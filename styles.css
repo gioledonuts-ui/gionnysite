@@ -2827,3 +2827,658 @@ body {
     font-size: 7px;
   }
 }
+
+/* Use the available height instead of shrinking the cards into tiny tiles. */
+@media (min-height: 681px) {
+  .hub-layout {
+    gap: clamp(14px, 2.4vh, 24px);
+    padding-block: clamp(14px, 2.2vh, 24px);
+  }
+
+  .welcome-panel {
+    gap: clamp(24px, 3vw, 44px);
+    padding: clamp(24px, 3vw, 40px);
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(168px, 13vw, 205px) minmax(0, 1fr);
+    gap: clamp(20px, 2.8vw, 40px);
+  }
+
+  .profile-frame {
+    width: clamp(168px, 13vw, 205px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(3rem, 4.5vw, 4.25rem);
+  }
+
+  .creator-handle {
+    min-height: 32px;
+    margin-top: 10px;
+    padding: 4px 12px;
+    font-size: 13px;
+  }
+
+  .welcome-copy {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .welcome-actions {
+    gap: 12px;
+  }
+
+  .welcome-actions .discord-cta {
+    min-height: 88px;
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 13px 15px;
+    border-radius: 20px;
+  }
+
+  .welcome-actions .discord-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+  }
+
+  .welcome-actions .discord-icon svg {
+    width: 27px;
+    height: 27px;
+  }
+
+  .welcome-actions .discord-overline {
+    font-size: 8px;
+  }
+
+  .welcome-actions .discord-copy strong {
+    font-size: 20px;
+  }
+
+  .welcome-actions .discord-detail {
+    font-size: 9px;
+  }
+
+  .welcome-actions .discord-action-default,
+  .welcome-actions .discord-action .visited-badge {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: 9px;
+  }
+
+  .welcome-actions .schedule-card {
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+
+  .welcome-actions .schedule-topline {
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+
+  .welcome-actions .schedule-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .welcome-actions .schedule-mark svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .welcome-actions .schedule-copy h2 {
+    font-size: 14px;
+  }
+
+  .welcome-actions .schedule-copy p {
+    font-size: 8px;
+  }
+
+  .welcome-actions .schedule-time {
+    font-size: 27px;
+  }
+
+  .welcome-actions .schedule-time span {
+    font-size: 15px;
+  }
+
+  .welcome-actions .schedule-days {
+    gap: 5px;
+  }
+
+  .welcome-actions .schedule-days li {
+    min-height: 28px;
+    font-size: 8px;
+  }
+
+  .networks-panel {
+    padding: 18px 22px;
+  }
+
+  .networks-heading h2 {
+    font-size: clamp(1.35rem, 2.1vw, 1.85rem);
+  }
+
+  .network-grid {
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 94px;
+    gap: 12px;
+    padding: 12px 13px;
+    border-radius: 17px;
+  }
+
+  .network-icon,
+  .network-card--wide .network-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+
+  .network-icon svg,
+  .network-card--wide .network-icon svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .network-copy strong,
+  .network-card--wide .network-copy strong {
+    font-size: 15px;
+  }
+
+  .network-copy > span,
+  .network-card--wide .network-copy > span {
+    font-size: 10px;
+  }
+
+  .network-card--twitch .stream-title {
+    max-width: 220px;
+    font-size: 9px;
+    -webkit-line-clamp: 2;
+  }
+
+  .network-card .network-head .visited-badge {
+    top: 6px;
+    right: 7px;
+    min-height: 19px;
+    padding-inline: 6px;
+    font-size: 8px;
+  }
+
+  .network-card .network-head .visited-badge svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .network-card--twitch .network-side {
+    top: 6px;
+    right: 7px;
+  }
+
+  .network-card--twitch .live-badge {
+    min-height: 20px;
+    padding-inline: 6px;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 680px) and (min-height: 681px) {
+  .site-header {
+    min-height: 48px;
+  }
+
+  .ticker-viewport {
+    min-height: 42px;
+  }
+
+  .ticker-track {
+    min-height: 40px;
+  }
+
+  .ticker-item {
+    min-height: 34px;
+    padding: 3px 9px;
+  }
+
+  .ticker-icon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .hub-layout {
+    gap: 12px;
+    padding-block: 10px;
+  }
+
+  .welcome-panel {
+    gap: 12px;
+    padding: 15px;
+    border-radius: 22px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(110px, 30vw, 122px) minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .profile-frame {
+    width: clamp(110px, 30vw, 122px);
+    box-shadow: 0 16px 34px rgba(4, 3, 11, 0.4), 0 0 0 6px rgba(169, 112, 255, 0.07);
+  }
+
+  .profile-frame-glow {
+    inset: -9px;
+    filter: blur(15px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.55rem, 7.1vw, 2.1rem);
+    letter-spacing: -0.075em;
+  }
+
+  .creator-handle {
+    min-height: 24px;
+    margin-top: 6px;
+    padding: 3px 9px;
+    font-size: 10px;
+  }
+
+  .welcome-copy {
+    margin-top: 7px;
+    font-size: 12px;
+    line-height: 1.38;
+  }
+
+  .welcome-actions {
+    gap: 9px;
+  }
+
+  .welcome-actions .discord-cta {
+    min-height: 68px;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding: 9px 11px;
+    border-radius: 17px;
+  }
+
+  .welcome-actions .discord-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+  }
+
+  .welcome-actions .discord-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .welcome-actions .discord-overline {
+    font-size: 7px;
+  }
+
+  .welcome-actions .discord-copy strong {
+    font-size: 16px;
+  }
+
+  .welcome-actions .discord-detail {
+    font-size: 8px;
+  }
+
+  .welcome-actions .discord-action-default,
+  .welcome-actions .discord-action .visited-badge {
+    min-height: 29px;
+    padding-inline: 8px;
+    font-size: 8px;
+  }
+
+  .welcome-actions .schedule-card {
+    padding: 9px 11px;
+    border-radius: 16px;
+  }
+
+  .welcome-actions .schedule-topline {
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+
+  .welcome-actions .schedule-mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+  }
+
+  .welcome-actions .schedule-mark svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .welcome-actions .schedule-copy h2 {
+    font-size: 12px;
+  }
+
+  .welcome-actions .schedule-copy p {
+    font-size: 7px;
+  }
+
+  .welcome-actions .schedule-time {
+    font-size: 23px;
+  }
+
+  .welcome-actions .schedule-time span {
+    font-size: 13px;
+  }
+
+  .welcome-actions .schedule-days {
+    gap: 4px;
+  }
+
+  .welcome-actions .schedule-days li {
+    min-height: 24px;
+    font-size: 8px;
+  }
+
+  .networks-panel {
+    padding: 11px 12px;
+    border-radius: 20px;
+  }
+
+  .networks-heading h2 {
+    font-size: 19px;
+  }
+
+  .network-grid {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .network-item:last-child:nth-child(odd) {
+    width: calc((100% - 8px) / 2);
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 82px;
+    gap: 9px;
+    padding: 10px 11px;
+    border-radius: 15px;
+  }
+
+  .network-icon,
+  .network-card--wide .network-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .network-icon svg,
+  .network-card--wide .network-icon svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .network-copy strong,
+  .network-card--wide .network-copy strong {
+    font-size: 14px;
+  }
+
+  .network-copy > span,
+  .network-card--wide .network-copy > span {
+    font-size: 10px;
+  }
+
+  .network-card .network-head .visited-badge {
+    top: 6px;
+    right: 6px;
+    min-height: 17px;
+    gap: 3px;
+    padding-inline: 5px;
+    font-size: 7px;
+  }
+
+  .network-card--twitch .network-side {
+    top: 6px;
+    right: 6px;
+  }
+
+  .network-card--twitch .live-badge {
+    min-height: 17px;
+    padding-inline: 5px;
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 380px) and (min-height: 681px) {
+  .welcome-identity {
+    grid-template-columns: 98px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .profile-frame {
+    width: 98px;
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.4rem, 6.5vw, 1.7rem);
+  }
+
+  .welcome-copy {
+    font-size: 10px;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 72px;
+    gap: 6px;
+    padding: 8px 7px;
+  }
+
+  .network-icon,
+  .network-card--wide .network-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .network-icon svg,
+  .network-card--wide .network-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .network-copy strong,
+  .network-card--wide .network-copy strong {
+    font-size: 12px;
+  }
+
+  .network-copy > span,
+  .network-card--wide .network-copy > span {
+    font-size: 9px;
+  }
+}
+
+/* Medium-height phones can use more room without adopting the full tall-screen scale. */
+@media (max-width: 680px) and (min-height: 600px) and (max-height: 680px) {
+  .site-header {
+    min-height: 42px;
+  }
+
+  .ticker-viewport {
+    min-height: 36px;
+  }
+
+  .ticker-track {
+    min-height: 34px;
+  }
+
+  .hub-layout {
+    gap: 8px;
+    padding-block: 5px;
+  }
+
+  .welcome-panel {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(88px, 26vw, 100px) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .profile-frame {
+    width: clamp(88px, 26vw, 100px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.25rem, 6.2vw, 1.7rem);
+  }
+
+  .creator-handle {
+    min-height: 22px;
+    margin-top: 5px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+
+  .welcome-copy {
+    margin-top: 5px;
+    font-size: 10px;
+    line-height: 1.32;
+  }
+
+  .welcome-actions {
+    gap: 7px;
+  }
+
+  .welcome-actions .discord-cta {
+    min-height: 58px;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 6px;
+    padding: 7px 8px;
+  }
+
+  .welcome-actions .discord-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .welcome-actions .discord-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .welcome-actions .discord-overline {
+    font-size: 6.5px;
+  }
+
+  .welcome-actions .discord-copy strong {
+    font-size: 14px;
+  }
+
+  .welcome-actions .discord-detail {
+    font-size: 7px;
+  }
+
+  .welcome-actions .discord-action-default,
+  .welcome-actions .discord-action .visited-badge {
+    min-height: 24px;
+    padding-inline: 6px;
+    font-size: 7px;
+  }
+
+  .welcome-actions .schedule-card {
+    padding: 7px 9px;
+  }
+
+  .welcome-actions .schedule-topline {
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+
+  .welcome-actions .schedule-mark {
+    width: 28px;
+    height: 28px;
+  }
+
+  .welcome-actions .schedule-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .welcome-actions .schedule-copy h2 {
+    font-size: 10px;
+  }
+
+  .welcome-actions .schedule-copy p {
+    font-size: 6px;
+  }
+
+  .welcome-actions .schedule-time {
+    font-size: 20px;
+  }
+
+  .welcome-actions .schedule-time span {
+    font-size: 11px;
+  }
+
+  .welcome-actions .schedule-days {
+    gap: 3px;
+  }
+
+  .welcome-actions .schedule-days li {
+    min-height: 20px;
+    font-size: 6.5px;
+  }
+
+  .networks-panel {
+    padding: 8px 10px;
+  }
+
+  .networks-heading h2 {
+    font-size: 16px;
+  }
+
+  .network-grid {
+    gap: 6px;
+    margin-top: 7px;
+  }
+
+  .network-item:last-child:nth-child(odd) {
+    width: calc((100% - 6px) / 2);
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 64px;
+    gap: 7px;
+    padding: 7px 6px;
+  }
+
+  .network-icon,
+  .network-card--wide .network-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .network-icon svg,
+  .network-card--wide .network-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .network-copy strong,
+  .network-card--wide .network-copy strong {
+    font-size: 12px;
+  }
+
+  .network-copy > span,
+  .network-card--wide .network-copy > span {
+    font-size: 9px;
+  }
+}
