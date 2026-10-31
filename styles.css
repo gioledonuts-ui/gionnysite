@@ -356,12 +356,6 @@ a:focus-visible {
   margin-bottom: 25px;
 }
 
-.section-label {
-  margin: 0 0 7px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .section-heading h2 {
   margin: 0;
   font-family: var(--display-font);
@@ -400,7 +394,7 @@ a:focus-visible {
 .social-link {
   display: grid;
   min-height: 82px;
-  grid-template-columns: 42px minmax(0, 1fr) minmax(74px, auto) auto;
+  grid-template-columns: 42px minmax(0, 1fr) minmax(74px, auto);
   align-items: center;
   gap: 13px;
   padding: 12px 8px;
@@ -527,24 +521,10 @@ a:focus-visible {
 }
 
 .social-open {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--ink-soft);
-  font-size: 10px;
-  font-weight: 650;
+  color: var(--teal-dark);
+  font-size: 11px;
+  font-weight: 700;
   white-space: nowrap;
-}
-
-.social-open b {
-  color: var(--teal);
-  font-size: 16px;
-  font-weight: 500;
-  transition: transform 140ms ease;
-}
-
-.social-link:hover .social-open b {
-  transform: translate(2px, -2px);
 }
 
 .site-footer {
@@ -750,15 +730,19 @@ a:focus-visible {
   .social-link,
   .social-link-discord {
     min-height: 74px;
-    grid-template-columns: 40px minmax(0, 1fr) auto;
     gap: 11px;
     margin-inline: 0;
     padding: 10px 2px;
     border-left: 0;
   }
 
+  .social-link {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
   .social-link-discord {
     min-height: 82px;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
     padding-inline: 10px;
     border-left: 3px solid var(--teal);
   }
@@ -770,15 +754,6 @@ a:focus-visible {
 
   .social-handle {
     display: none;
-  }
-
-  .social-open {
-    gap: 0;
-    font-size: 0;
-  }
-
-  .social-open b {
-    font-size: 17px;
   }
 
   .site-footer {
