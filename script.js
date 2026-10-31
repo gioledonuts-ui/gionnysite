@@ -192,6 +192,7 @@
   const tickerTrack = ticker?.querySelector("[data-ticker-track]");
   const tickerSet = tickerTrack?.querySelector("[data-ticker-set]");
   let tickerCycleWidth = 0;
+  let tickerPosition = 0;
 
   const ensureTickerCopies = () => {
     if (!ticker || !tickerTrack || !tickerSet) return;
@@ -313,25 +314,33 @@
     let touching = false;
     let resumeAt = 0;
     let lastFrame = 0;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     ensureTickerCopies();
+    tickerPosition = ticker.scrollLeft;
     document.fonts?.ready.then(ensureTickerCopies);
     window.addEventListener("resize", ensureTickerCopies, { passive: true });
 
     ticker.addEventListener("focusin", () => {
       keyboardFocus = true;
+      tickerPosition = ticker.scrollLeft;
     });
     ticker.addEventListener("focusout", (event) => {
-      if (!ticker.contains(event.relatedTarget)) keyboardFocus = false;
+      if (!ticker.contains(event.relatedTarget)) {
+        keyboardFocus = false;
+        tickerPosition = ticker.scrollLeft;
+      }
     });
     ticker.addEventListener("pointerdown", (event) => {
-      if (event.pointerType !== "mouse") touching = true;
+      if (event.pointerType !== "mouse") {
+        touching = true;
+        tickerPosition = ticker.scrollLeft;
+      }
     });
     ticker.addEventListener(
       "touchstart",
       () => {
         touching = true;
+        tickerPosition = ticker.scrollLeft;
       },
       { passive: true }
     );
@@ -339,6 +348,7 @@
     const finishTouch = () => {
       if (!touching) return;
       touching = false;
+      tickerPosition = ticker.scrollLeft;
       resumeAt = performance.now() + 2600;
     };
     window.addEventListener("pointerup", finishTouch, { passive: true });
@@ -355,28 +365,30 @@
       "wheel",
       () => {
         resumeAt = performance.now() + 2600;
+        window.requestAnimationFrame(() => {
+          tickerPosition = ticker.scrollLeft;
+        });
       },
       { passive: true }
     );
 
-    if (!reducedMotion) {
-      const animateTicker = (now) => {
-        if (!lastFrame) lastFrame = now;
-        const elapsed = Math.min(now - lastFrame, 48);
-        lastFrame = now;
+    // Keep the ticker moving even with reduced motion enabled, as requested.
+    const animateTicker = (now) => {
+      if (!lastFrame) lastFrame = now;
+      const elapsed = Math.min(now - lastFrame, 120);
+      lastFrame = now;
 
-        if (!keyboardFocus && !touching && !document.hidden && now >= resumeAt) {
-          tickerCycleWidth = tickerSet.getBoundingClientRect().width;
-          if (tickerCycleWidth > 0) {
-            ticker.scrollLeft += elapsed * 0.05;
-            if (ticker.scrollLeft >= tickerCycleWidth) ticker.scrollLeft %= tickerCycleWidth;
-          }
+      if (!keyboardFocus && !touching && !document.hidden && now >= resumeAt) {
+        tickerCycleWidth = tickerSet.getBoundingClientRect().width;
+        if (tickerCycleWidth > 0) {
+          tickerPosition = (tickerPosition + elapsed * 0.045) % tickerCycleWidth;
+          ticker.scrollLeft = tickerPosition;
         }
+      }
 
-        window.requestAnimationFrame(animateTicker);
-      };
       window.requestAnimationFrame(animateTicker);
-    }
+    };
+    window.requestAnimationFrame(animateTicker);
   }
 
   void refreshTicker();

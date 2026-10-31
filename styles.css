@@ -1771,3 +1771,341 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Wide introduction, enlarged profile photo and softly faded ticker edges. */
+.ticker-viewport {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 34px,
+    #000 calc(100% - 34px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 34px,
+    #000 calc(100% - 34px),
+    transparent 100%
+  );
+}
+
+.hub-layout {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(22px, 3.4vw, 42px);
+  padding-block: clamp(25px, 4.2vh, 48px);
+}
+
+.welcome-panel {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  align-items: center;
+  gap: clamp(25px, 3.8vw, 52px);
+  padding: clamp(28px, 4vw, 54px);
+  overflow: hidden;
+  border: 1px solid rgba(237, 224, 255, 0.15);
+  border-radius: clamp(25px, 3vw, 38px);
+  background: linear-gradient(128deg, rgba(36, 26, 45, 0.96), rgba(25, 19, 34, 0.97) 58%, rgba(39, 24, 43, 0.94));
+  box-shadow: 0 30px 85px rgba(4, 3, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(18px);
+}
+
+.welcome-panel::before {
+  top: auto;
+  right: -7%;
+  bottom: -49%;
+  width: min(58%, 560px);
+  border: 0;
+  background: radial-gradient(circle, rgba(145, 70, 255, 0.2), rgba(255, 67, 88, 0.075) 43%, transparent 72%);
+  box-shadow: none;
+  filter: blur(8px);
+  opacity: 0.86;
+  animation: none;
+}
+
+.welcome-identity {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: clamp(142px, 16vw, 194px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(22px, 3.6vw, 46px);
+}
+
+.profile-frame {
+  position: relative;
+  display: grid;
+  width: clamp(142px, 16vw, 194px);
+  aspect-ratio: 1;
+  place-items: center;
+  margin-inline: auto;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(68, 45, 83, 0.95), rgba(33, 23, 43, 0.98));
+  box-shadow: 0 22px 55px rgba(4, 3, 11, 0.42), 0 0 0 9px rgba(169, 112, 255, 0.07);
+  isolation: isolate;
+}
+
+.profile-frame-glow {
+  position: absolute;
+  z-index: -1;
+  inset: -12px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 210deg,
+    rgba(255, 67, 88, 0.8),
+    rgba(255, 111, 145, 0.28),
+    rgba(169, 112, 255, 0.88),
+    rgba(255, 67, 88, 0.8)
+  );
+  filter: blur(18px);
+  opacity: 0.62;
+  pointer-events: none;
+  animation: orbit-breathe 7s ease-in-out infinite;
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 4px solid rgba(34, 25, 43, 0.98);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+  object-fit: cover;
+}
+
+.welcome-intro {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.welcome-panel h1 {
+  max-width: 700px;
+  font-size: clamp(2.7rem, 4.6vw, 4.6rem);
+  letter-spacing: -0.078em;
+  line-height: 1.03;
+}
+
+.welcome-name {
+  color: #e2d2fa;
+  letter-spacing: -0.06em;
+}
+
+.creator-handle {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  margin-top: 15px;
+  padding: 4px 13px;
+  border: 1px solid rgba(185, 151, 255, 0.27);
+  border-radius: 999px;
+  background: rgba(169, 112, 255, 0.11);
+  color: #d7c2ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+}
+
+.welcome-copy {
+  max-width: 560px;
+  margin-top: 17px;
+  font-size: 14px;
+}
+
+.welcome-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  gap: 13px;
+}
+
+.welcome-actions .discord-cta {
+  width: 100%;
+  min-height: 102px;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px;
+  margin: 0;
+}
+
+.welcome-actions .schedule-card {
+  width: 100%;
+  margin: 0;
+}
+
+.networks-panel {
+  width: 100%;
+}
+
+@media (max-width: 940px) {
+  .welcome-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 26px;
+    padding: clamp(24px, 4vw, 36px);
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(132px, 19vw, 168px) minmax(0, 1fr);
+    gap: clamp(20px, 4vw, 34px);
+  }
+
+  .profile-frame {
+    width: clamp(132px, 19vw, 168px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(2.8rem, 6.8vw, 4.25rem);
+  }
+
+  .welcome-actions {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    align-items: stretch;
+  }
+
+  .welcome-actions .discord-cta,
+  .welcome-actions .schedule-card {
+    height: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .ticker-viewport {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 22px, #000 calc(100% - 22px), transparent 100%);
+  }
+
+  .hub-layout {
+    gap: 21px;
+    padding-block: 25px 34px;
+  }
+
+  .welcome-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 23px;
+    padding: 22px;
+    border-radius: 27px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .profile-frame {
+    width: clamp(126px, 35vw, 154px);
+  }
+
+  .welcome-intro {
+    width: 100%;
+  }
+
+  .welcome-panel h1 {
+    max-width: 580px;
+    margin-inline: auto;
+    font-size: clamp(2.3rem, 10vw, 3.85rem);
+    letter-spacing: -0.078em;
+  }
+
+  .creator-handle {
+    margin-top: 12px;
+  }
+
+  .welcome-copy {
+    margin: 14px auto 0;
+    font-size: 13px;
+  }
+
+  .welcome-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .welcome-actions .discord-cta {
+    min-height: 88px;
+    grid-template-columns: 47px minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 11px 12px;
+  }
+
+  .welcome-actions .discord-icon {
+    width: 47px;
+    height: 47px;
+  }
+
+  .welcome-actions .schedule-card {
+    height: auto;
+    padding: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .ticker-viewport {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  }
+
+  .welcome-panel {
+    gap: 20px;
+    padding: 18px 16px;
+  }
+
+  .profile-frame {
+    width: clamp(118px, 36vw, 136px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(2.1rem, 10.2vw, 2.65rem);
+  }
+
+  .welcome-actions .discord-cta {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding-inline: 9px;
+  }
+
+  .welcome-actions .discord-icon {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Touch phones keep the whole page stacked even in landscape orientation. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 560px) {
+  .hub-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .welcome-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+    padding: 22px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: 128px minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .profile-frame {
+    width: 128px;
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(2.35rem, 5.8vw, 3.5rem);
+  }
+
+  .welcome-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
