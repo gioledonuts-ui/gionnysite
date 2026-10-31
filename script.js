@@ -189,6 +189,13 @@
     ticker.addEventListener("pointerdown", (event) => {
       if (event.pointerType !== "mouse") touching = true;
     });
+    ticker.addEventListener(
+      "touchstart",
+      () => {
+        touching = true;
+      },
+      { passive: true }
+    );
 
     const finishTouch = () => {
       if (!touching) return;
@@ -196,7 +203,15 @@
       resumeAt = performance.now() + 2600;
     };
     window.addEventListener("pointerup", finishTouch, { passive: true });
-    window.addEventListener("pointercancel", finishTouch, { passive: true });
+    window.addEventListener(
+      "pointercancel",
+      (event) => {
+        if (event.pointerType !== "touch") finishTouch();
+      },
+      { passive: true }
+    );
+    window.addEventListener("touchend", finishTouch, { passive: true });
+    window.addEventListener("touchcancel", finishTouch, { passive: true });
     ticker.addEventListener(
       "wheel",
       () => {
