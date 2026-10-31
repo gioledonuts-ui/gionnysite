@@ -16,12 +16,13 @@ Puis ouvre <http://localhost:8000>. Le site et ses liens restent utilisables san
 
 - Les textes, destinations des liens et horaires se trouvent dans `index.html`.
 - Les couleurs, animations et adaptations aux écrans se trouvent dans `styles.css`.
-- `script.js` mémorise localement les réseaux déjà ouverts et actualise le bandeau depuis `/api/updates`.
+- `script.js` mémorise localement les réseaux déjà ouverts, compte jusqu’à trois vidéos YouTube non vues et actualise le bandeau depuis `/api/updates`.
 - `api/updates.mjs` interroge Twitch et YouTube côté serveur : les secrets ne sont jamais envoyés au navigateur.
 - Les polices Space Grotesk et Manrope sont servies depuis `assets/fonts/`, sans requête à un service externe. Leurs licences SIL Open Font License se trouvent dans le même dossier.
 - L’icône de l’onglet est `favicon.svg`.
+- Pour ajouter les images personnelles, dépose la photo dans `assets/gionny-profile.jpg` et l’image de fond dans `assets/gionny-background.jpg`. Les images restent facultatives et le site les détecte automatiquement.
 
-Les clics mémorisés restent dans le stockage du navigateur sur cet appareil; ils ne sont envoyés nulle part. Pour les effacer, il suffit de supprimer les données de ce site dans les paramètres du navigateur.
+Les clics mémorisés et la dernière vidéo YouTube consultée restent dans le stockage de ce navigateur sur cet appareil; ils ne sont envoyés nulle part. Pour les effacer, il suffit de supprimer les données de ce site dans les paramètres du navigateur.
 
 ## Variables Vercel pour Twitch et YouTube
 

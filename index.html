@@ -120,6 +120,7 @@
 
       <main class="hub-layout" id="main">
         <section class="welcome-panel" aria-labelledby="welcome-title">
+          <img class="profile-avatar" data-profile-image alt="Photo de profil de Gionny" hidden />
           <h1 id="welcome-title">
             Bienvenue<br />
             dans le <span class="heading-accent">QG</span><span class="heading-bang">!</span>
@@ -193,24 +194,28 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 data-network="twitch"
+                data-twitch-card
+                data-live="unknown"
               >
-                <span class="network-head">
-                  <span class="network-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M5 3h17v12l-5 5h-4l-3 3H7v-3H3V6l2-3Z" />
-                      <path d="M10 8v5M16 8v5" />
-                    </svg>
-                  </span>
+                <span class="network-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 3h17v12l-5 5h-4l-3 3H7v-3H3V6l2-3Z" />
+                    <path d="M10 8v5M16 8v5" />
+                  </svg>
+                </span>
+                <span class="network-copy">
+                  <strong>Twitch</strong>
+                  <span>@7gionny</span>
+                  <span class="stream-title" data-stream-title hidden></span>
+                </span>
+                <span class="network-side">
+                  <span class="live-badge" data-stream-status aria-live="polite" hidden>EN LIVE</span>
                   <span class="visited-badge" aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
                       <path d="m3.5 8.2 3 3 6-6.2" />
                     </svg>
                     Déjà visité
                   </span>
-                </span>
-                <span class="network-copy">
-                  <strong>Twitch</strong>
-                  <span>@7gionny</span>
                 </span>
               </a>
             </li>
@@ -249,6 +254,7 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 data-network="youtube"
+                data-youtube-card
               >
                 <span class="network-head">
                   <span class="network-icon" aria-hidden="true">
@@ -257,7 +263,8 @@
                       <path class="play-mark" d="m10 15.5 5.2-3.5L10 8.5v7Z" />
                     </svg>
                   </span>
-                  <span class="visited-badge" aria-live="polite" hidden>
+                  <span class="youtube-count-badge" data-youtube-count aria-live="polite" hidden>1</span>
+                  <span class="visited-badge" data-youtube-visited aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
                       <path d="m3.5 8.2 3 3 6-6.2" />
                     </svg>

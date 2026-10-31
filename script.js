@@ -1,8 +1,11 @@
 (() => {
   const storageKey = "gionny:visited-links:v1";
+  const youtubeSeenKey = "gionny:youtube:last-seen:v1";
   const links = [...document.querySelectorAll("[data-network]")];
   const knownNetworks = new Set(links.map((link) => link.dataset.network));
   const visitedNetworks = new Set();
+  let recentYouTubeUploads = [];
+  let youtubeApiAvailable = false;
 
   try {
     const savedNetworks = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -15,7 +18,68 @@
     // The links still work if local storage is unavailable.
   }
 
+  const renderYouTubeVisitState = (unseenCount, available = youtubeApiAvailable) => {
+    const card = document.querySelector("[data-youtube-card]");
+    const countBadge = card?.querySelector("[data-youtube-count]");
+    const visitedBadge = card?.querySelector("[data-youtube-visited]");
+    if (!countBadge || !visitedBadge) return;
+
+    const count = Math.max(0, Number(unseenCount) || 0);
+    countBadge.hidden = !available || count === 0;
+    visitedBadge.hidden = available ? count > 0 : !visitedNetworks.has("youtube");
+
+    if (count > 0) {
+      countBadge.textContent = String(Math.min(count, 3));
+      countBadge.setAttribute(
+        "aria-label",
+        `${count} nouvelle${count > 1 ? "s" : ""} vidéo${count > 1 ? "s" : ""}`
+      );
+    }
+  };
+
+  const readYouTubeMarker = () => {
+    try {
+      const marker = JSON.parse(localStorage.getItem(youtubeSeenKey) || "null");
+      return marker && typeof marker === "object" ? marker : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeYouTubeMarker = (video = recentYouTubeUploads[0]) => {
+    const marker = video
+      ? { id: video.id || "", publishedAt: video.publishedAt || new Date().toISOString() }
+      : { id: "", publishedAt: new Date().toISOString() };
+
+    try {
+      localStorage.setItem(youtubeSeenKey, JSON.stringify(marker));
+    } catch {
+      // The notification still clears for the current page if storage is blocked.
+    }
+    renderYouTubeVisitState(0, youtubeApiAvailable);
+  };
+
+  const countUnseenYouTubeUploads = (uploads) => {
+    const marker = readYouTubeMarker();
+    if (!marker) {
+      writeYouTubeMarker(uploads[0]);
+      return 0;
+    }
+    if (!uploads.length) return 0;
+
+    const seenIndex = marker.id ? uploads.findIndex((upload) => upload.id === marker.id) : -1;
+    if (seenIndex >= 0) return seenIndex;
+
+    const seenAt = Date.parse(marker.publishedAt || "");
+    if (!Number.isFinite(seenAt)) {
+      writeYouTubeMarker(uploads[0]);
+      return 0;
+    }
+    return uploads.filter((upload) => Date.parse(upload.publishedAt) > seenAt).length;
+  };
+
   const showVisitedState = (link) => {
+    if (link.dataset.network === "youtube") return;
     const badge = link.querySelector(".visited-badge");
     if (badge) badge.hidden = false;
     link.dataset.visited = "true";
@@ -23,8 +87,20 @@
 
   const saveVisitedState = (link) => {
     const network = link.dataset.network;
-    if (!network || visitedNetworks.has(network)) return;
+    if (!network) return;
 
+    if (network === "youtube") {
+      visitedNetworks.add(network);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify([...visitedNetworks]));
+      } catch {
+        // Keep the visual state for this page even if storage is blocked.
+      }
+      writeYouTubeMarker();
+      return;
+    }
+
+    if (visitedNetworks.has(network)) return;
     visitedNetworks.add(network);
     links
       .filter((candidate) => candidate.dataset.network === network)
@@ -41,6 +117,7 @@
     if (visitedNetworks.has(link.dataset.network)) showVisitedState(link);
     link.addEventListener("click", () => saveVisitedState(link));
   });
+  renderYouTubeVisitState(0, false);
 
   const safeYouTubeUrl = (url) => {
     try {
@@ -68,6 +145,37 @@
     }
     return "https://www.twitch.tv/7gionny";
   };
+
+  const assetExists = async (url) => {
+    try {
+      const response = await fetch(url, { method: "HEAD", cache: "no-store" });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  const profileImage = document.querySelector("[data-profile-image]");
+  if (profileImage) {
+    void assetExists("/assets/gionny-profile.jpg").then((exists) => {
+      if (!exists) return;
+      profileImage.addEventListener("error", () => (profileImage.hidden = true), { once: true });
+      profileImage.src = "/assets/gionny-profile.jpg";
+      profileImage.hidden = false;
+    });
+  }
+
+  void assetExists("/assets/gionny-background.jpg").then((exists) => {
+    if (!exists) return;
+    document.documentElement.style.setProperty(
+      "--creator-background",
+      'url("/assets/gionny-background.jpg")'
+    );
+    document.documentElement.style.setProperty(
+      "--creator-background-overlay",
+      "linear-gradient(rgba(16, 10, 18, 0.62), rgba(16, 10, 18, 0.88))"
+    );
+  });
 
   const ticker = document.querySelector("[data-ticker]");
   const tickerTrack = ticker?.querySelector("[data-ticker-track]");
@@ -102,37 +210,46 @@
   const applyTickerUpdates = (updates) => {
     const twitch = updates?.twitch;
     const twitchAvailable = twitch?.available === true && typeof twitch.isLive === "boolean";
+    const isLive = twitchAvailable && twitch.isLive;
+    const streamTitle = typeof twitch?.title === "string" ? twitch.title.trim() : "";
 
     document.querySelectorAll("[data-ticker-live]").forEach((item) => {
-      const isLive = twitchAvailable && twitch.isLive;
       item.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
-
       const label = item.querySelector("[data-live-label]");
       const message = item.querySelector("[data-live-message]");
       if (label) label.textContent = isLive ? "EN DIRECT" : "TWITCH";
       if (message) {
-        const title = typeof twitch?.title === "string" ? twitch.title.trim() : "";
         message.textContent = !twitchAvailable
           ? "Suis la chaîne pour les prochains lives"
           : isLive
-            ? title
-              ? `Gionny est en live : ${title}`
+            ? streamTitle
+              ? `Gionny est en live : ${streamTitle}`
               : "Gionny est en live, rejoins le chat"
             : "À bientôt sur Twitch";
       }
       item.href = safeTwitchUrl(twitch?.url);
     });
 
+    document.querySelectorAll("[data-twitch-card]").forEach((card) => {
+      card.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
+      const status = card.querySelector("[data-stream-status]");
+      const title = card.querySelector("[data-stream-title]");
+      if (status) status.hidden = !isLive;
+      if (title) {
+        title.textContent = streamTitle;
+        title.hidden = !isLive || !streamTitle;
+      }
+    });
+
     const youtube = updates?.youtube;
     const youtubeUrl = safeYouTubeUrl(youtube?.url);
-    const youtubeAvailable =
-      youtube?.available === true &&
-      typeof youtube.title === "string" &&
-      youtube.title.trim() &&
-      youtubeUrl !== "https://www.youtube.com/@gionnyyy";
-    if (youtubeAvailable) {
+    const youtubeVideoAvailable =
+      youtube?.available === true && youtubeUrl !== "https://www.youtube.com/@gionnyyy";
+    const youtubeTitle = typeof youtube?.title === "string" ? youtube.title.trim() : "";
+
+    if (youtubeVideoAvailable) {
       document.querySelectorAll("[data-video-title]").forEach((title) => {
-        title.textContent = youtube.title.trim();
+        title.textContent = youtubeTitle || "Voir la dernière vidéo";
       });
       setTickerLinks("[data-ticker-youtube]", youtubeUrl);
     } else {
@@ -140,6 +257,22 @@
         title.textContent = "Voir la chaîne YouTube";
       });
       setTickerLinks("[data-ticker-youtube]", "https://www.youtube.com/@gionnyyy");
+    }
+
+    recentYouTubeUploads = Array.isArray(youtube?.uploads)
+      ? youtube.uploads.filter(
+          (upload) =>
+            upload &&
+            typeof upload.id === "string" &&
+            typeof upload.publishedAt === "string" &&
+            Number.isFinite(Date.parse(upload.publishedAt))
+        )
+      : [];
+    youtubeApiAvailable = youtube?.available === true;
+    if (youtubeApiAvailable) {
+      renderYouTubeVisitState(countUnseenYouTubeUploads(recentYouTubeUploads), true);
+    } else {
+      renderYouTubeVisitState(0, false);
     }
 
     ensureTickerCopies();
@@ -163,7 +296,6 @@
   };
 
   if (ticker && tickerTrack && tickerSet) {
-    let hovering = false;
     let keyboardFocus = false;
     let touching = false;
     let resumeAt = 0;
@@ -174,12 +306,6 @@
     document.fonts?.ready.then(ensureTickerCopies);
     window.addEventListener("resize", ensureTickerCopies, { passive: true });
 
-    ticker.addEventListener("mouseenter", () => {
-      hovering = true;
-    });
-    ticker.addEventListener("mouseleave", () => {
-      hovering = false;
-    });
     ticker.addEventListener("focusin", () => {
       keyboardFocus = true;
     });
@@ -226,10 +352,10 @@
         const elapsed = Math.min(now - lastFrame, 48);
         lastFrame = now;
 
-        if (!hovering && !keyboardFocus && !touching && !document.hidden && now >= resumeAt) {
+        if (!keyboardFocus && !touching && !document.hidden && now >= resumeAt) {
           tickerCycleWidth = tickerSet.getBoundingClientRect().width;
           if (tickerCycleWidth > 0) {
-            ticker.scrollLeft += elapsed * 0.032;
+            ticker.scrollLeft += elapsed * 0.05;
             if (ticker.scrollLeft >= tickerCycleWidth) ticker.scrollLeft %= tickerCycleWidth;
           }
         }

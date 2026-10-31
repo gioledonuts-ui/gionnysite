@@ -70,9 +70,9 @@ async function getTwitchStatus() {
   };
 }
 
-async function getLatestYouTubeVideo() {
+async function getRecentYouTubeVideos() {
   const apiKey = process.env.YOUTUBE_API_KEY?.trim();
-  if (!apiKey) return { available: false, url: YOUTUBE_CHANNEL_URL };
+  if (!apiKey) return { available: false, url: YOUTUBE_CHANNEL_URL, uploads: [] };
 
   const channelParams = new URLSearchParams({
     part: "contentDetails",
@@ -87,29 +87,44 @@ async function getLatestYouTubeVideo() {
 
   const channelPayload = await channelResponse.json();
   const uploadsPlaylistId = channelPayload.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-  if (!uploadsPlaylistId) return { available: false, url: YOUTUBE_CHANNEL_URL };
+  if (!uploadsPlaylistId) return { available: false, url: YOUTUBE_CHANNEL_URL, uploads: [] };
 
   const videoParams = new URLSearchParams({
     part: "snippet,contentDetails",
     playlistId: uploadsPlaylistId,
-    maxResults: "1",
+    maxResults: "50",
     key: apiKey,
   });
   const videoResponse = await fetch(
     `https://www.googleapis.com/youtube/v3/playlistItems?${videoParams}`,
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
   );
-  if (!videoResponse.ok) throw new Error("YouTube latest video request failed");
+  if (!videoResponse.ok) throw new Error("YouTube uploads request failed");
 
   const videoPayload = await videoResponse.json();
-  const latestVideo = videoPayload.items?.[0];
-  const videoId = latestVideo?.contentDetails?.videoId;
-  if (!videoId) return { available: false, url: YOUTUBE_CHANNEL_URL };
+  const uploads = (Array.isArray(videoPayload.items) ? videoPayload.items : [])
+    .map((item) => {
+      const videoId = item?.contentDetails?.videoId || item?.snippet?.resourceId?.videoId;
+      if (typeof videoId !== "string" || !videoId) return null;
 
+      const publishedAt =
+        item.contentDetails?.videoPublishedAt || item.snippet?.publishedAt || "";
+      return {
+        id: videoId,
+        publishedAt: typeof publishedAt === "string" ? publishedAt : "",
+        title: typeof item.snippet?.title === "string" ? item.snippet.title : "",
+        url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+      };
+    })
+    .filter((upload) => upload && Number.isFinite(Date.parse(upload.publishedAt)))
+    .sort((first, second) => Date.parse(second.publishedAt) - Date.parse(first.publishedAt));
+
+  const latestVideo = uploads[0];
   return {
     available: true,
-    title: typeof latestVideo.snippet?.title === "string" ? latestVideo.snippet.title : "",
-    url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+    title: latestVideo?.title || "",
+    url: latestVideo?.url || YOUTUBE_CHANNEL_URL,
+    uploads,
   };
 }
 
@@ -123,7 +138,7 @@ export default async function handler(request, response) {
 
   const [twitchResult, youtubeResult] = await Promise.allSettled([
     getTwitchStatus(),
-    getLatestYouTubeVideo(),
+    getRecentYouTubeVideos(),
   ]);
 
   const twitch =
@@ -133,7 +148,7 @@ export default async function handler(request, response) {
   const youtube =
     youtubeResult.status === "fulfilled"
       ? youtubeResult.value
-      : { available: false, url: YOUTUBE_CHANNEL_URL };
+      : { available: false, url: YOUTUBE_CHANNEL_URL, uploads: [] };
 
   return response.status(200).json({ twitch, youtube, updatedAt: new Date().toISOString() });
 }

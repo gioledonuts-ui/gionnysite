@@ -17,6 +17,8 @@
 :root {
   color-scheme: dark;
   --page: #100a12;
+  --creator-background: none;
+  --creator-background-overlay: none;
   --panel: #1b1320;
   --text: #f8f6ff;
   --muted: #c2b4c5;
@@ -54,9 +56,15 @@ body {
   overflow-x: hidden;
   isolation: isolate;
   background:
+    var(--creator-background-overlay),
+    var(--creator-background),
     radial-gradient(ellipse at 15% 14%, rgba(126, 58, 161, 0.18), transparent 32rem),
     radial-gradient(ellipse at 91% 87%, rgba(255, 54, 84, 0.11), transparent 30rem),
     var(--page);
+  background-attachment: fixed, fixed, scroll, scroll, scroll;
+  background-position: center, center, 15% 14%, 91% 87%, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size: cover, cover, auto, auto, auto;
   color: var(--text);
   font-size: 15px;
   line-height: 1.55;
@@ -184,20 +192,14 @@ a:focus-visible {
 }
 
 .ticker-label {
-  display: inline-flex;
-  min-width: 78px;
-  min-height: 43px;
-  align-items: center;
-  justify-content: center;
-  padding-inline: 10px;
-  border: 1px solid rgba(255, 67, 88, 0.24);
-  border-radius: 15px;
-  background: rgba(255, 67, 88, 0.1);
+  display: block;
+  min-width: max-content;
   color: var(--pink);
   font-family: "Space Grotesk", sans-serif;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -404,6 +406,18 @@ a:focus-visible {
   animation: orbit-breathe 7s ease-in-out infinite;
 }
 
+.profile-avatar {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 0 17px;
+  border: 2px solid rgba(255, 255, 255, 0.76);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 67, 88, 0.26), rgba(169, 112, 255, 0.28));
+  box-shadow: 0 0 0 5px rgba(169, 112, 255, 0.12), 0 12px 30px rgba(4, 3, 11, 0.35);
+  object-fit: cover;
+}
+
 .welcome-panel h1 {
   max-width: 630px;
   margin: 0;
@@ -417,8 +431,13 @@ a:focus-visible {
 }
 
 .heading-accent {
+  display: inline-block;
+  padding: 0.035em 0.075em 0.11em 0.025em;
   background: linear-gradient(110deg, var(--coral) 8%, var(--pink) 56%, var(--violet) 100%);
   background-clip: text;
+  font-size: 1.02em;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
   -webkit-text-fill-color: transparent;
 }
 
@@ -914,6 +933,62 @@ a:focus-visible {
   gap: 7px;
 }
 
+.network-side {
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
+.live-badge {
+  display: inline-flex;
+  min-height: 25px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 67, 88, 0.37);
+  border-radius: 999px;
+  background: rgba(255, 67, 88, 0.15);
+  color: #ff8192;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.live-badge::before {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 10px rgba(255, 67, 88, 0.85);
+  content: "";
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+
+.youtube-count-badge {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 50%;
+  background: #ff4358;
+  box-shadow: 0 0 17px rgba(255, 67, 88, 0.4);
+  color: #fff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .network-icon {
   display: grid;
   width: 43px;
@@ -1005,6 +1080,24 @@ a:focus-visible {
 
 .network-card--wide .network-copy {
   margin-top: 0;
+}
+
+.network-card--twitch .network-copy {
+  flex: 1 1 auto;
+}
+
+.network-card--twitch .stream-title {
+  display: -webkit-box;
+  max-width: 360px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .network-card--wide .network-copy strong {
@@ -1242,11 +1335,8 @@ a:focus-visible {
   }
 
   .ticker-label {
-    min-width: 59px;
-    min-height: 39px;
-    padding-inline: 7px;
-    border-radius: 13px;
-    font-size: 8px;
+    font-size: 11px;
+    letter-spacing: 0.035em;
   }
 
   .ticker-viewport {
@@ -1483,10 +1573,8 @@ a:focus-visible {
   }
 
   .ticker-label {
-    min-width: 52px;
-    min-height: 36px;
-    padding-inline: 5px;
-    font-size: 7px;
+    font-size: 10px;
+    letter-spacing: 0.02em;
   }
 
   .ticker-viewport {
