@@ -69,6 +69,10 @@
 
     const seenIndex = marker.id ? uploads.findIndex((upload) => upload.id === marker.id) : -1;
     if (seenIndex >= 0) return seenIndex;
+    if (!marker.id) {
+      writeYouTubeMarker(uploads[0]);
+      return 0;
+    }
 
     const seenAt = Date.parse(marker.publishedAt || "");
     if (!Number.isFinite(seenAt)) {
@@ -122,13 +126,20 @@
   const safeYouTubeUrl = (url) => {
     try {
       const parsed = new URL(url);
-      if (
-        parsed.protocol === "https:" &&
-        parsed.hostname === "www.youtube.com" &&
-        parsed.pathname === "/watch" &&
-        parsed.searchParams.has("v")
-      ) {
-        return parsed.href;
+      if (parsed.protocol !== "https:") return "https://www.youtube.com/@gionnyyy";
+
+      let videoId = "";
+      if (parsed.hostname === "youtu.be") {
+        videoId = parsed.pathname.split("/").filter(Boolean)[0] || "";
+      } else if (["youtube.com", "www.youtube.com", "m.youtube.com"].includes(parsed.hostname)) {
+        videoId =
+          parsed.searchParams.get("v") ||
+          parsed.pathname.match(/^\/(?:shorts|live|embed)\/([^/?#]+)/u)?.[1] ||
+          "";
+      }
+
+      if (/^[A-Za-z0-9_-]{6,20}$/u.test(videoId)) {
+        return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
       }
     } catch {
       // Use the public channel link below when an API response has no valid video URL.
