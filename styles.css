@@ -367,6 +367,13 @@ a:focus-visible {
 .social-links {
   display: grid;
   gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.social-links li {
+  min-width: 0;
 }
 
 .social-link {
