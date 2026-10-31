@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#100d1b" />
+    <meta name="theme-color" content="#100a12" />
     <meta
       name="description"
       content="Bienvenue dans le QG de Gionny : retrouve la communauté, les réseaux et les lives du mardi, mercredi, samedi et dimanche dès 22 h."
@@ -42,22 +42,84 @@
 
     <div class="site-shell">
       <header class="site-header">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true">G<span>.</span></span>
-          <span class="brand-copy">
-            <strong>Gionny</strong>
-            <span>STREAMER · FR</span>
-          </span>
-        </div>
-        <div class="header-equalizer" aria-hidden="true">
-          <i></i><i></i><i></i><i></i><i></i>
+        <span class="ticker-label" aria-hidden="true">À LA UNE</span>
+        <div
+          class="ticker-viewport"
+          data-ticker
+          role="region"
+          aria-label="Actualités et liens de Gionny"
+          tabindex="0"
+        >
+          <div class="ticker-track" data-ticker-track>
+            <div class="ticker-set" data-ticker-set>
+              <a
+                class="ticker-item ticker-item--live"
+                data-ticker-live
+                data-network="twitch"
+                data-live="unknown"
+                href="https://www.twitch.tv/7gionny"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span class="ticker-icon ticker-icon--twitch" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 3h17v12l-5 5h-4l-3 3H7v-3H3V6l2-3Z" />
+                    <path d="M10 8v5M16 8v5" />
+                  </svg>
+                </span>
+                <span class="ticker-copy">
+                  <strong class="ticker-eyebrow" data-live-label>TWITCH</strong>
+                  <span class="ticker-message" data-live-message aria-live="polite">
+                    Suis la chaîne pour les prochains lives
+                  </span>
+                </span>
+                <span class="ticker-live-dot" aria-hidden="true"></span>
+              </a>
+
+              <a
+                class="ticker-item ticker-item--youtube"
+                data-network="youtube"
+                data-ticker-youtube
+                href="https://www.youtube.com/@gionnyyy"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span class="ticker-icon ticker-icon--youtube" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M21.3 7.1a2.8 2.8 0 0 0-2-2C17.5 4.6 12 4.6 12 4.6s-5.5 0-7.3.5a2.8 2.8 0 0 0-2 2A29 29 0 0 0 2.2 12a29 29 0 0 0 .5 4.9 2.8 2.8 0 0 0 2 2c1.8.5 7.3.5 7.3.5s5.5 0 7.3-.5a2.8 2.8 0 0 0 2-2 29 29 0 0 0 .5-4.9 29 29 0 0 0-.5-4.9Z" />
+                    <path d="m10 15.5 5.2-3.5L10 8.5v7Z" />
+                  </svg>
+                </span>
+                <span class="ticker-copy">
+                  <strong class="ticker-eyebrow">DERNIÈRE VIDÉO</strong>
+                  <span class="ticker-message" data-video-title>Voir la chaîne YouTube</span>
+                </span>
+              </a>
+
+              <a
+                class="ticker-item ticker-item--discord"
+                data-network="discord"
+                href="https://discord.gg/nPACfBTnPx"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span class="ticker-icon ticker-icon--discord" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M19.7 5.4a17.3 17.3 0 0 0-4.3-1.3l-.5 1a16 16 0 0 0-5.8 0l-.5-1a17.3 17.3 0 0 0-4.3 1.3C1.6 9.4.9 13.3 1.2 17.2a17.5 17.5 0 0 0 5.3 2.7l1.1-1.8-1.7-.8.4-.3c3.3 1.5 6.9 1.5 10.1 0l.4.3-1.7.8 1.1 1.8a17.5 17.5 0 0 0 5.3-2.7c.4-4.5-.7-8.4-3.8-11.8ZM8.8 14.8c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.4 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z" />
+                  </svg>
+                </span>
+                <span class="ticker-copy">
+                  <strong class="ticker-eyebrow">LA COMMU</strong>
+                  <span class="ticker-message">Rejoins le Discord</span>
+                </span>
+              </a>
+            </div>
+          </div>
         </div>
       </header>
 
       <main class="hub-layout" id="main">
         <section class="welcome-panel" aria-labelledby="welcome-title">
-          <span class="welcome-sticker" aria-hidden="true">✦</span>
-          <p class="welcome-kicker"><span></span> TON QG COMMENCE ICI</p>
           <h1 id="welcome-title">
             Bienvenue<br />
             dans le <span class="heading-accent">QG</span><span class="heading-bang">!</span>
@@ -120,11 +182,7 @@
 
         <section class="networks-panel" aria-labelledby="networks-title">
           <div class="networks-heading">
-            <div>
-              <p class="section-kicker">ON SE RETROUVE AUSSI SUR</p>
-              <h2 id="networks-title">La commu, partout.</h2>
-            </div>
-            <span class="heading-spark" aria-hidden="true">✳</span>
+            <h2 id="networks-title">Retrouve-moi ici :</h2>
           </div>
 
           <ul class="network-grid" aria-label="Réseaux sociaux">
@@ -270,7 +328,6 @@
             </li>
           </ul>
 
-          <p class="visit-note">Tes visites sont mémorisées sur cet appareil.</p>
         </section>
       </main>
     </div>
