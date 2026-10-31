@@ -311,6 +311,7 @@
 
   if (ticker && tickerTrack && tickerSet) {
     let keyboardFocus = false;
+    let mouseHovering = false;
     let touching = false;
     let resumeAt = 0;
     let lastFrame = 0;
@@ -329,6 +330,17 @@
         keyboardFocus = false;
         tickerPosition = ticker.scrollLeft;
       }
+    });
+    ticker.addEventListener("pointerenter", (event) => {
+      if (event.pointerType !== "mouse") return;
+      mouseHovering = true;
+      tickerPosition = ticker.scrollLeft;
+    });
+    ticker.addEventListener("pointerleave", (event) => {
+      if (event.pointerType !== "mouse") return;
+      mouseHovering = false;
+      tickerPosition = ticker.scrollLeft;
+      resumeAt = performance.now() + 1000;
     });
     ticker.addEventListener("pointerdown", (event) => {
       if (event.pointerType !== "mouse") {
@@ -378,7 +390,7 @@
       const elapsed = Math.min(now - lastFrame, 120);
       lastFrame = now;
 
-      if (!keyboardFocus && !touching && !document.hidden && now >= resumeAt) {
+      if (!keyboardFocus && !mouseHovering && !touching && !document.hidden && now >= resumeAt) {
         tickerCycleWidth = tickerSet.getBoundingClientRect().width;
         if (tickerCycleWidth > 0) {
           tickerPosition = (tickerPosition + elapsed * 0.045) % tickerCycleWidth;
