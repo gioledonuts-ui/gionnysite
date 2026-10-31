@@ -263,11 +263,13 @@
         title.textContent = youtubeTitle || "Voir la dernière vidéo";
       });
       setTickerLinks("[data-ticker-youtube]", youtubeUrl);
+      setTickerLinks("[data-youtube-card]", youtubeUrl);
     } else {
       document.querySelectorAll("[data-video-title]").forEach((title) => {
         title.textContent = "Voir la chaîne YouTube";
       });
       setTickerLinks("[data-ticker-youtube]", "https://www.youtube.com/@gionnyyy");
+      setTickerLinks("[data-youtube-card]", "https://www.youtube.com/@gionnyyy");
     }
 
     recentYouTubeUploads = Array.isArray(youtube?.uploads)
