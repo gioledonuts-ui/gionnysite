@@ -85,7 +85,8 @@
   const showVisitedState = (link) => {
     if (link.dataset.network === "youtube") return;
     const badge = link.querySelector(".visited-badge");
-    if (badge) badge.hidden = false;
+    const twitchIsLive = link.matches('[data-twitch-card][data-live="true"]');
+    if (badge) badge.hidden = twitchIsLive;
     link.dataset.visited = "true";
   };
 
@@ -246,7 +247,9 @@
       card.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
       const status = card.querySelector("[data-stream-status]");
       const title = card.querySelector("[data-stream-title]");
+      const visitedBadge = card.querySelector(".visited-badge");
       if (status) status.hidden = !isLive;
+      if (visitedBadge) visitedBadge.hidden = isLive || !visitedNetworks.has("twitch");
       if (title) {
         title.textContent = streamTitle;
         title.hidden = !isLive || !streamTitle;
