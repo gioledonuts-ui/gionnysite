@@ -18,7 +18,8 @@ Puis ouvre <http://localhost:8000>. Le statut Twitch et la dernière vidéo YouT
 - Les couleurs, animations et adaptations aux écrans se trouvent dans `styles.css`.
 - `script.js` mémorise localement les réseaux déjà ouverts, lit les liens et le planning partagés, et actualise le ticker.
 - `api/updates.mjs` lit les informations publiques de Twitch et YouTube via DecAPI, un service tiers sans clé ni connexion. Son fonctionnement peut dépendre de sa disponibilité et de son délai de mise à jour.
-- Les liens sociaux et les horaires se modifient dans le panneau d’administration décrit ci-dessous.
+- `api/discord-status.mjs` récupère le nombre approximatif de membres en ligne depuis l’API publique des invitations Discord; le code est extrait du lien Discord enregistré et le compteur est actualisé environ toutes les 30 secondes.
+- Les liens sociaux, les sous-titres facultatifs sous les pseudos et les horaires se modifient dans le panneau d’administration décrit ci-dessous.
 - Les polices Space Grotesk et Manrope sont servies depuis `assets/fonts/`, sans requête à un service externe. Leurs licences SIL Open Font License se trouvent dans le même dossier.
 - La photo fournie est rangée dans `assets/gionny-profile.jpg`. L’icône de l’onglet utilise cette même photo.
 
@@ -30,7 +31,7 @@ Le panneau n’a pas de lien dans la navigation du site. Après le déploiement,
 
 <https://qg2gionny.vercel.app/gestion-qg/>
 
-Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux, régler les horaires des lives et gérer les discussions reçues depuis la bulle de contact. Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
+Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux, ajouter un petit sous-titre facultatif aux cinq profils, régler les horaires des lives et gérer les discussions reçues depuis le bouton « Écris-moi ». Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
 
 ### Stockage partagé requis
 
@@ -41,7 +42,7 @@ Les variables `GIONNY_ADMIN_PIN` et `GIONNY_ADMIN_SESSION_SECRET` sont conservé
 3. Redéploie le site après la connexion du stockage si Vercel ne le fait pas automatiquement.
 4. Retourne sur `/gestion-qg/`. Le bandeau indiquera que le stockage en ligne est actif; tu pourras alors enregistrer les changements.
 
-Avant l’activation de Blob, le site garde les liens et le planning par défaut et le panneau ne permet pas de sauvegarder. Le fichier partagé contient seulement les liens et horaires publics, pas le code d’accès.
+Avant l’activation de Blob, le site garde les liens, sous-titres et horaires par défaut et le panneau ne permet pas de sauvegarder. Le fichier partagé contient seulement ces réglages publics, pas le code d’accès.
 
 La bulle « M’écrire » ouvre une mini-discussion : le visiteur envoie un premier message, puis peut réduire et rouvrir le fil depuis le même navigateur pour lire tes réponses et continuer la conversation. Aucun e-mail, compte ou code à recopier n’est demandé. Un cookie privé et protégé relie le navigateur au fil; si la personne efface les cookies ou change d’appareil/navigateur, elle ne pourra pas récupérer cette discussion. Il n’y a pas de notification e-mail.
 
@@ -51,7 +52,9 @@ Le formulaire limite la longueur des messages, ajoute un piège anti-robot et li
 
 ## Données Twitch et YouTube sans clés
 
-Aucune clé Twitch/YouTube ni connexion à un compte n’est nécessaire. Le serveur appelle les endpoints publics DecAPI `/twitch/uptime/7gionny`, `/twitch/title/7gionny` et `/youtube/latest_video?handle=@Gionnyyy`. La vidéo est simplement liée vers YouTube; elle n’est pas hébergée sur le site. Si DecAPI est indisponible ou limite les requêtes, l’état est laissé inconnu plutôt que d’afficher un faux direct.
+Aucune clé Twitch/YouTube ni connexion à un compte n’est nécessaire. Le serveur appelle les endpoints publics DecAPI `/twitch/uptime/7gionny`, `/twitch/title/7gionny` et `/youtube/latest_video?handle=@Gionnyyy`. Quand Twitch confirme un direct, le compte à rebours du planning laisse place à « En direct actuellement » et le lecteur Twitch apparaît avec le son coupé par défaut; le paramètre `parent` reprend le nom d’hôte de la page. Si la hauteur d’écran ne suffit pas, le défilement vertical est réactivé pendant le direct pour ne pas couper le lecteur ni les réseaux. La vidéo YouTube reste simplement liée vers YouTube, elle n’est pas hébergée sur le site. Si une API publique est indisponible ou limite les requêtes, seul l’indicateur concerné reste masqué; le statut live n’est pas inventé.
+
+Les nouveaux champs de sous-titres sont facultatifs et ajoutés au fichier de réglages partagé existant. Les configurations Blob déjà enregistrées sans ces champs restent valides : leurs liens et horaires ne sont pas remplacés.
 
 ## Déploiement Vercel
 

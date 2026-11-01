@@ -8,9 +8,15 @@
   let youtubeApiAvailable = false;
   let latestTickerUpdates = null;
   let configuredSocials = {};
+  let configuredSocialInfo = {};
   let latestYouTubeUrl = "";
+  let currentTwitchIsLive = false;
+  let currentSchedule = null;
+  let nextScheduledLiveAt = null;
 
   const DEFAULT_YOUTUBE_URL = "https://www.youtube.com/@gionnyyy";
+  const DEFAULT_DISCORD_URL = "https://discord.gg/nPACfBTnPx";
+  const SOCIAL_INFO_KEYS = ["twitch", "tiktok", "youtube", "x", "instagram"];
   const SOCIAL_HOSTS = {
     twitch: new Set(["twitch.tv", "www.twitch.tv"]),
     tiktok: new Set(["tiktok.com", "www.tiktok.com"]),
@@ -28,6 +34,21 @@
     { key: "saturday", label: "Samedi" },
     { key: "sunday", label: "Dimanche" },
   ];
+  const DEFAULT_LIVE_DAYS = new Set(["tuesday", "wednesday", "saturday", "sunday"]);
+  const PARIS_DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const parisDateFormatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Paris",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+  currentSchedule = Object.fromEntries(
+    WEEKDAYS.map(({ key }) => [key, { enabled: DEFAULT_LIVE_DAYS.has(key), time: "22:00" }])
+  );
 
   try {
     const savedNetworks = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -199,9 +220,41 @@
     }
   };
 
+  const extractDiscordInviteCode = (value) => {
+    const safeUrl = safeSocialUrl("discord", value);
+    if (!safeUrl) return "";
+    try {
+      const parsed = new URL(safeUrl);
+      const code = parsed.hostname === "discord.gg"
+        ? parsed.pathname.split("/").filter(Boolean)[0] || ""
+        : parsed.pathname.match(/^\/invite\/([^/]+)\/?$/iu)?.[1] || "";
+      return /^[A-Za-z0-9-]{2,64}$/u.test(code) ? code : "";
+    } catch {
+      return "";
+    }
+  };
+
+  const extractTwitchChannel = (value) => {
+    const safeUrl = safeSocialUrl("twitch", value);
+    if (!safeUrl) return "7gionny";
+    try {
+      const segment = new URL(safeUrl).pathname.split("/").filter(Boolean)[0] || "";
+      return /^[A-Za-z0-9_]{1,25}$/u.test(segment) ? segment : "7gionny";
+    } catch {
+      return "7gionny";
+    }
+  };
+
   const isValidSiteConfig = (config) => {
     if (!config || typeof config !== "object" || !config.socials || !config.schedule) return false;
     if (Object.keys(SOCIAL_HOSTS).some((key) => !safeSocialUrl(key, config.socials[key]))) return false;
+    if (config.socialInfo !== undefined && (!config.socialInfo || typeof config.socialInfo !== "object" || Array.isArray(config.socialInfo))) return false;
+    if (
+      SOCIAL_INFO_KEYS.some((key) =>
+        config.socialInfo?.[key] !== undefined &&
+        (typeof config.socialInfo[key] !== "string" || config.socialInfo[key].length > 120)
+      )
+    ) return false;
     return WEEKDAYS.every(({ key }) => {
       const day = config.schedule[key];
       return (
@@ -228,15 +281,270 @@
     });
   };
 
+  const renderSocialInfo = () => {
+    for (const key of SOCIAL_INFO_KEYS) {
+      const element = document.querySelector(`[data-social-info="${key}"]`);
+      if (!element) continue;
+      const value = typeof configuredSocialInfo[key] === "string" ? configuredSocialInfo[key].trim() : "";
+      element.textContent = value;
+      element.hidden = !value;
+    }
+  };
+
+  let discordStatusInFlight = false;
+  let activeDiscordInviteCode = "";
+
+  const renderDiscordOnlineStatus = (status) => {
+    const badge = document.querySelector("[data-discord-online]");
+    const count = document.querySelector("[data-discord-online-count]");
+    if (!badge || !count) return;
+    const isAvailable = status?.available === true && Number.isSafeInteger(status.onlineCount) && status.onlineCount >= 0;
+    badge.hidden = !isAvailable;
+    if (isAvailable) count.textContent = status.onlineCount.toLocaleString("fr-FR");
+  };
+
+  const refreshDiscordStatus = async () => {
+    if (document.hidden) return;
+    const inviteCode = extractDiscordInviteCode(configuredSocials.discord || DEFAULT_DISCORD_URL);
+    activeDiscordInviteCode = inviteCode;
+    if (!inviteCode) {
+      renderDiscordOnlineStatus(null);
+      return;
+    }
+    if (discordStatusInFlight) return;
+
+    discordStatusInFlight = true;
+    try {
+      const response = await fetch(`/api/discord-status?invite=${encodeURIComponent(inviteCode)}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      const status = await response.json().catch(() => ({}));
+      if (activeDiscordInviteCode === inviteCode) renderDiscordOnlineStatus(response.ok ? status : null);
+    } catch {
+      if (activeDiscordInviteCode === inviteCode) renderDiscordOnlineStatus(null);
+    } finally {
+      discordStatusInFlight = false;
+      if (extractDiscordInviteCode(configuredSocials.discord || DEFAULT_DISCORD_URL) !== inviteCode) {
+        void refreshDiscordStatus();
+      }
+    }
+  };
+
+  let liveOverflowCheckVersion = 0;
+  const scheduleLiveOverflowCheck = () => {
+    const version = ++liveOverflowCheckVersion;
+    const check = () => {
+      if (version !== liveOverflowCheckVersion) return;
+      const panels = [document.querySelector(".welcome-panel"), document.querySelector(".networks-panel")];
+      const isAnimating = panels.some((panel) =>
+        panel?.getAnimations().some((animation) => animation.playState === "running")
+      );
+      if (isAnimating) {
+        window.requestAnimationFrame(check);
+        return;
+      }
+
+      const needsScroll =
+        document.body.dataset.twitchLive === "true" && document.body.scrollHeight > window.innerHeight;
+      document.documentElement.dataset.liveOverflow = String(needsScroll);
+    };
+    window.requestAnimationFrame(check);
+  };
+
+  const renderLivePlayer = (isLive, twitch) => {
+    document.body.dataset.twitchLive = String(isLive);
+    if (!isLive) document.documentElement.dataset.liveOverflow = "false";
+    scheduleLiveOverflowCheck();
+
+    const card = document.querySelector("[data-live-player]");
+    const playerContainer = document.querySelector("[data-twitch-player]");
+    const chatLink = document.querySelector("[data-live-chat-link]");
+    const title = document.querySelector("[data-live-player-title]");
+    if (!card || !playerContainer) return;
+
+    const profileUrl = safeSocialUrl("twitch", configuredSocials.twitch) || "https://www.twitch.tv/7gionny";
+    if (chatLink) chatLink.href = profileUrl;
+    if (title) {
+      title.textContent = typeof twitch?.title === "string" && twitch.title.trim()
+        ? twitch.title.trim()
+        : "Gionny est en direct sur Twitch.";
+    }
+
+    card.hidden = !isLive;
+    if (!isLive) {
+      playerContainer.replaceChildren();
+      delete playerContainer.dataset.channel;
+      delete playerContainer.dataset.parent;
+      return;
+    }
+
+    const channel = extractTwitchChannel(twitch?.url || configuredSocials.twitch);
+    const parent = window.location.hostname;
+    const existingPlayer = playerContainer.querySelector("iframe");
+    if (existingPlayer?.dataset.channel === channel && existingPlayer.dataset.parent === parent) return;
+
+    const playerUrl = new URL("https://player.twitch.tv/");
+    playerUrl.searchParams.set("channel", channel);
+    playerUrl.searchParams.set("parent", parent);
+    playerUrl.searchParams.set("muted", "true");
+    playerUrl.searchParams.set("autoplay", "true");
+
+    const iframe = document.createElement("iframe");
+    iframe.src = playerUrl.href;
+    iframe.title = `Direct Twitch de Gionny, chaîne ${channel}`;
+    iframe.allow = "autoplay; fullscreen";
+    iframe.allowFullscreen = true;
+    iframe.loading = "lazy";
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+    iframe.dataset.channel = channel;
+    iframe.dataset.parent = parent;
+    playerContainer.replaceChildren(iframe);
+    playerContainer.dataset.channel = channel;
+    playerContainer.dataset.parent = parent;
+  };
+
   const formatScheduleTime = (value) => {
     const [hour, minute] = value.split(":");
     return `${Number(hour)}h${minute === "00" ? "" : minute}`;
+  };
+
+  const readParisDateParts = (timestamp) => {
+    const parts = Object.fromEntries(
+      parisDateFormatter.formatToParts(new Date(timestamp)).map(({ type, value }) => [type, value])
+    );
+    return {
+      year: Number(parts.year),
+      month: Number(parts.month),
+      day: Number(parts.day),
+      hour: Number(parts.hour),
+      minute: Number(parts.minute),
+      second: Number(parts.second),
+    };
+  };
+
+  const findParisWallTimeInstants = (wallClock, target) => {
+    const offsets = new Set(
+      [-36, -12, -6, 0, 6, 12, 36].map((hours) => {
+        const sample = wallClock + hours * 60 * 60 * 1000;
+        const local = readParisDateParts(sample);
+        const localAsUtc = Date.UTC(
+          local.year,
+          local.month - 1,
+          local.day,
+          local.hour,
+          local.minute,
+          local.second
+        );
+        return localAsUtc - Math.floor(sample / 1000) * 1000;
+      })
+    );
+    return [...offsets]
+      .map((offset) => wallClock - offset)
+      .filter((timestamp) => {
+        const local = readParisDateParts(timestamp);
+        return (
+          local.year === target.year &&
+          local.month === target.month &&
+          local.day === target.day &&
+          local.hour === target.hour &&
+          local.minute === target.minute
+        );
+      })
+      .sort((left, right) => left - right);
+  };
+
+  const parisWallTimeInstants = (year, month, day, hour, minute) => {
+    const wallClock = Date.UTC(year, month - 1, day, hour, minute);
+    const target = { year, month, day, hour, minute };
+    const exactMatches = findParisWallTimeInstants(wallClock, target);
+    if (exactMatches.length) return exactMatches;
+
+    // If a chosen time falls in the spring DST gap, use the next valid Paris minute.
+    for (let delta = 1; delta <= 180; delta += 1) {
+      const adjusted = new Date(wallClock + delta * 60_000);
+      const adjustedTarget = {
+        year: adjusted.getUTCFullYear(),
+        month: adjusted.getUTCMonth() + 1,
+        day: adjusted.getUTCDate(),
+        hour: adjusted.getUTCHours(),
+        minute: adjusted.getUTCMinutes(),
+      };
+      const matches = findParisWallTimeInstants(adjusted.getTime(), adjustedTarget);
+      if (matches.length) return matches;
+    }
+    return [];
+  };
+
+  const findNextScheduledLiveAt = (schedule, now = Date.now()) => {
+    const today = readParisDateParts(now);
+    const parisMidnightAsUtc = Date.UTC(today.year, today.month - 1, today.day);
+
+    for (let dayOffset = 0; dayOffset <= 7; dayOffset += 1) {
+      const day = new Date(parisMidnightAsUtc + dayOffset * 86_400_000);
+      const dayKey = PARIS_DAY_KEYS[day.getUTCDay()];
+      const entry = schedule?.[dayKey];
+      if (!entry?.enabled || typeof entry.time !== "string") continue;
+      const [hour, minute] = entry.time.split(":").map(Number);
+      if (!Number.isInteger(hour) || !Number.isInteger(minute)) continue;
+
+      const instants = parisWallTimeInstants(
+        day.getUTCFullYear(),
+        day.getUTCMonth() + 1,
+        day.getUTCDate(),
+        hour,
+        minute
+      );
+      const next = instants.find((timestamp) => timestamp > now);
+      if (next) return next;
+    }
+    return null;
+  };
+
+  const updateScheduleCountdown = () => {
+    const countdown = document.querySelector("[data-next-live-countdown]");
+    const countdownPrefix = document.querySelector("[data-next-live-prefix]");
+    const countdownValue = document.querySelector("[data-next-live-value]");
+    const liveStatus = document.querySelector("[data-current-live]");
+    if (!countdown || !countdownPrefix || !countdownValue || !liveStatus) return;
+
+    if (currentTwitchIsLive) {
+      countdown.hidden = true;
+      liveStatus.hidden = false;
+      return;
+    }
+
+    liveStatus.hidden = true;
+    countdown.hidden = false;
+    const now = Date.now();
+    const scheduledTimeReached = Boolean(nextScheduledLiveAt && nextScheduledLiveAt <= now);
+    if (!nextScheduledLiveAt || scheduledTimeReached) {
+      nextScheduledLiveAt = findNextScheduledLiveAt(currentSchedule, now);
+      if (scheduledTimeReached) void refreshTicker();
+    }
+
+    if (!nextScheduledLiveAt) {
+      countdownPrefix.hidden = true;
+      countdownValue.textContent = "Aucun live programmé";
+      return;
+    }
+
+    countdownPrefix.hidden = false;
+    const remainingSeconds = Math.max(0, Math.floor((nextScheduledLiveAt - Date.now()) / 1000));
+    const hours = Math.floor(remainingSeconds / 3600);
+    const minutes = Math.floor((remainingSeconds % 3600) / 60);
+    const seconds = remainingSeconds % 60;
+    countdownValue.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
   };
 
   const renderSchedule = (schedule) => {
     const timeDisplay = document.querySelector("[data-schedule-time]");
     const daysList = document.querySelector("[data-schedule-days]");
     if (!timeDisplay || !daysList) return;
+
+    currentSchedule = schedule;
+    nextScheduledLiveAt = findNextScheduledLiveAt(schedule);
+    updateScheduleCountdown();
 
     const activeDays = WEEKDAYS.filter(({ key }) => schedule[key].enabled);
     const uniqueTimes = new Set(activeDays.map(({ key }) => schedule[key].time));
@@ -294,10 +602,15 @@
   const applySiteConfig = (config) => {
     if (!isValidSiteConfig(config)) return false;
     configuredSocials = config.socials;
+    configuredSocialInfo = Object.fromEntries(
+      SOCIAL_INFO_KEYS.map((key) => [key, typeof config.socialInfo?.[key] === "string" ? config.socialInfo[key] : ""])
+    );
+    renderSocialInfo();
     renderSchedule(config.schedule);
 
     if (latestTickerUpdates) applyTickerUpdates(latestTickerUpdates);
     else applyConfiguredLinks();
+    void refreshDiscordStatus();
     return true;
   };
 
@@ -709,6 +1022,9 @@
     const twitchAvailable = twitch?.available === true && typeof twitch.isLive === "boolean";
     const isLive = twitchAvailable && twitch.isLive;
     const streamTitle = typeof twitch?.title === "string" ? twitch.title.trim() : "";
+    currentTwitchIsLive = isLive;
+    updateScheduleCountdown();
+    renderLivePlayer(isLive, twitch);
 
     document.querySelectorAll("[data-ticker-live]").forEach((item) => {
       item.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
@@ -901,11 +1217,18 @@
     window.requestAnimationFrame(animateTicker);
   }
 
+  window.addEventListener("resize", scheduleLiveOverflowCheck, { passive: true });
   void refreshSiteConfig();
   void refreshTicker();
+  void refreshDiscordStatus();
   window.setInterval(refreshTicker, 60_000);
+  window.setInterval(refreshDiscordStatus, 30_000);
+  window.setInterval(updateScheduleCountdown, 1_000);
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) void refreshTicker();
+    if (!document.hidden) {
+      void refreshTicker();
+      void refreshDiscordStatus();
+    }
   });
 
   const canFollowPointer =

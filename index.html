@@ -176,6 +176,10 @@
                 <span class="discord-overline">ON SE RETROUVE SUR</span>
                 <strong>Discord</strong>
                 <span class="discord-detail">La commu, même hors live</span>
+                <span class="discord-online-badge" data-discord-online hidden>
+                  <span class="discord-online-dot" aria-hidden="true"></span>
+                  <span data-discord-online-count>0</span> en ligne
+                </span>
               </span>
               <span class="discord-action">
                 <span class="discord-action-default">Rejoindre</span>
@@ -209,11 +213,32 @@
                 <li>Samedi</li>
                 <li>Dimanche</li>
               </ul>
+              <p class="schedule-countdown" data-next-live-countdown aria-live="off">
+                <span data-next-live-prefix>⏳ Prochain live dans :</span>
+                <strong data-next-live-value>--h --m --s</strong>
+              </p>
+              <p class="schedule-countdown-live" data-current-live role="status" hidden>🔴 EN DIRECT ACTUELLEMENT</p>
             </section>
           </div>
         </section>
 
         <section class="networks-panel" aria-labelledby="networks-title">
+          <section class="live-player-card" data-live-player aria-label="Lecteur du direct Twitch de Gionny" hidden>
+            <div class="live-player-header">
+              <span class="live-player-status"><span class="live-player-dot" aria-hidden="true"></span>EN DIRECT</span>
+              <a
+                class="live-player-chat-link"
+                data-live-chat-link
+                href="https://www.twitch.tv/7gionny"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Rejoindre le chat sur Twitch <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+            <div class="live-player-video" data-twitch-player></div>
+            <p class="live-player-caption" data-live-player-title>Gionny est en direct sur Twitch.</p>
+          </section>
           <div class="networks-heading">
             <h2 id="networks-title">Retrouve-moi ici :</h2>
           </div>
@@ -238,6 +263,7 @@
                 <span class="network-copy">
                   <strong>Twitch</strong>
                   <span>@7gionny</span>
+                  <span class="network-info" data-social-info="twitch" hidden></span>
                   <span class="stream-title" data-stream-title hidden></span>
                 </span>
                 <span class="network-side">
@@ -276,6 +302,7 @@
                 <span class="network-copy">
                   <strong>TikTok</strong>
                   <span>@gio_nny</span>
+                  <span class="network-info" data-social-info="tiktok" hidden></span>
                 </span>
               </a>
             </li>
@@ -306,6 +333,7 @@
                 <span class="network-copy">
                   <strong>YouTube</strong>
                   <span>@gionnyyy</span>
+                  <span class="network-info" data-social-info="youtube" hidden></span>
                 </span>
               </a>
             </li>
@@ -334,6 +362,7 @@
                 <span class="network-copy">
                   <strong>X</strong>
                   <span>@nny_gio</span>
+                  <span class="network-info" data-social-info="x" hidden></span>
                 </span>
               </a>
             </li>
@@ -364,6 +393,7 @@
                 <span class="network-copy">
                   <strong>Instagram</strong>
                   <span>@nny_gio</span>
+                  <span class="network-info" data-social-info="instagram" hidden></span>
                 </span>
               </a>
             </li>
@@ -377,7 +407,7 @@
       class="contact-launcher"
       type="button"
       data-open-contact
-      aria-label="Ouvrir ta discussion privée avec Gionny"
+      aria-label="Écris-moi ou rouvre ta discussion privée avec Gionny"
       aria-haspopup="dialog"
       aria-expanded="false"
       aria-controls="contact-widget"
@@ -387,8 +417,8 @@
         <path d="M4.5 5.5h15v11h-9l-4.5 3v-14Z" />
         <path d="M8 9.5h8M8 13h5" />
       </svg>
+      <span class="contact-launcher-label">💬 Écris-moi</span>
       <span class="contact-launcher-badge" data-contact-badge hidden aria-hidden="true"></span>
-      <span class="sr-only">M’écrire ou rouvrir la discussion</span>
     </button>
 
     <aside

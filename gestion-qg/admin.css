@@ -449,6 +449,22 @@ button {
   gap: 6px;
 }
 
+.social-field-group {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.social-field-group .input-field > span {
+  color: #dceaff;
+  font-size: 10px;
+}
+
+.social-field-group .input-field input[type="text"] {
+  min-height: 38px;
+  font-size: 10px;
+}
+
 .input-field input {
   min-height: 42px;
   font-size: 11px;

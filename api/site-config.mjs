@@ -1,6 +1,6 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import { isBlobStorageConfigured, readSharedSiteConfig, writeSharedSiteConfig } from "../lib/blob-store.mjs";
-import { validateSiteConfig } from "../lib/site-config.mjs";
+import { SOCIAL_INFO_FIELDS, validateSiteConfig } from "../lib/site-config.mjs";
 
 function setNoStore(response) {
   response.setHeader("Cache-Control", "no-store, private");
@@ -58,7 +58,29 @@ export default async function handler(request, response) {
     });
   }
 
-  const body = readJsonBody(request);
+  let body = readJsonBody(request);
+  const incomingSocialInfo = body?.socialInfo;
+  const socialInfoIsPartial =
+    incomingSocialInfo === undefined ||
+    (incomingSocialInfo &&
+      typeof incomingSocialInfo === "object" &&
+      !Array.isArray(incomingSocialInfo) &&
+      SOCIAL_INFO_FIELDS.some((field) => incomingSocialInfo[field] === undefined));
+
+  if (body && typeof body === "object" && !Array.isArray(body) && socialInfoIsPartial) {
+    try {
+      const current = await readSharedSiteConfig();
+      body = {
+        ...body,
+        socialInfo: { ...current.config.socialInfo, ...(incomingSocialInfo || {}) },
+      };
+    } catch {
+      return response.status(503).json({
+        error: "shared_storage_unavailable",
+        message: "Les sous-titres enregistrés n’ont pas pu être conservés. Réessaie sans écraser les réglages actuels.",
+      });
+    }
+  }
   const validation = validateSiteConfig(body);
   if (!validation.ok) {
     return response.status(400).json({ error: validation.error });

@@ -9,6 +9,7 @@
     "sunday",
   ];
   const SOCIALS = ["twitch", "tiktok", "youtube", "x", "instagram", "discord"];
+  const SOCIAL_INFO = ["twitch", "tiktok", "youtube", "x", "instagram"];
   const loginPanel = document.querySelector("[data-login-panel]");
   const adminPanel = document.querySelector("[data-admin-panel]");
   const loginForm = document.querySelector("#login-form");
@@ -91,6 +92,11 @@
     for (const key of SOCIALS) {
       const input = settingsForm.elements.namedItem(`socials.${key}`);
       if (input && typeof config?.socials?.[key] === "string") input.value = config.socials[key];
+    }
+
+    for (const key of SOCIAL_INFO) {
+      const input = settingsForm.elements.namedItem(`socialInfo.${key}`);
+      if (input) input.value = typeof config?.socialInfo?.[key] === "string" ? config.socialInfo[key] : "";
     }
 
     for (const day of DAYS) {
@@ -714,6 +720,9 @@
     const socials = Object.fromEntries(
       SOCIALS.map((key) => [key, settingsForm.elements.namedItem(`socials.${key}`).value.trim()])
     );
+    const socialInfo = Object.fromEntries(
+      SOCIAL_INFO.map((key) => [key, settingsForm.elements.namedItem(`socialInfo.${key}`).value.trim()])
+    );
     const schedule = Object.fromEntries(
       DAYS.map((day) => [
         day,
@@ -723,7 +732,7 @@
         },
       ])
     );
-    return { version: 1, socials, schedule };
+    return { version: 1, socials, socialInfo, schedule };
   };
 
   settingsForm?.addEventListener("submit", async (event) => {
