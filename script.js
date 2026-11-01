@@ -158,36 +158,14 @@
     return "https://www.twitch.tv/7gionny";
   };
 
-  const assetExists = async (url) => {
-    try {
-      const response = await fetch(url, { method: "HEAD", cache: "no-store" });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  };
-
   const profileImage = document.querySelector("[data-profile-image]");
   if (profileImage) {
-    void assetExists("/assets/gionny-profile.jpg").then((exists) => {
-      if (!exists) return;
-      profileImage.addEventListener("error", () => (profileImage.hidden = true), { once: true });
-      profileImage.src = "/assets/gionny-profile.jpg";
-      profileImage.hidden = false;
-    });
+    const hideUnavailableProfileImage = () => (profileImage.hidden = true);
+    profileImage.addEventListener("error", hideUnavailableProfileImage, { once: true });
+    if (profileImage.complete && profileImage.naturalWidth === 0) {
+      hideUnavailableProfileImage();
+    }
   }
-
-  void assetExists("/assets/gionny-background.jpg").then((exists) => {
-    if (!exists) return;
-    document.documentElement.style.setProperty(
-      "--creator-background",
-      'url("/assets/gionny-background.jpg")'
-    );
-    document.documentElement.style.setProperty(
-      "--creator-background-overlay",
-      "linear-gradient(rgba(16, 10, 18, 0.62), rgba(16, 10, 18, 0.88))"
-    );
-  });
 
   const ticker = document.querySelector("[data-ticker]");
   const tickerTrack = ticker?.querySelector("[data-ticker-track]");
