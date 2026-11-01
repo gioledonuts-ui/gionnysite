@@ -28,7 +28,7 @@ Les clics mémorisés et la dernière vidéo YouTube consultée restent dans le 
 
 Le panneau n’a pas de lien dans la navigation du site. Après le déploiement, ouvre directement :
 
-<https://gionnysite.vercel.app/gestion-qg/>
+<https://qg2gionny.vercel.app/gestion-qg/>
 
 Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux et activer ou désactiver chaque jour de la semaine avec son heure. Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
 
@@ -36,7 +36,7 @@ Saisis le code d’accès à quatre caractères pour modifier les six liens soci
 
 Les variables `GIONNY_ADMIN_PIN` et `GIONNY_ADMIN_SESSION_SECRET` sont conservées dans les variables sensibles du projet Vercel; aucune valeur secrète n’est incluse dans les fichiers du site. Pour activer les sauvegardes visibles par tout le monde :
 
-1. Dans le projet Vercel `gionnysite`, crée un espace **Blob** dans l’onglet **Storage**.
+1. Dans le projet Vercel `qg2gionny`, crée un espace **Blob** dans l’onglet **Storage**.
 2. Connecte cet espace au projet de production. Vercel y ajoute `BLOB_STORE_ID` et autorise les fonctions serveur avec OIDC; aucun jeton à copier dans le code n’est nécessaire.
 3. Redéploie le site après la connexion du stockage si Vercel ne le fait pas automatiquement.
 4. Retourne sur `/gestion-qg/`. Le bandeau indiquera que le stockage en ligne est actif; tu pourras alors enregistrer les changements.

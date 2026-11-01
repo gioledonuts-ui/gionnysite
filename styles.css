@@ -4710,3 +4710,45 @@ body {
     animation: none !important;
   }
 }
+
+/* On narrow cards, show live status as a compact red indicator, not a text pill. */
+@media (max-width: 680px) {
+  .network-card--twitch[data-live="true"] .network-copy {
+    padding-right: 23px;
+  }
+
+  .network-card--twitch[data-live="true"] .stream-title {
+    display: none !important;
+  }
+
+  .network-card--twitch .network-side {
+    top: 7px;
+    right: 7px;
+  }
+
+  .network-card--twitch .live-badge {
+    display: inline-flex;
+    width: 17px;
+    min-width: 17px;
+    max-width: 17px;
+    height: 17px;
+    min-height: 17px;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 0;
+    color: transparent;
+  }
+
+  .network-card--twitch .live-badge::before {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff;
+    content: "";
+  }
+}
