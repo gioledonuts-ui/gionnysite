@@ -373,6 +373,78 @@
       </main>
     </div>
 
+    <button
+      class="contact-launcher"
+      type="button"
+      data-open-contact
+      aria-label="Écrire un message privé à Gionny"
+      aria-haspopup="dialog"
+      aria-expanded="false"
+      aria-controls="contact-dialog"
+      title="M’écrire"
+    >
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4.5 5.5h15v11h-9l-4.5 3v-14Z" />
+        <path d="M8 9.5h8M8 13h5" />
+      </svg>
+      <span class="sr-only">M’écrire</span>
+    </button>
+
+    <dialog
+      class="contact-dialog"
+      id="contact-dialog"
+      aria-labelledby="contact-title"
+      aria-describedby="contact-copy"
+      data-contact-dialog
+    >
+      <div class="contact-dialog-card">
+        <div class="contact-dialog-topline">
+          <span class="contact-dialog-kicker">MESSAGE PRIVÉ · QG2GIONNY</span>
+          <button class="contact-dialog-close" type="button" data-close-contact aria-label="Fermer le formulaire">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <h2 id="contact-title">Écris-moi</h2>
+        <p id="contact-copy">Laisse ton pseudo et ton message. Seul Gionny pourra le lire dans son espace privé.</p>
+        <form class="contact-form" data-contact-form>
+          <label class="contact-field">
+            <span>Ton pseudo <strong aria-hidden="true">*</strong></span>
+            <input
+              name="pseudo"
+              type="text"
+              autocomplete="nickname"
+              minlength="2"
+              maxlength="32"
+              placeholder="Ex. : GioFan42"
+              required
+            />
+          </label>
+          <label class="contact-field">
+            <span>Ton message <strong aria-hidden="true">*</strong></span>
+            <textarea
+              name="message"
+              rows="5"
+              maxlength="1500"
+              placeholder="Écris ton message ici…"
+              required
+            ></textarea>
+          </label>
+          <div class="contact-honeypot" aria-hidden="true">
+            <label for="contact-website">Ne pas remplir</label>
+            <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <p class="contact-privacy">Seul Gionny pourra les lire dans le panneau admin. Ils y resteront jusqu’à leur suppression; aucune adresse e-mail n’est demandée.</p>
+          <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
+          <button class="contact-send" type="submit" data-contact-submit>
+            <span>Envoyer le message</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 12h15M13 5l7 7-7 7" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </dialog>
+
     <dialog
       class="about-dialog"
       id="about-dialog"

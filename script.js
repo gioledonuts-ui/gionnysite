@@ -356,6 +356,85 @@
     });
   }
 
+  const contactLauncher = document.querySelector("[data-open-contact]");
+  const contactDialog = document.querySelector("[data-contact-dialog]");
+  const contactForm = document.querySelector("[data-contact-form]");
+  const contactSubmit = document.querySelector("[data-contact-submit]");
+  const contactStatus = document.querySelector("[data-contact-status]");
+  const closeContactButtons = contactDialog?.querySelectorAll("[data-close-contact]") || [];
+
+  const setContactStatus = (message, kind = "") => {
+    if (!contactStatus) return;
+    contactStatus.textContent = message;
+    if (kind) contactStatus.dataset.kind = kind;
+    else delete contactStatus.dataset.kind;
+  };
+
+  if (contactLauncher && contactDialog?.showModal) {
+    contactLauncher.addEventListener("click", () => {
+      setContactStatus("");
+      contactDialog.showModal();
+      contactLauncher.setAttribute("aria-expanded", "true");
+      contactForm?.elements.namedItem("pseudo")?.focus();
+    });
+
+    closeContactButtons.forEach((button) => {
+      button.addEventListener("click", () => contactDialog.close());
+    });
+
+    contactDialog.addEventListener("click", (event) => {
+      if (event.target === contactDialog) contactDialog.close();
+    });
+
+    contactDialog.addEventListener("close", () => {
+      contactLauncher.setAttribute("aria-expanded", "false");
+      contactLauncher.focus({ preventScroll: true });
+    });
+
+    contactForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!contactForm.reportValidity() || !contactSubmit || contactSubmit.disabled) return;
+
+      const formData = new FormData(contactForm);
+      const payload = {
+        pseudo: String(formData.get("pseudo") || ""),
+        message: String(formData.get("message") || ""),
+        website: String(formData.get("website") || ""),
+      };
+
+      contactSubmit.disabled = true;
+      setContactStatus("Envoi de ton message…");
+
+      try {
+        const response = await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || data.ok !== true) {
+          setContactStatus(data.error || "Ton message n’a pas pu être envoyé. Réessaie.", "error");
+          return;
+        }
+
+        contactForm.reset();
+        setContactStatus("Merci ! Ton message est bien arrivé à Gionny.", "success");
+      } catch {
+        setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
+      } finally {
+        contactSubmit.disabled = false;
+      }
+    });
+  } else if (contactLauncher) {
+    contactLauncher.hidden = true;
+  }
+
   const profileImage = document.querySelector("[data-profile-image]");
   if (profileImage) {
     const hideUnavailableProfileImage = () => (profileImage.hidden = true);

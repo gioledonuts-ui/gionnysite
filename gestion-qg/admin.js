@@ -20,9 +20,16 @@
   const saveButton = document.querySelector("[data-save-button]");
   const saveStatus = document.querySelector("[data-save-status]");
   const logoutButton = document.querySelector("[data-logout]");
+  const inboxList = document.querySelector("[data-inbox-list]");
+  const inboxStatus = document.querySelector("[data-inbox-status]");
+  const inboxRefreshButton = document.querySelector("[data-inbox-refresh]");
+  const inboxMoreButton = document.querySelector("[data-inbox-more]");
 
   let storageConfigured = false;
   let saving = false;
+  let inboxLoading = false;
+  let inboxCursor = "";
+  let inboxHasMore = false;
 
   const setStatus = (element, message, kind = "") => {
     if (!element) return;
@@ -129,12 +136,154 @@
     }
   };
 
+  const formatInboxTime = (value) => {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Date inconnue";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  };
+
+  const createInboxMessage = (message) => {
+    const card = document.createElement("article");
+    card.className = "inbox-message";
+
+    const header = document.createElement("div");
+    header.className = "inbox-message-header";
+
+    const sender = document.createElement("strong");
+    sender.className = "inbox-message-sender";
+    sender.textContent = typeof message.pseudo === "string" ? message.pseudo : "Visiteur";
+
+    const date = document.createElement("time");
+    date.className = "inbox-message-date";
+    date.dateTime = message.createdAt;
+    date.textContent = formatInboxTime(message.createdAt);
+
+    const identity = document.createElement("div");
+    identity.className = "inbox-message-identity";
+    identity.append(sender, date);
+
+    const removeButton = document.createElement("button");
+    removeButton.className = "inbox-delete";
+    removeButton.type = "button";
+    removeButton.textContent = "Supprimer";
+    removeButton.setAttribute("aria-label", `Supprimer le message de ${sender.textContent}`);
+
+    const content = document.createElement("p");
+    content.className = "inbox-message-content";
+    content.textContent = typeof message.message === "string" ? message.message : "";
+
+    header.append(identity, removeButton);
+    card.append(header, content);
+    removeButton.addEventListener("click", () => {
+      void deleteInboxMessage(message.id, card, removeButton);
+    });
+    return card;
+  };
+
+  const deleteInboxMessage = async (id, card, button) => {
+    if (!id || !window.confirm("Supprimer définitivement ce message ?")) return;
+    button.disabled = true;
+
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id }),
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.deleted !== true) {
+        setStatus(inboxStatus, data.error || "Le message n’a pas pu être supprimé.", "error");
+        return;
+      }
+
+      card.remove();
+      const count = inboxList?.querySelectorAll(".inbox-message").length || 0;
+      setStatus(
+        inboxStatus,
+        count ? "Message supprimé." : inboxHasMore ? "Page supprimée." : "Aucun message pour le moment."
+      );
+    } catch {
+      setStatus(inboxStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  const loadInbox = async ({ reset = false } = {}) => {
+    if (!inboxList || inboxLoading) return;
+    if (reset) {
+      inboxList.replaceChildren();
+      inboxCursor = "";
+      inboxHasMore = false;
+    }
+
+    inboxLoading = true;
+    if (inboxRefreshButton) inboxRefreshButton.disabled = true;
+    if (inboxMoreButton) inboxMoreButton.disabled = true;
+    setStatus(inboxStatus, "Chargement des messages…");
+
+    try {
+      const url = new URL("/api/admin-messages", window.location.origin);
+      if (inboxCursor) url.searchParams.set("cursor", inboxCursor);
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(inboxStatus, data.error || "La boîte de réception n’a pas pu être chargée.", "error");
+        return;
+      }
+
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      messages.forEach((message) => inboxList.append(createInboxMessage(message)));
+      inboxCursor = typeof data.cursor === "string" ? data.cursor : "";
+      inboxHasMore = data.hasMore === true && Boolean(inboxCursor);
+      if (inboxMoreButton) inboxMoreButton.hidden = !inboxHasMore;
+
+      const count = inboxList.querySelectorAll(".inbox-message").length;
+      setStatus(
+        inboxStatus,
+        count ? `${count} message${count > 1 ? "s" : ""} reçu${count > 1 ? "s" : ""}.` : "Aucun message pour le moment."
+      );
+    } catch {
+      setStatus(inboxStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      inboxLoading = false;
+      if (inboxRefreshButton) inboxRefreshButton.disabled = false;
+      if (inboxMoreButton) inboxMoreButton.disabled = false;
+    }
+  };
+
+  inboxRefreshButton?.addEventListener("click", () => void loadInbox({ reset: true }));
+  inboxMoreButton?.addEventListener("click", () => void loadInbox());
+
   const showAdmin = async () => {
     loginPanel.hidden = true;
     adminPanel.hidden = false;
     setStatus(loginStatus, "");
     setStatus(saveStatus, "");
-    await loadSettings();
+    await Promise.all([loadSettings(), loadInbox({ reset: true })]);
   };
 
   loginForm?.addEventListener("submit", async (event) => {

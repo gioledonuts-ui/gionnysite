@@ -208,6 +208,20 @@
             </button>
           </div>
         </form>
+
+        <section class="settings-section inbox-section" aria-labelledby="inbox-title">
+          <div class="section-heading inbox-heading">
+            <span class="section-number">03</span>
+            <div>
+              <h3 id="inbox-title">Messages reçus</h3>
+              <p>Les messages des visiteurs sont privés et visibles uniquement ici.</p>
+            </div>
+            <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh>Actualiser</button>
+          </div>
+          <p class="inbox-status" data-inbox-status role="status" aria-live="polite">Chargement des messages…</p>
+          <div class="inbox-list" data-inbox-list aria-live="polite"></div>
+          <button class="quiet-button inbox-more" type="button" data-inbox-more hidden>Afficher les messages plus anciens</button>
+        </section>
       </section>
 
       <footer class="admin-footer">Modifications du site · visibles par tous après enregistrement</footer>

@@ -30,7 +30,7 @@ Le panneau n’a pas de lien dans la navigation du site. Après le déploiement,
 
 <https://qg2gionny.vercel.app/gestion-qg/>
 
-Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux et activer ou désactiver chaque jour de la semaine avec son heure. Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
+Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux, régler les horaires des lives et lire ou supprimer les messages reçus depuis la bulle de contact. Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
 
 ### Stockage partagé requis
 
@@ -42,6 +42,8 @@ Les variables `GIONNY_ADMIN_PIN` et `GIONNY_ADMIN_SESSION_SECRET` sont conservé
 4. Retourne sur `/gestion-qg/`. Le bandeau indiquera que le stockage en ligne est actif; tu pourras alors enregistrer les changements.
 
 Avant l’activation de Blob, le site garde les liens et le planning par défaut et le panneau ne permet pas de sauvegarder. Le fichier partagé contient seulement les liens et horaires publics, pas le code d’accès.
+
+La bulle « M’écrire » demande obligatoirement un pseudo et un message. Les messages sont enregistrés séparément comme objets **privés** dans Vercel Blob (préfixe `gionny/inbox/`) : leur contenu n’est pas public et seule une session admin peut les consulter ou les supprimer. Ils restent dans la boîte jusqu’à suppression. Le formulaire limite la longueur des messages et ajoute un piège anti-robot ainsi qu’une limitation simple des envois répétés.
 
 ## Données Twitch et YouTube sans clés
 
