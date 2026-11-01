@@ -20,7 +20,7 @@ Puis ouvre <http://localhost:8000>. Le statut Twitch et la dernière vidéo YouT
 - `api/updates.mjs` lit les informations publiques de Twitch et YouTube via DecAPI, un service tiers sans clé ni connexion. Son fonctionnement peut dépendre de sa disponibilité et de son délai de mise à jour.
 - Les polices Space Grotesk et Manrope sont servies depuis `assets/fonts/`, sans requête à un service externe. Leurs licences SIL Open Font License se trouvent dans le même dossier.
 - La photo fournie est rangée dans `assets/gionny-profile.jpg`. Pour ajouter une image de fond, dépose-la sous `assets/gionny-background.jpg`.
-- L’icône de l’onglet est `favicon.svg`.
+- L’icône de l’onglet utilise la photo fournie dans `assets/gionny-profile.jpg`.
 
 Les clics mémorisés et la dernière vidéo YouTube consultée restent dans le stockage de ce navigateur sur cet appareil; ils ne sont envoyés nulle part. Pour les effacer, il suffit de supprimer les données de ce site dans les paramètres du navigateur.
 
