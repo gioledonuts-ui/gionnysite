@@ -3,6 +3,7 @@
   "private": true,
   "description": "Le QG en ligne de Gionny",
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "2.8.2"
   }
 }

@@ -1,16 +1,22 @@
 import { isSameOriginRequest } from "../lib/admin-security.mjs";
 import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
-  addVisitorReply,
+  addAccountReply,
+  clearAccountSessionCookie,
   clearVisitorConversationCookie,
-  createConversation,
-  getVisitorConversation,
+  clearVisitorAccountSession,
+  CONVERSATION_SUBJECTS,
+  getAccountConversation,
+  isConversationSubject,
+  loginVisitorAccount,
+  readAccountSessionCookie,
   readVisitorConversationCookie,
-  saveVisitorConversationCookie,
+  registerVisitorAccount,
+  saveAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
 
 const RATE_WINDOW_MS = 15 * 60 * 1000;
-const MAX_MESSAGES_PER_WINDOW = 12;
+const MAX_REQUESTS_PER_WINDOW = 12;
 const MAX_BODY_BYTES = 12_000;
 const rateLimits = new Map();
 
@@ -63,9 +69,7 @@ function getClientKey(request) {
 function isRateLimited(key) {
   const now = Date.now();
   let state = rateLimits.get(key);
-  if (!state || state.resetAt <= now) {
-    state = { count: 0, resetAt: now + RATE_WINDOW_MS };
-  }
+  if (!state || state.resetAt <= now) state = { count: 0, resetAt: now + RATE_WINDOW_MS };
   state.count += 1;
   rateLimits.set(key, state);
 
@@ -75,7 +79,7 @@ function isRateLimited(key) {
     }
   }
 
-  return state.count > MAX_MESSAGES_PER_WINDOW
+  return state.count > MAX_REQUESTS_PER_WINDOW
     ? Math.max(1, Math.ceil((state.resetAt - now) / 1000))
     : 0;
 }
@@ -98,26 +102,65 @@ function cleanMessage(value) {
     .trim();
 }
 
-function conversationError(reason) {
-  if (reason === "blocked") {
-    return { status: 403, error: "Cette discussion a été bloquée." };
-  }
-  if (reason === "closed") {
-    return { status: 409, error: "Cette discussion est fermée pour le moment." };
-  }
-  if (reason === "limit") {
-    return { status: 409, error: "Cette discussion a atteint sa limite de messages." };
-  }
+function setRateLimitResponse(response, retryAfter) {
+  if (!retryAfter) return false;
+  response.setHeader("Retry-After", String(retryAfter));
+  response.status(429).json({ error: "Tu as envoyé plusieurs demandes récemment. Réessaie dans quelques minutes." });
+  return true;
+}
+
+function threadError(reason) {
+  if (reason === "blocked") return { status: 403, error: "Cette discussion a été bloquée." };
+  if (reason === "closed") return { status: 409, error: "Cette discussion est fermée pour le moment." };
+  if (reason === "limit") return { status: 409, error: "Cette discussion a atteint sa limite de messages." };
+  if (reason === "already_open") return { status: 409, error: "Ta discussion est déjà ouverte. Continue dans ce fil." };
+  if (reason === "invalid_message") return { status: 400, error: "Le message vocal ne peut pas être enregistré. Réessaie." };
+  if (reason === "unauthorized") return { status: 401, error: "Connecte-toi pour continuer la discussion." };
   return { status: 404, error: "Cette discussion n’a pas été retrouvée. Tu peux en démarrer une nouvelle." };
 }
 
-async function createVisitorThread(request, response, { pseudo, message }) {
-  const thread = await createConversation({ pseudo, message });
-  saveVisitorConversationCookie(request, response, thread.cookieValue);
-  return response.status(201).json({
+async function handleAuthentication(request, response, body, action) {
+  const retryAfter = isRateLimited(`auth:${getClientKey(request)}`);
+  if (setRateLimitResponse(response, retryAfter)) return;
+  if (!isBlobStorageConfigured()) {
+    response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+    return;
+  }
+
+  const credentials = {
+    pseudo: cleanPseudo(body.pseudo),
+    password: typeof body.password === "string" ? body.password : "",
+    legacyCookieValue: readVisitorConversationCookie(request),
+  };
+  const result = action === "register"
+    ? await registerVisitorAccount(credentials)
+    : await loginVisitorAccount(credentials);
+
+  if (!result.ok) {
+    if (result.reason === "pseudo") {
+      response.status(400).json({ error: "Le pseudo doit contenir entre 2 et 32 caractères." });
+      return;
+    }
+    if (result.reason === "password") {
+      response.status(400).json({ error: "Le mot de passe doit contenir entre 8 et 128 caractères." });
+      return;
+    }
+    if (result.reason === "exists") {
+      response.status(409).json({ error: "Ce pseudo a déjà un compte. Essaie de te connecter." });
+      return;
+    }
+    response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
+    return;
+  }
+
+  saveAccountSessionCookie(request, response, result.sessionToken);
+  const state = await getAccountConversation(result.sessionToken);
+  response.status(action === "register" ? 201 : 200).json({
     ok: true,
-    conversation: thread.conversation,
-    messages: thread.messages,
+    account: state?.account || result.account,
+    conversation: state?.conversation || null,
+    messages: state?.messages || [],
+    subjects: CONVERSATION_SUBJECTS,
   });
 }
 
@@ -128,21 +171,24 @@ export default async function handler(request, response) {
     response.setHeader("Allow", "GET, POST, DELETE");
     return response.status(405).json({ error: "Méthode non autorisée." });
   }
-  if (!isSameOriginRequest(request)) {
-    return response.status(403).json({ error: "Requête refusée." });
-  }
+  if (!isSameOriginRequest(request)) return response.status(403).json({ error: "Requête refusée." });
 
-  const cookieValue = readVisitorConversationCookie(request);
+  const sessionToken = readAccountSessionCookie(request);
 
   if (request.method === "GET") {
-    if (!cookieValue || !isBlobStorageConfigured()) {
-      return response.status(200).json({ conversation: null, messages: [] });
+    if (!sessionToken) {
+      return response.status(200).json({ account: null, conversation: null, messages: [], subjects: CONVERSATION_SUBJECTS });
     }
-
+    if (!isBlobStorageConfigured()) {
+      return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+    }
     try {
-      const thread = await getVisitorConversation(cookieValue);
-      if (!thread) clearVisitorConversationCookie(request, response);
-      return response.status(200).json(thread || { conversation: null, messages: [] });
+      const state = await getAccountConversation(sessionToken);
+      if (!state) {
+        clearAccountSessionCookie(request, response);
+        return response.status(200).json({ account: null, conversation: null, messages: [], subjects: CONVERSATION_SUBJECTS });
+      }
+      return response.status(200).json({ ...state, subjects: CONVERSATION_SUBJECTS });
     } catch (error) {
       console.error("[contact] private conversation read failed", {
         name: error instanceof Error ? error.name : "UnknownError",
@@ -153,16 +199,6 @@ export default async function handler(request, response) {
   }
 
   if (request.method === "DELETE") {
-    if (cookieValue && isBlobStorageConfigured()) {
-      try {
-        const thread = await getVisitorConversation(cookieValue);
-        if (thread?.conversation.status === "blocked") {
-          return response.status(403).json({ error: "Cette discussion a été bloquée." });
-        }
-      } catch {
-        // Clearing an unreadable visitor cookie is safe; no conversation data is changed.
-      }
-    }
     clearVisitorConversationCookie(request, response);
     return response.status(200).json({ cleared: true });
   }
@@ -171,77 +207,66 @@ export default async function handler(request, response) {
   if (!body || typeof body !== "object") {
     return response.status(400).json({ error: "Le formulaire est incomplet. Réessaie." });
   }
+  if (typeof body.website === "string" && body.website.trim()) return response.status(201).json({ ok: true });
 
-  // Silent honeypot response: automated submissions are not stored.
-  if (typeof body.website === "string" && body.website.trim()) {
-    return response.status(201).json({ ok: true });
+  const action = typeof body.action === "string" ? body.action : "send";
+  if (action === "register" || action === "login") {
+    try {
+      return await handleAuthentication(request, response, body, action);
+    } catch (error) {
+      console.error("[contact] account authentication failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+        code: typeof error?.code === "string" ? error.code : undefined,
+      });
+      return response.status(502).json({ error: "La connexion n’a pas pu aboutir. Réessaie dans un instant." });
+    }
   }
+
+  if (action === "logout") {
+    if (sessionToken && isBlobStorageConfigured()) {
+      try {
+        await clearVisitorAccountSession(sessionToken);
+      } catch {
+        // Clearing the browser cookie still prevents further use of this session.
+      }
+    }
+    clearAccountSessionCookie(request, response);
+    return response.status(200).json({ ok: true });
+  }
+
+  if (action !== "send") return response.status(400).json({ error: "Cette action n’est pas reconnue." });
+  if (!sessionToken) return response.status(401).json({ error: "Crée un compte ou connecte-toi pour écrire." });
 
   const message = cleanMessage(body.message);
   if (message.length < 1 || message.length > 1500) {
-    return response.status(400).json({
-      error: "Écris un message de 1 à 1 500 caractères.",
-    });
+    return response.status(400).json({ error: "Écris un message de 1 à 1 500 caractères." });
   }
+  const subject = typeof body.subject === "string" ? body.subject : "";
+  if (!isConversationSubject(subject)) return response.status(400).json({ error: "Choisis un sujet pour ta discussion." });
 
-  const pseudo = cleanPseudo(body.pseudo);
-  const isNewConversation = body.newConversation === true;
-  if (!cookieValue || isNewConversation) {
-    if (pseudo.length < 2 || pseudo.length > 32) {
-      return response.status(400).json({
-        error: "Ajoute un pseudo de 2 à 32 caractères pour démarrer la discussion.",
-      });
-    }
-  }
-
-  const retryAfter = isRateLimited(getClientKey(request));
-  if (retryAfter) {
-    response.setHeader("Retry-After", String(retryAfter));
-    return response.status(429).json({
-      error: "Tu as envoyé plusieurs messages récemment. Réessaie dans quelques minutes.",
-    });
-  }
-
+  const retryAfter = isRateLimited(`message:${getClientKey(request)}`);
+  if (setRateLimitResponse(response, retryAfter)) return;
   if (!isBlobStorageConfigured()) {
-    return response.status(503).json({
-      error: "La discussion est momentanément indisponible. Réessaie plus tard.",
-    });
+    return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
   }
 
   try {
-    if (cookieValue && isNewConversation) {
-      const previous = await getVisitorConversation(cookieValue);
-      if (previous?.conversation.status === "blocked") {
-        return response.status(403).json({ error: "Cette discussion a été bloquée." });
-      }
-      if (previous?.conversation.status === "open") {
-        return response.status(409).json({ error: "Ta discussion est déjà ouverte. Continue dans ce fil." });
-      }
-      // A closed discussion can be replaced by a new one in this browser.
-      return await createVisitorThread(request, response, { pseudo, message });
+    const result = await addAccountReply(sessionToken, { message, subject, newConversation: body.newConversation === true });
+    if (!result.ok) {
+      const failure = threadError(result.reason);
+      return response.status(failure.status).json({ error: failure.error });
     }
-
-    if (cookieValue) {
-      const result = await addVisitorReply(cookieValue, message);
-      if (!result.ok) {
-        const failure = conversationError(result.reason);
-        return response.status(failure.status).json({ error: failure.error });
-      }
-      return response.status(200).json({
-        ok: true,
-        conversation: result.conversation,
-        message: result.message,
-      });
-    }
-
-    return await createVisitorThread(request, response, { pseudo, message });
+    return response.status(result.messages ? 201 : 200).json({
+      ok: true,
+      account: result.account,
+      conversation: result.conversation,
+      ...(result.messages ? { messages: result.messages } : { message: result.message }),
+    });
   } catch (error) {
     console.error("[contact] private conversation save failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       code: typeof error?.code === "string" ? error.code : undefined,
     });
-    return response.status(502).json({
-      error: "Ton message n’a pas pu être envoyé. Réessaie dans un instant.",
-    });
+    return response.status(502).json({ error: "Ton message n’a pas pu être envoyé. Réessaie dans un instant." });
   }
 }

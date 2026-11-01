@@ -1250,3 +1250,29 @@ button {
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+.conversation-list-subject {
+  overflow: hidden;
+  color: #c6dcff;
+  font-size: 9px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-subject {
+  width: fit-content;
+  color: #c6dcff;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.thread-message-audio {
+  display: block;
+  width: min(320px, 100%);
+  height: 38px;
+  min-height: 38px;
+  margin-top: 3px;
+  border-radius: 9px;
+  color-scheme: dark;
+}

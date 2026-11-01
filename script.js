@@ -670,43 +670,80 @@
   }
 
   const contactLauncher = document.querySelector("[data-open-contact]");
+  const contactScrim = document.querySelector("[data-contact-scrim]");
   const contactWidget = document.querySelector("[data-contact-widget]");
   const minimizeContactButton = document.querySelector("[data-minimize-contact]");
+  const contactAuth = document.querySelector("[data-contact-auth]");
+  const authForm = document.querySelector("[data-auth-form]");
+  const authSubmit = document.querySelector("[data-auth-submit]");
+  const authSubmitLabel = document.querySelector("[data-auth-submit-label]");
+  const authStatus = document.querySelector("[data-auth-status]");
+  const authTabs = [...document.querySelectorAll("[data-auth-tab]")];
   const contactNewView = document.querySelector("[data-contact-new]");
   const contactForm = document.querySelector("[data-contact-form]");
   const contactSubmit = document.querySelector("[data-contact-submit]");
   const contactStatus = document.querySelector("[data-contact-status]");
+  const accountPseudo = document.querySelector("[data-account-pseudo]");
   const contactReplyForm = document.querySelector("[data-contact-reply-form]");
   const contactReplySubmit = document.querySelector("[data-contact-reply-submit]");
   const contactReplyStatus = document.querySelector("[data-contact-thread-status]");
   const contactThread = document.querySelector("[data-contact-thread]");
   const contactThreadMessages = document.querySelector("[data-contact-thread-messages]");
   const contactThreadPseudo = document.querySelector("[data-contact-thread-pseudo]");
+  const contactThreadSubject = document.querySelector("[data-contact-thread-subject]");
   const contactThreadState = document.querySelector("[data-contact-thread-state]");
   const contactThreadClosed = document.querySelector("[data-contact-closed]");
   const contactThreadClosedCopy = document.querySelector("[data-contact-closed-copy]");
   const newConversationButton = document.querySelector("[data-new-conversation]");
+  const logoutButtons = [...document.querySelectorAll("[data-contact-logout]")];
   const contactBadge = document.querySelector("[data-contact-badge]");
   const VISITOR_SEEN_PREFIX = "gionny:conversation:last-seen:v1:";
+  const MAX_VOICE_DURATION_SECONDS = 60;
+  const MAX_VOICE_BYTES = 200_000;
 
+  let visitorAccount = null;
   let visitorConversation = null;
   let visitorConversationMessages = [];
   let newConversationMode = false;
   let visitorConversationLoading = false;
   let visitorPollTimer = 0;
+  let authMode = "register";
+  const voiceControlStates = [];
+
+  const setStatusNode = (node, message, kind = "") => {
+    if (!node) return;
+    node.textContent = message;
+    if (kind) node.dataset.kind = kind;
+    else delete node.dataset.kind;
+  };
 
   const setContactStatus = (message, kind = "") => {
-    if (!contactStatus) return;
-    contactStatus.textContent = message;
-    if (kind) contactStatus.dataset.kind = kind;
-    else delete contactStatus.dataset.kind;
+    if (contactThread && !contactThread.hidden) {
+      setStatusNode(contactReplyStatus, message, kind);
+      return;
+    }
+    const target = contactNewView && !contactNewView.hidden ? contactStatus : authStatus;
+    setStatusNode(target, message, kind);
   };
 
   const setContactThreadStatus = (message, kind = "") => {
-    if (!contactReplyStatus) return;
-    contactReplyStatus.textContent = message;
-    if (kind) contactReplyStatus.dataset.kind = kind;
-    else delete contactReplyStatus.dataset.kind;
+    setStatusNode(contactReplyStatus, message, kind);
+  };
+
+  const setAuthMode = (mode) => {
+    authMode = mode === "login" ? "login" : "register";
+    authTabs.forEach((tab) => {
+      const selected = tab.dataset.authTab === authMode;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    const password = authForm?.elements.namedItem("password");
+    if (password) {
+      password.autocomplete = authMode === "login" ? "current-password" : "new-password";
+      password.placeholder = authMode === "login" ? "Ton mot de passe" : "8 caractères minimum";
+    }
+    if (authSubmitLabel) authSubmitLabel.textContent = authMode === "login" ? "Se connecter" : "Créer mon compte";
+    setStatusNode(authStatus, "");
   };
 
   const readVisitorSeenId = (conversationId) => {
@@ -747,25 +784,38 @@
     const name = document.createElement("span");
     name.className = "contact-chat-sender";
     name.textContent = sender === "gionny" ? "Gionny" : visitorConversation?.pseudo || "Toi";
+    item.append(name);
 
-    const text = document.createElement("p");
-    text.className = "contact-chat-text";
-    text.textContent = typeof message.text === "string" ? message.text : "";
+    if (message.kind === "audio" || message.hasAudio) {
+      const audio = document.createElement("audio");
+      audio.className = "contact-chat-audio";
+      audio.controls = true;
+      audio.preload = "none";
+      audio.setAttribute("aria-label", `Message vocal de ${sender === "gionny" ? "Gionny" : visitorConversation?.pseudo || "toi"}`);
+      audio.src = `/api/contact-audio?conversationId=${encodeURIComponent(visitorConversation.id)}&messageId=${encodeURIComponent(message.id)}`;
+      item.append(audio);
+    } else {
+      const text = document.createElement("p");
+      text.className = "contact-chat-text";
+      text.textContent = typeof message.text === "string" ? message.text : "";
+      item.append(text);
+    }
 
     const date = document.createElement("time");
     date.className = "contact-chat-date";
     date.dateTime = message.createdAt;
     date.textContent = formatConversationTime(message.createdAt);
-
-    item.append(name, text, date);
+    item.append(date);
     return item;
   };
 
   const renderVisitorConversation = ({ announceNewReply = false } = {}) => {
     if (!visitorConversation || !contactThread || !contactNewView) return;
+    if (contactAuth) contactAuth.hidden = true;
     contactNewView.hidden = true;
     contactThread.hidden = false;
-    contactThreadPseudo.textContent = visitorConversation.pseudo || "Ta discussion privée";
+    contactThreadPseudo.textContent = visitorConversation.pseudo || visitorAccount?.pseudo || "Ta discussion privée";
+    if (contactThreadSubject) contactThreadSubject.textContent = visitorConversation.subject || "💬 Discussion";
     contactThreadState.textContent = visitorConversation.status === "blocked"
       ? "Bloquée"
       : visitorConversation.status === "closed"
@@ -781,9 +831,13 @@
       : "Cette discussion est fermée. Tu peux démarrer un nouveau fil si tu as une autre question.";
     newConversationButton.hidden = visitorConversation.status !== "closed";
 
-    const wasNearBottom = contactThreadMessages.scrollHeight - contactThreadMessages.scrollTop - contactThreadMessages.clientHeight < 80;
-    contactThreadMessages.replaceChildren(...visitorConversationMessages.map(createVisitorChatMessage));
-    if (wasNearBottom) contactThreadMessages.scrollTop = contactThreadMessages.scrollHeight;
+    const messageSignature = visitorConversationMessages.map((message) => `${message.id}:${message.kind || "text"}`).join("|");
+    if (contactThreadMessages.dataset.messageSignature !== messageSignature) {
+      const wasNearBottom = contactThreadMessages.scrollHeight - contactThreadMessages.scrollTop - contactThreadMessages.clientHeight < 80;
+      contactThreadMessages.replaceChildren(...visitorConversationMessages.map(createVisitorChatMessage));
+      contactThreadMessages.dataset.messageSignature = messageSignature;
+      if (wasNearBottom) contactThreadMessages.scrollTop = contactThreadMessages.scrollHeight;
+    }
 
     const latestGionnyMessage = [...visitorConversationMessages].reverse().find((message) => message.sender === "gionny");
     const seenId = readVisitorSeenId(visitorConversation.id);
@@ -795,6 +849,26 @@
       contactLauncher?.setAttribute("aria-label", "Ouvrir ta discussion privée avec Gionny");
     }
     if (!contactWidget.hidden) markVisitorThreadSeen();
+  };
+
+  const renderContactState = () => {
+    if (!visitorAccount) {
+      if (contactAuth) contactAuth.hidden = false;
+      if (contactNewView) contactNewView.hidden = true;
+      if (contactThread) contactThread.hidden = true;
+      if (contactBadge) contactBadge.hidden = true;
+      return;
+    }
+
+    if (contactAuth) contactAuth.hidden = true;
+    if (accountPseudo) accountPseudo.textContent = visitorAccount.pseudo || "";
+    if (visitorConversation) {
+      renderVisitorConversation();
+      return;
+    }
+    if (contactThread) contactThread.hidden = true;
+    if (contactNewView) contactNewView.hidden = false;
+    if (contactBadge) contactBadge.hidden = true;
   };
 
   const loadVisitorConversation = async ({ quiet = false } = {}) => {
@@ -812,18 +886,12 @@
         return;
       }
 
-      if (data.conversation && Array.isArray(data.messages)) {
-        visitorConversation = data.conversation;
-        visitorConversationMessages = data.messages;
-        renderVisitorConversation({ announceNewReply: true });
-      } else {
-        visitorConversation = null;
-        visitorConversationMessages = [];
-        newConversationMode = false;
-        contactThread.hidden = true;
-        contactNewView.hidden = false;
-        if (contactBadge) contactBadge.hidden = true;
-      }
+      visitorAccount = data.account || null;
+      visitorConversation = data.conversation || null;
+      visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
+      newConversationMode = false;
+      renderContactState();
+      if (visitorConversation) renderVisitorConversation({ announceNewReply: true });
     } catch {
       if (!quiet) setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
     } finally {
@@ -834,24 +902,447 @@
   const openContactWidget = () => {
     if (!contactWidget) return;
     contactWidget.hidden = false;
+    if (contactScrim) contactScrim.hidden = false;
+    document.body.classList.add("contact-page-open");
     contactLauncher?.setAttribute("aria-expanded", "true");
     if (contactBadge) contactBadge.hidden = true;
     if (visitorConversation && !newConversationMode) {
       markVisitorThreadSeen();
       void loadVisitorConversation({ quiet: true });
       contactReplyForm?.querySelector("textarea")?.focus({ preventScroll: true });
+    } else if (visitorAccount) {
+      contactForm?.elements.namedItem("message")?.focus({ preventScroll: true });
     } else {
-      contactForm?.elements.namedItem("pseudo")?.focus({ preventScroll: true });
+      authForm?.elements.namedItem("pseudo")?.focus({ preventScroll: true });
     }
   };
 
   const minimizeContactWidget = () => {
     if (!contactWidget) return;
+    voiceControlStates.forEach((state) => state.cancel());
     contactWidget.hidden = true;
+    if (contactScrim) contactScrim.hidden = true;
+    document.body.classList.remove("contact-page-open");
     contactLauncher?.setAttribute("aria-expanded", "false");
     contactLauncher?.focus({ preventScroll: true });
     if (visitorConversation && !newConversationMode) renderVisitorConversation({ announceNewReply: true });
   };
+
+  const updateConversationFromResponse = (data) => {
+    if (data.account) visitorAccount = data.account;
+    if (data.conversation) visitorConversation = data.conversation;
+    if (Array.isArray(data.messages)) visitorConversationMessages = data.messages;
+    else if (data.message) visitorConversationMessages.push(data.message);
+  };
+
+  const logoutVisitor = async () => {
+    if (voiceControlStates.some((state) => state.sending)) {
+      setContactStatus("Attends la fin de l’envoi du vocal avant de te déconnecter.", "error");
+      return;
+    }
+    voiceControlStates.forEach((state) => state.cancel());
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "logout" }),
+      });
+      if (!response.ok) {
+        setContactStatus("La déconnexion n’a pas abouti. Réessaie.", "error");
+        return;
+      }
+    } catch {
+      setContactStatus("Impossible de joindre le serveur pour te déconnecter.", "error");
+      return;
+    }
+    visitorAccount = null;
+    visitorConversation = null;
+    visitorConversationMessages = [];
+    newConversationMode = false;
+    renderContactState();
+    setAuthMode("register");
+    setContactStatus("Tu es déconnecté·e.", "success");
+  };
+
+  authTabs.forEach((tab) => tab.addEventListener("click", () => setAuthMode(tab.dataset.authTab)));
+  authForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!authForm.reportValidity() || !authSubmit || authSubmit.disabled) return;
+    const formData = new FormData(authForm);
+    authSubmit.disabled = true;
+    setStatusNode(authStatus, authMode === "register" ? "Création de ton compte…" : "Connexion…");
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({
+          action: authMode,
+          pseudo: String(formData.get("pseudo") || ""),
+          password: String(formData.get("password") || ""),
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) {
+        setStatusNode(authStatus, data.error || "La connexion n’a pas abouti. Réessaie.", "error");
+        return;
+      }
+      visitorAccount = data.account || null;
+      visitorConversation = data.conversation || null;
+      visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
+      newConversationMode = false;
+      authForm.reset();
+      setStatusNode(authStatus, "");
+      renderContactState();
+      if (visitorConversation) {
+        renderVisitorConversation();
+        markVisitorThreadSeen();
+      } else {
+        contactForm?.elements.namedItem("message")?.focus({ preventScroll: true });
+      }
+    } catch {
+      setStatusNode(authStatus, "Impossible de joindre le serveur. Réessaie dans un instant.", "error");
+    } finally {
+      authSubmit.disabled = false;
+    }
+  });
+
+  logoutButtons.forEach((button) => button.addEventListener("click", () => void logoutVisitor()));
+
+  contactForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!contactForm.reportValidity() || !contactSubmit || contactSubmit.disabled) return;
+    const formData = new FormData(contactForm);
+    const payload = {
+      action: "send",
+      subject: String(formData.get("subject") || "💬 Discussion"),
+      message: String(formData.get("message") || ""),
+      website: String(formData.get("website") || ""),
+      newConversation: newConversationMode,
+    };
+    contactSubmit.disabled = true;
+    setContactStatus(newConversationMode ? "Ouverture d’une nouvelle discussion…" : "Envoi de ton message…");
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) {
+        setContactStatus(data.error || "Ton message n’a pas pu être envoyé. Réessaie.", "error");
+        if (response.status === 409 || response.status === 403) await loadVisitorConversation({ quiet: true });
+        return;
+      }
+
+      updateConversationFromResponse(data);
+      newConversationMode = false;
+      contactForm.reset();
+      setContactStatus("");
+      renderContactState();
+      markVisitorThreadSeen();
+      contactReplyForm?.querySelector("textarea")?.focus({ preventScroll: true });
+    } catch {
+      setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
+    } finally {
+      contactSubmit.disabled = false;
+    }
+  });
+
+  contactReplyForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!contactReplyForm.reportValidity() || !contactReplySubmit || contactReplySubmit.disabled) return;
+    const messageField = contactReplyForm.elements.namedItem("message");
+    const message = String(messageField?.value || "").trim();
+    if (!message) return;
+
+    contactReplySubmit.disabled = true;
+    setContactThreadStatus("Envoi de ton message…");
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "send", message, subject: visitorConversation?.subject || "💬 Discussion" }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) {
+        setContactThreadStatus(data.error || "Ton message n’a pas pu être envoyé.", "error");
+        if (response.status === 409 || response.status === 403 || response.status === 404) await loadVisitorConversation({ quiet: true });
+        return;
+      }
+      updateConversationFromResponse(data);
+      messageField.value = "";
+      setContactThreadStatus("");
+      renderContactState();
+      markVisitorThreadSeen();
+    } catch {
+      setContactThreadStatus("Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      contactReplySubmit.disabled = false;
+    }
+  });
+
+  newConversationButton?.addEventListener("click", () => {
+    if (visitorConversation?.status !== "closed") return;
+    newConversationMode = true;
+    contactThread.hidden = true;
+    contactAuth.hidden = true;
+    contactNewView.hidden = false;
+    setContactStatus("");
+    const messageInput = contactForm?.elements.namedItem("message");
+    if (messageInput) messageInput.value = "";
+    contactForm?.elements.namedItem("subject")?.focus({ preventScroll: true });
+  });
+
+  const formatVoiceDuration = (seconds) => {
+    const wholeSeconds = Math.max(0, Math.floor(seconds));
+    return `${Math.floor(wholeSeconds / 60)}:${String(wholeSeconds % 60).padStart(2, "0")}`;
+  };
+
+  const voiceMimeTypes = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"];
+
+  const uploadVoice = async (state, audioBlob) => {
+    if (!audioBlob || !audioBlob.size) {
+      state.setStatus("Aucun son n’a été enregistré. Réessaie.", "error");
+      return;
+    }
+    if (audioBlob.size > MAX_VOICE_BYTES) {
+      state.setStatus("Ce vocal dépasse 200 Ko. Essaie un enregistrement plus court.", "error");
+      return;
+    }
+
+    const form = state.form;
+    const subject = form?.elements.namedItem("subject")?.value || visitorConversation?.subject || "💬 Discussion";
+    const isReply = form === contactReplyForm;
+    const submitButton = form?.querySelector("[data-contact-submit], [data-contact-reply-submit]");
+    state.sending = true;
+    state.sendButton.disabled = true;
+    state.recordButton.disabled = true;
+    if (submitButton) submitButton.disabled = true;
+    state.setStatus("Envoi du vocal…");
+
+    try {
+      const response = await fetch("/api/contact-audio", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": audioBlob.type || "audio/webm",
+          "X-Conversation-Subject": encodeURIComponent(subject),
+          ...(newConversationMode && !isReply ? { "X-New-Conversation": "true" } : {}),
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: audioBlob,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) {
+        state.setStatus(data.error || "Le vocal n’a pas pu être envoyé. Réessaie.", "error");
+        return;
+      }
+      updateConversationFromResponse(data);
+      newConversationMode = false;
+      state.reset();
+      renderContactState();
+      markVisitorThreadSeen();
+      state.setStatus("Vocal envoyé.", "success");
+    } catch {
+      state.setStatus("Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      state.sending = false;
+      state.sendButton.disabled = false;
+      state.recordButton.disabled = false;
+      if (submitButton) submitButton.disabled = false;
+    }
+  };
+
+  document.querySelectorAll("[data-voice-controls]").forEach((controls) => {
+    const recordButton = controls.querySelector("[data-voice-record]");
+    const recorderPanel = controls.querySelector("[data-voice-recorder]");
+    const waveform = controls.querySelector("[data-voice-wave]");
+    const timer = controls.querySelector("[data-voice-timer]");
+    const cancelButton = controls.querySelector("[data-voice-cancel]");
+    const sendButton = controls.querySelector("[data-voice-send]");
+    const status = controls.querySelector("[data-voice-status]");
+    const form = controls.closest("form");
+    if (!recordButton || !recorderPanel || !timer || !cancelButton || !sendButton || !status || !form) return;
+
+    for (let index = 0; index < 28; index += 1) {
+      const bar = document.createElement("span");
+      bar.style.setProperty("--wave-height", `${20 + ((index * 17 + 11) % 72)}%`);
+      bar.style.setProperty("--wave-delay", `${-(index * 37)}ms`);
+      waveform?.append(bar);
+    }
+
+    const state = {
+      recordButton,
+      recorderPanel,
+      cancelButton,
+      sendButton,
+      form,
+      recorder: null,
+      stream: null,
+      chunks: [],
+      recordedBlob: null,
+      timerId: 0,
+      startedAt: 0,
+      byteCount: 0,
+      cancelled: false,
+      overflow: false,
+      sendAfterStop: false,
+      sending: false,
+      setStatus: (message, kind = "") => setStatusNode(status, message, kind),
+      stopStream() {
+        this.stream?.getTracks().forEach((track) => track.stop());
+        this.stream = null;
+      },
+      reset() {
+        window.clearInterval(this.timerId);
+        this.timerId = 0;
+        this.stopStream();
+        this.recorder = null;
+        this.chunks = [];
+        this.recordedBlob = null;
+        this.byteCount = 0;
+        this.cancelled = false;
+        this.overflow = false;
+        this.sendAfterStop = false;
+        this.recorderPanel.hidden = true;
+        this.recorderPanel.dataset.recording = "false";
+        this.recordButton.hidden = false;
+        this.recordButton.disabled = false;
+        this.sendButton.disabled = false;
+        this.setStatus("");
+        timer.textContent = "0:00 / 1:00";
+      },
+      cancel() {
+        this.cancelled = true;
+        this.sendAfterStop = false;
+        if (this.recorder && this.recorder.state !== "inactive") this.recorder.stop();
+        else this.reset();
+      },
+    };
+    voiceControlStates.push(state);
+
+    if (!navigator.mediaDevices?.getUserMedia || typeof window.MediaRecorder !== "function") {
+      recordButton.hidden = true;
+      state.setStatus("L’enregistrement vocal n’est pas disponible dans ce navigateur.");
+      return;
+    }
+
+    const updateTimer = () => {
+      const elapsed = Math.min(MAX_VOICE_DURATION_SECONDS, (performance.now() - state.startedAt) / 1000);
+      timer.textContent = `${formatVoiceDuration(elapsed)} / 1:00`;
+      if (elapsed >= MAX_VOICE_DURATION_SECONDS && state.recorder?.state === "recording") {
+        state.setStatus("Une minute maximum. Tu peux envoyer ou supprimer le vocal.");
+        state.recorder.stop();
+      }
+    };
+
+    recordButton.addEventListener("click", async () => {
+      if (state.sending || state.recorder?.state === "recording") return;
+      recordButton.disabled = true;
+      state.setStatus("Autorise l’accès au micro…");
+      try {
+        state.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const preferredType = voiceMimeTypes.find((type) => window.MediaRecorder.isTypeSupported?.(type));
+        let recorder;
+        try {
+          recorder = new window.MediaRecorder(state.stream, {
+            audioBitsPerSecond: 24_000,
+            ...(preferredType ? { mimeType: preferredType } : {}),
+          });
+        } catch {
+          recorder = new window.MediaRecorder(state.stream, { audioBitsPerSecond: 24_000 });
+        }
+        state.recorder = recorder;
+        state.chunks = [];
+        state.byteCount = 0;
+        state.startedAt = performance.now();
+        state.cancelled = false;
+        state.overflow = false;
+        state.sendAfterStop = false;
+        state.recordButton.hidden = true;
+        state.recorderPanel.hidden = false;
+        state.recorderPanel.dataset.recording = "true";
+        state.setStatus("Enregistrement en cours…");
+
+        recorder.addEventListener("dataavailable", (event) => {
+          if (performance.now() - state.startedAt >= MAX_VOICE_DURATION_SECONDS * 1000 && recorder.state === "recording") {
+            state.setStatus("Une minute maximum. Tu peux envoyer ou supprimer le vocal.");
+            recorder.stop();
+          }
+          if (!event.data?.size) return;
+          state.byteCount += event.data.size;
+          if (state.byteCount > MAX_VOICE_BYTES) {
+            state.overflow = true;
+            state.sendAfterStop = false;
+            state.setStatus("Ce navigateur a dépassé 200 Ko. Annule ou recommence plus court.", "error");
+            if (recorder.state !== "inactive") recorder.stop();
+            return;
+          }
+          state.chunks.push(event.data);
+        });
+        recorder.addEventListener("stop", () => {
+          window.clearInterval(state.timerId);
+          state.timerId = 0;
+          state.stopStream();
+          state.recorderPanel.dataset.recording = "false";
+          if (state.cancelled) {
+            state.reset();
+            return;
+          }
+          if (state.overflow) {
+            state.sendButton.disabled = true;
+            state.setStatus("Vocal trop volumineux (maximum 200 Ko). Essaie plus court.", "error");
+            return;
+          }
+          state.recordedBlob = new Blob(state.chunks, { type: recorder.mimeType || preferredType || "audio/webm" });
+          if (state.sendAfterStop) {
+            void uploadVoice(state, state.recordedBlob);
+          } else {
+            state.setStatus("Enregistrement terminé. Envoie-le ou supprime-le.");
+          }
+        }, { once: true });
+        recorder.start(500);
+        state.timerId = window.setInterval(updateTimer, 200);
+        updateTimer();
+      } catch (error) {
+        state.reset();
+        recordButton.disabled = false;
+        state.setStatus(error?.name === "NotAllowedError"
+          ? "Le micro est bloqué. Autorise-le dans les réglages du navigateur."
+          : "Impossible de démarrer le micro sur cet appareil.", "error");
+      }
+    });
+
+    sendButton.addEventListener("click", () => {
+      if (state.sending) return;
+      if (state.recorder?.state === "recording") {
+        state.sendAfterStop = true;
+        sendButton.disabled = true;
+        state.setStatus("Préparation du vocal…");
+        state.recorder.stop();
+      } else if (state.recordedBlob) {
+        void uploadVoice(state, state.recordedBlob);
+      }
+    });
+
+    cancelButton.addEventListener("click", () => {
+      state.cancelled = true;
+      state.sendAfterStop = false;
+      state.setStatus("");
+      if (state.recorder && state.recorder.state !== "inactive") state.recorder.stop();
+      else state.reset();
+    });
+  });
 
   if (contactLauncher && contactWidget) {
     contactLauncher.addEventListener("click", () => {
@@ -860,102 +1351,25 @@
     });
     minimizeContactButton?.addEventListener("click", minimizeContactWidget);
 
+    contactScrim?.addEventListener("click", minimizeContactWidget);
     document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape" || contactWidget.hidden || document.querySelector("dialog[open]")) return;
-      minimizeContactWidget();
-    });
-
-    contactForm?.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (!contactForm.reportValidity() || !contactSubmit || contactSubmit.disabled) return;
-
-      const formData = new FormData(contactForm);
-      const payload = {
-        pseudo: String(formData.get("pseudo") || ""),
-        message: String(formData.get("message") || ""),
-        website: String(formData.get("website") || ""),
-        newConversation: newConversationMode,
-      };
-      contactSubmit.disabled = true;
-      setContactStatus(newConversationMode ? "Ouverture d’une nouvelle discussion…" : "Envoi de ton message…");
-
-      try {
-        const response = await fetch("/api/contact", {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          credentials: "same-origin",
-          cache: "no-store",
-          body: JSON.stringify(payload),
-        });
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok || data.ok !== true) {
-          setContactStatus(data.error || "Ton message n’a pas pu être envoyé. Réessaie.", "error");
-          if (response.status === 409 || response.status === 403) await loadVisitorConversation({ quiet: true });
-          return;
-        }
-
-        if (data.conversation) {
-          visitorConversation = data.conversation;
-          if (Array.isArray(data.messages)) visitorConversationMessages = data.messages;
-          else if (data.message) visitorConversationMessages.push(data.message);
-          newConversationMode = false;
-          contactForm.reset();
-          setContactStatus("");
-          renderVisitorConversation();
-          markVisitorThreadSeen();
-          contactReplyForm?.querySelector("textarea")?.focus({ preventScroll: true });
-        } else {
-          setContactStatus("Merci, ton message a bien été reçu.", "success");
-        }
-      } catch {
-        setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
-      } finally {
-        contactSubmit.disabled = false;
+      if (contactWidget.hidden || document.querySelector("dialog[open]")) return;
+      if (event.key === "Escape") {
+        minimizeContactWidget();
+        return;
       }
-    });
-
-    contactReplyForm?.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (!contactReplyForm.reportValidity() || !contactReplySubmit || contactReplySubmit.disabled) return;
-      const messageField = contactReplyForm.elements.namedItem("message");
-      const message = String(messageField?.value || "").trim();
-      if (!message) return;
-
-      contactReplySubmit.disabled = true;
-      setContactThreadStatus("Envoi de ton message…");
-      try {
-        const response = await fetch("/api/contact", {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          credentials: "same-origin",
-          cache: "no-store",
-          body: JSON.stringify({ message }),
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok || data.ok !== true) {
-          setContactThreadStatus(data.error || "Ton message n’a pas pu être envoyé.", "error");
-          if (response.status === 409 || response.status === 403 || response.status === 404) {
-            await loadVisitorConversation({ quiet: true });
-          }
-          return;
-        }
-        if (data.message) visitorConversationMessages.push(data.message);
-        if (data.conversation) visitorConversation = data.conversation;
-        messageField.value = "";
-        setContactThreadStatus("");
-        renderVisitorConversation();
-        markVisitorThreadSeen();
-      } catch {
-        setContactThreadStatus("Impossible de joindre le serveur. Réessaie.", "error");
-      } finally {
-        contactReplySubmit.disabled = false;
+      if (event.key !== "Tab") return;
+      const focusable = [...contactWidget.querySelectorAll("button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])")]
+        .filter((element) => !element.hidden && !element.closest("[hidden]"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && (document.activeElement === first || !contactWidget.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !contactWidget.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
       }
     });
 
@@ -963,18 +1377,17 @@
       if (visitorConversation?.status !== "closed") return;
       newConversationMode = true;
       contactThread.hidden = true;
+      contactAuth.hidden = true;
       contactNewView.hidden = false;
       setContactStatus("");
-      const pseudoInput = contactForm?.elements.namedItem("pseudo");
       const messageInput = contactForm?.elements.namedItem("message");
-      if (pseudoInput) pseudoInput.value = visitorConversation.pseudo || "";
       if (messageInput) messageInput.value = "";
-      messageInput?.focus({ preventScroll: true });
+      contactForm?.elements.namedItem("subject")?.focus({ preventScroll: true });
     });
 
     void loadVisitorConversation();
     visitorPollTimer = window.setInterval(() => {
-      if (visitorConversation && !newConversationMode && !contactWidget.hidden) {
+      if (visitorAccount && visitorConversation && !newConversationMode && !contactWidget.hidden) {
         void loadVisitorConversation({ quiet: true });
       }
     }, 20_000);

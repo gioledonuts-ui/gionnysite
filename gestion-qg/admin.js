@@ -32,6 +32,7 @@
   const conversationContent = document.querySelector("[data-conversation-content]");
   const threadPseudo = document.querySelector("[data-thread-pseudo]");
   const threadStatus = document.querySelector("[data-thread-status]");
+  const threadSubject = document.querySelector("[data-thread-subject]");
   const threadMessages = document.querySelector("[data-thread-messages]");
   const threadCloseButton = document.querySelector("[data-thread-close]");
   const threadBlockButton = document.querySelector("[data-thread-block]");
@@ -332,6 +333,10 @@
     status.textContent = statusLabel(conversation.status);
     head.append(pseudo, status);
 
+    const subject = document.createElement("span");
+    subject.className = "conversation-list-subject";
+    subject.textContent = typeof conversation.subject === "string" ? conversation.subject : "💬 Discussion";
+
     const preview = document.createElement("span");
     preview.className = "conversation-list-preview";
     const previewText = typeof conversation.lastMessagePreview === "string" ? conversation.lastMessagePreview : "";
@@ -342,7 +347,7 @@
     date.dateTime = conversation.updatedAt;
     date.textContent = formatInboxTime(conversation.updatedAt);
 
-    button.append(head, preview, date);
+    button.append(head, subject, preview, date);
     button.addEventListener("click", () => selectConversation(conversation.id, { scroll: true }));
     return button;
   };
@@ -424,16 +429,26 @@
     name.className = "thread-message-sender";
     name.textContent = sender === "gionny" ? "Gionny" : "Visiteur";
 
-    const text = document.createElement("p");
-    text.className = "thread-message-text";
-    text.textContent = typeof message.text === "string" ? message.text : "";
+    let content;
+    if (message.kind === "audio" || message.hasAudio) {
+      content = document.createElement("audio");
+      content.className = "thread-message-audio";
+      content.controls = true;
+      content.preload = "none";
+      content.setAttribute("aria-label", `Message vocal de ${sender === "gionny" ? "Gionny" : "Visiteur"}`);
+      content.src = `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
+    } else {
+      content = document.createElement("p");
+      content.className = "thread-message-text";
+      content.textContent = typeof message.text === "string" ? message.text : "";
+    }
 
     const date = document.createElement("time");
     date.className = "thread-message-date";
     date.dateTime = message.createdAt;
     date.textContent = formatInboxTime(message.createdAt);
 
-    item.append(name, text, date);
+    item.append(name, content, date);
     return item;
   };
 
@@ -443,6 +458,7 @@
     conversationEmpty.hidden = true;
     conversationContent.hidden = false;
     threadPseudo.textContent = conversation.pseudo || "Visiteur";
+    if (threadSubject) threadSubject.textContent = conversation.subject || "💬 Discussion";
     threadStatus.textContent = statusLabel(conversation.status);
     threadStatus.dataset.state = conversation.status;
     threadCloseButton.disabled = conversation.status === "blocked";
@@ -457,9 +473,14 @@
       ? "Cette discussion est bloquée. Débloque-la pour pouvoir répondre à nouveau."
       : "Cette discussion est fermée. Tu peux la rouvrir quand tu veux.";
 
-    const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
-    threadMessages.replaceChildren(...(Array.isArray(data.messages) ? data.messages : []).map(createThreadMessage));
-    if (wasNearBottom) threadMessages.scrollTop = threadMessages.scrollHeight;
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    const messageSignature = messages.map((message) => `${message.id}:${message.kind || "text"}`).join("|");
+    if (threadMessages.dataset.messageSignature !== messageSignature) {
+      const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
+      threadMessages.replaceChildren(...messages.map(createThreadMessage));
+      threadMessages.dataset.messageSignature = messageSignature;
+      if (wasNearBottom) threadMessages.scrollTop = threadMessages.scrollHeight;
+    }
     updateConversationSelection();
   };
 
@@ -524,7 +545,7 @@
   const changeConversationStatus = async (status) => {
     if (!currentConversationId) return;
     const conversationId = currentConversationId;
-    if (status === "blocked" && !window.confirm("Bloquer cette discussion sur ce navigateur ? Sans compte ni e-mail, une autre session peut démarrer un nouveau fil.")) return;
+    if (status === "blocked" && !window.confirm("Bloquer cette discussion ? Le pseudo n’est pas une identité vérifiée.")) return;
 
     threadCloseButton.disabled = true;
     threadBlockButton.disabled = true;

@@ -32,6 +32,10 @@
       crossorigin
     />
     <link rel="stylesheet" href="/styles.css" />
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
     <script src="/script.js" defer></script>
   </head>
   <body>
@@ -403,6 +407,8 @@
       </main>
     </div>
 
+    <div class="contact-scrim" data-contact-scrim hidden aria-hidden="true"></div>
+
     <button
       class="contact-launcher"
       type="button"
@@ -425,7 +431,7 @@
       class="contact-widget"
       id="contact-widget"
       role="dialog"
-      aria-modal="false"
+      aria-modal="true"
       aria-labelledby="contact-widget-title"
       data-contact-widget
       hidden
@@ -438,43 +444,71 @@
           </button>
         </div>
 
-        <section class="contact-new-view" data-contact-new>
+        <section class="contact-auth" data-contact-auth aria-labelledby="contact-title">
           <h2 id="contact-title">Écris-moi</h2>
-          <p id="contact-copy">Ton message ouvre une discussion privée. Tu pourras revenir ici pour lire ma réponse.</p>
+          <p id="contact-copy">Crée un compte sans e-mail ou connecte-toi pour retrouver ta discussion sur ce navigateur.</p>
+          <div class="contact-auth-tabs" role="tablist" aria-label="Compte de discussion">
+            <button id="contact-register-tab" type="button" role="tab" aria-selected="true" aria-controls="contact-auth-form" data-auth-tab="register">Créer un compte</button>
+            <button id="contact-login-tab" type="button" role="tab" aria-selected="false" aria-controls="contact-auth-form" data-auth-tab="login" tabindex="-1">Se connecter</button>
+          </div>
+          <form class="contact-auth-form" id="contact-auth-form" data-auth-form>
+            <label class="contact-field">
+              <span>Ton pseudo</span>
+              <input name="pseudo" type="text" autocomplete="nickname" minlength="2" maxlength="32" placeholder="Ex. : GioFan42" required />
+            </label>
+            <label class="contact-field">
+              <span>Mot de passe</span>
+              <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="8 caractères minimum" required />
+            </label>
+            <p class="contact-privacy">Aucun e-mail n’est demandé. Garde ton pseudo et ton mot de passe pour retrouver ta discussion sur un autre appareil.</p>
+            <p class="contact-status" data-auth-status role="status" aria-live="polite"></p>
+            <button class="contact-send" type="submit" data-auth-submit>
+              <span data-auth-submit-label>Créer mon compte</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" /></svg>
+            </button>
+          </form>
+        </section>
+
+        <section class="contact-new-view" data-contact-new hidden>
+          <div class="contact-compose-heading">
+            <div>
+              <h2>Nouvelle discussion</h2>
+              <p>Connecté·e en tant que <strong data-account-pseudo></strong></p>
+            </div>
+            <button class="contact-logout" type="button" data-contact-logout>Déconnexion</button>
+          </div>
           <form class="contact-form" data-contact-form>
             <label class="contact-field">
-              <span>Ton pseudo <strong aria-hidden="true">*</strong></span>
-              <input
-                name="pseudo"
-                type="text"
-                autocomplete="nickname"
-                minlength="2"
-                maxlength="32"
-                placeholder="Ex. : GioFan42"
-                required
-              />
+              <span>Le sujet</span>
+              <select name="subject" required>
+                <option value="🎤 Passer en live">🎤 Passer en live</option>
+                <option value="💡 Idée vidéo / React">💡 Idée vidéo / React</option>
+                <option value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</option>
+                <option value="❓ Question">❓ Question</option>
+                <option value="💬 Discussion" selected>💬 Discussion</option>
+              </select>
             </label>
             <label class="contact-field">
-              <span>Ton message <strong aria-hidden="true">*</strong></span>
-              <textarea
-                name="message"
-                rows="4"
-                maxlength="1500"
-                placeholder="Écris ton message ici…"
-                required
-              ></textarea>
+              <span>Ton message</span>
+              <textarea name="message" rows="3" maxlength="1500" placeholder="Écris ton message ici…" required></textarea>
             </label>
-            <div class="contact-honeypot" aria-hidden="true">
-              <label for="contact-website">Ne pas remplir</label>
-              <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            <div class="contact-voice" data-voice-controls>
+              <button class="contact-voice-record" type="button" data-voice-record aria-label="Enregistrer un message vocal"><span aria-hidden="true">🎙</span><span>Message vocal</span></button>
+              <div class="contact-voice-recorder" data-voice-recorder hidden>
+                <span class="contact-voice-live-dot" aria-hidden="true"></span>
+                <div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
+                <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
+                <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑</button>
+                <button type="button" class="contact-voice-send" data-voice-send>Envoyer</button>
+              </div>
+              <p class="contact-voice-status" data-voice-status role="status" aria-live="polite"></p>
             </div>
-            <p class="contact-privacy">La discussion reste privée et sera conservée jusqu’à suppression dans le panneau admin. Garde ce navigateur pour la retrouver; aucun e-mail ni compte ne sont demandés.</p>
+            <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Ne pas remplir</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
+            <p class="contact-privacy">La discussion reste privée. Les vocaux sont limités à une minute et à 200 Ko.</p>
             <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
             <button class="contact-send" type="submit" data-contact-submit>
               <span>Envoyer le message</span>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 12h15M13 5l7 7-7 7" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" /></svg>
             </button>
           </form>
         </section>
@@ -483,22 +517,30 @@
           <div class="contact-thread-heading">
             <div>
               <h2 id="contact-thread-title">Ta discussion</h2>
-              <p><span data-contact-thread-pseudo></span> · Réduis le panneau avec le bouton −, puis rouvre-le avec la bulle.</p>
+              <p><span data-contact-thread-pseudo></span> · <span data-contact-thread-subject></span></p>
             </div>
-            <span class="contact-thread-state" data-contact-thread-state>Ouverte</span>
+            <div class="contact-thread-actions">
+              <span class="contact-thread-state" data-contact-thread-state>Ouverte</span>
+              <button class="contact-logout" type="button" data-contact-logout>Déconnexion</button>
+            </div>
           </div>
           <div class="contact-thread-messages" data-contact-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
           <p class="contact-thread-status" data-contact-thread-status role="status" aria-live="polite"></p>
           <form class="contact-reply-form" data-contact-reply-form>
-            <label class="contact-field">
-              <span>Ton message</span>
-              <textarea name="message" rows="2" maxlength="1500" placeholder="Écris ta réponse…" required></textarea>
-            </label>
+            <label class="contact-field"><span>Ta réponse</span><textarea name="message" rows="2" maxlength="1500" placeholder="Écris ta réponse…" required></textarea></label>
+            <div class="contact-voice" data-voice-controls>
+              <button class="contact-voice-record" type="button" data-voice-record aria-label="Enregistrer un message vocal"><span aria-hidden="true">🎙</span><span>Message vocal</span></button>
+              <div class="contact-voice-recorder" data-voice-recorder hidden>
+                <span class="contact-voice-live-dot" aria-hidden="true"></span><div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
+                <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
+                <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑</button>
+                <button type="button" class="contact-voice-send" data-voice-send>Envoyer</button>
+              </div>
+              <p class="contact-voice-status" data-voice-status role="status" aria-live="polite"></p>
+            </div>
             <button class="contact-send" type="submit" data-contact-reply-submit>
               <span>Envoyer</span>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 12h15M13 5l7 7-7 7" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" /></svg>
             </button>
           </form>
           <div class="contact-thread-closed" data-contact-closed hidden>
