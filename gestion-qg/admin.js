@@ -24,12 +24,35 @@
   const inboxStatus = document.querySelector("[data-inbox-status]");
   const inboxRefreshButton = document.querySelector("[data-inbox-refresh]");
   const inboxMoreButton = document.querySelector("[data-inbox-more]");
+  const conversationsList = document.querySelector("[data-conversation-list]");
+  const conversationsStatus = document.querySelector("[data-conversations-status]");
+  const conversationsMoreButton = document.querySelector("[data-conversations-more]");
+  const conversationEmpty = document.querySelector("[data-conversation-empty]");
+  const conversationContent = document.querySelector("[data-conversation-content]");
+  const threadPseudo = document.querySelector("[data-thread-pseudo]");
+  const threadStatus = document.querySelector("[data-thread-status]");
+  const threadMessages = document.querySelector("[data-thread-messages]");
+  const threadCloseButton = document.querySelector("[data-thread-close]");
+  const threadBlockButton = document.querySelector("[data-thread-block]");
+  const threadDeleteButton = document.querySelector("[data-thread-delete]");
+  const threadClosedNote = document.querySelector("[data-thread-closed-note]");
+  const replyForm = document.querySelector("[data-reply-form]");
+  const replyInput = document.querySelector("[data-reply-input]");
+  const replySendButton = document.querySelector("[data-reply-send]");
+  const replyStatus = document.querySelector("[data-reply-status]");
 
   let storageConfigured = false;
   let saving = false;
   let inboxLoading = false;
   let inboxCursor = "";
   let inboxHasMore = false;
+  let conversationsLoading = false;
+  let conversationsCursor = "";
+  let conversationsHasMore = false;
+  let currentConversationId = "";
+  let currentConversationStatus = "";
+  let selectedConversationLoading = false;
+  let adminPollTimer = 0;
 
   const setStatus = (element, message, kind = "") => {
     if (!element) return;
@@ -47,6 +70,8 @@
   };
 
   const showLogin = (message = "") => {
+    if (adminPollTimer) window.clearInterval(adminPollTimer);
+    adminPollTimer = 0;
     loginPanel.hidden = false;
     adminPanel.hidden = true;
     setStatus(loginStatus, message, message ? "error" : "");
@@ -214,7 +239,7 @@
       const count = inboxList?.querySelectorAll(".inbox-message").length || 0;
       setStatus(
         inboxStatus,
-        count ? "Message supprimé." : inboxHasMore ? "Page supprimée." : "Aucun message pour le moment."
+        count ? "Message supprimé." : inboxHasMore ? "Page supprimée." : "Aucun ancien message."
       );
     } catch {
       setStatus(inboxStatus, "Impossible de joindre le serveur. Réessaie.", "error");
@@ -234,7 +259,7 @@
     inboxLoading = true;
     if (inboxRefreshButton) inboxRefreshButton.disabled = true;
     if (inboxMoreButton) inboxMoreButton.disabled = true;
-    setStatus(inboxStatus, "Chargement des messages…");
+    setStatus(inboxStatus, "Chargement des anciens messages…");
 
     try {
       const url = new URL("/api/admin-messages", window.location.origin);
@@ -251,7 +276,7 @@
         return;
       }
       if (!response.ok) {
-        setStatus(inboxStatus, data.error || "La boîte de réception n’a pas pu être chargée.", "error");
+        setStatus(inboxStatus, data.error || "Les anciens messages n’ont pas pu être chargés.", "error");
         return;
       }
 
@@ -264,7 +289,7 @@
       const count = inboxList.querySelectorAll(".inbox-message").length;
       setStatus(
         inboxStatus,
-        count ? `${count} message${count > 1 ? "s" : ""} reçu${count > 1 ? "s" : ""}.` : "Aucun message pour le moment."
+        count ? `${count} ancien${count > 1 ? "s" : ""} message${count > 1 ? "s" : ""}.` : "Aucun ancien message."
       );
     } catch {
       setStatus(inboxStatus, "Impossible de joindre le serveur. Réessaie.", "error");
@@ -275,15 +300,374 @@
     }
   };
 
-  inboxRefreshButton?.addEventListener("click", () => void loadInbox({ reset: true }));
+  const statusLabel = (status) => {
+    if (status === "blocked") return "Bloquée";
+    if (status === "closed") return "Fermée";
+    return "Ouverte";
+  };
+
+  const createConversationListItem = (conversation) => {
+    const button = document.createElement("button");
+    button.className = "conversation-list-item";
+    button.type = "button";
+    button.dataset.conversationId = conversation.id;
+    button.setAttribute("aria-current", String(conversation.id === currentConversationId));
+
+    const head = document.createElement("span");
+    head.className = "conversation-list-head";
+
+    const pseudo = document.createElement("strong");
+    pseudo.className = "conversation-list-pseudo";
+    pseudo.textContent = typeof conversation.pseudo === "string" ? conversation.pseudo : "Visiteur";
+
+    const status = document.createElement("span");
+    status.className = "conversation-list-status";
+    status.dataset.state = conversation.status;
+    status.textContent = statusLabel(conversation.status);
+    head.append(pseudo, status);
+
+    const preview = document.createElement("span");
+    preview.className = "conversation-list-preview";
+    const previewText = typeof conversation.lastMessagePreview === "string" ? conversation.lastMessagePreview : "";
+    preview.textContent = conversation.lastMessageSender === "gionny" ? `Toi : ${previewText}` : `Visiteur : ${previewText}`;
+
+    const date = document.createElement("time");
+    date.className = "conversation-list-date";
+    date.dateTime = conversation.updatedAt;
+    date.textContent = formatInboxTime(conversation.updatedAt);
+
+    button.append(head, preview, date);
+    button.addEventListener("click", () => selectConversation(conversation.id, { scroll: true }));
+    return button;
+  };
+
+  const updateConversationSelection = () => {
+    conversationsList?.querySelectorAll("[data-conversation-id]").forEach((button) => {
+      button.setAttribute("aria-current", String(button.dataset.conversationId === currentConversationId));
+    });
+  };
+
+  const loadConversations = async ({ reset = false, quiet = false } = {}) => {
+    if (!conversationsList || conversationsLoading) return;
+    if (reset) {
+      conversationsList.replaceChildren();
+      conversationsCursor = "";
+      conversationsHasMore = false;
+    }
+
+    conversationsLoading = true;
+    if (inboxRefreshButton) inboxRefreshButton.disabled = true;
+    if (conversationsMoreButton) conversationsMoreButton.disabled = true;
+    if (!quiet) setStatus(conversationsStatus, "Chargement des discussions…");
+
+    try {
+      const url = new URL("/api/admin-messages", window.location.origin);
+      url.searchParams.set("view", "conversations");
+      if (conversationsCursor) url.searchParams.set("cursor", conversationsCursor);
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(conversationsStatus, data.error || "Les discussions n’ont pas pu être chargées.", "error");
+        return;
+      }
+
+      const items = Array.isArray(data.conversations) ? data.conversations : [];
+      items.forEach((conversation) => conversationsList.append(createConversationListItem(conversation)));
+      conversationsCursor = typeof data.cursor === "string" ? data.cursor : "";
+      conversationsHasMore = data.hasMore === true && Boolean(conversationsCursor);
+      if (conversationsMoreButton) conversationsMoreButton.hidden = !conversationsHasMore;
+
+      const count = conversationsList.querySelectorAll("[data-conversation-id]").length;
+      if (!quiet) {
+        setStatus(
+          conversationsStatus,
+          count ? `${count} discussion${count > 1 ? "s" : ""}.` : "Aucune discussion pour le moment."
+        );
+      }
+      updateConversationSelection();
+
+      if (!currentConversationId && items[0]) {
+        await selectConversation(items[0].id);
+      } else if (currentConversationId) {
+        void loadSelectedConversation({ quiet: true });
+      }
+    } catch {
+      if (!quiet) setStatus(conversationsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      conversationsLoading = false;
+      if (inboxRefreshButton) inboxRefreshButton.disabled = false;
+      if (conversationsMoreButton) conversationsMoreButton.disabled = false;
+    }
+  };
+
+  const createThreadMessage = (message) => {
+    const item = document.createElement("article");
+    const sender = message.sender === "gionny" ? "gionny" : "visitor";
+    item.className = `thread-message thread-message--${sender}`;
+
+    const name = document.createElement("span");
+    name.className = "thread-message-sender";
+    name.textContent = sender === "gionny" ? "Gionny" : "Visiteur";
+
+    const text = document.createElement("p");
+    text.className = "thread-message-text";
+    text.textContent = typeof message.text === "string" ? message.text : "";
+
+    const date = document.createElement("time");
+    date.className = "thread-message-date";
+    date.dateTime = message.createdAt;
+    date.textContent = formatInboxTime(message.createdAt);
+
+    item.append(name, text, date);
+    return item;
+  };
+
+  const renderSelectedConversation = (data) => {
+    const conversation = data.conversation;
+    currentConversationStatus = conversation.status;
+    conversationEmpty.hidden = true;
+    conversationContent.hidden = false;
+    threadPseudo.textContent = conversation.pseudo || "Visiteur";
+    threadStatus.textContent = statusLabel(conversation.status);
+    threadStatus.dataset.state = conversation.status;
+    threadCloseButton.disabled = conversation.status === "blocked";
+    threadCloseButton.textContent = conversation.status === "open" ? "Fermer" : "Réouvrir";
+    threadBlockButton.textContent = conversation.status === "blocked" ? "Débloquer" : "Bloquer";
+    threadDeleteButton.disabled = false;
+
+    const isOpen = conversation.status === "open";
+    replyForm.hidden = !isOpen;
+    threadClosedNote.hidden = isOpen;
+    threadClosedNote.textContent = conversation.status === "blocked"
+      ? "Cette discussion est bloquée. Débloque-la pour pouvoir répondre à nouveau."
+      : "Cette discussion est fermée. Tu peux la rouvrir quand tu veux.";
+
+    const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
+    threadMessages.replaceChildren(...(Array.isArray(data.messages) ? data.messages : []).map(createThreadMessage));
+    if (wasNearBottom) threadMessages.scrollTop = threadMessages.scrollHeight;
+    updateConversationSelection();
+  };
+
+  const loadSelectedConversation = async ({ quiet = false } = {}) => {
+    if (!currentConversationId || selectedConversationLoading) return;
+    const requestedId = currentConversationId;
+    selectedConversationLoading = true;
+
+    try {
+      const url = new URL("/api/admin-messages", window.location.origin);
+      url.searchParams.set("view", "conversation");
+      url.searchParams.set("id", requestedId);
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (requestedId === currentConversationId && response.status === 404) {
+          currentConversationId = "";
+          currentConversationStatus = "";
+          conversationContent.hidden = true;
+          conversationEmpty.hidden = false;
+        } else if (requestedId === currentConversationId) {
+          setStatus(replyStatus, data.error || "La discussion n’a pas pu être chargée.", "error");
+        }
+        return;
+      }
+      if (requestedId === currentConversationId) renderSelectedConversation(data);
+    } catch {
+      if (!quiet) setStatus(replyStatus, "Impossible de charger cette discussion.", "error");
+    } finally {
+      selectedConversationLoading = false;
+      if (currentConversationId && currentConversationId !== requestedId) {
+        void loadSelectedConversation({ quiet: true });
+      }
+    }
+  };
+
+  const selectConversation = async (id, { scroll = false } = {}) => {
+    if (!id) return;
+    currentConversationId = id;
+    setStatus(replyStatus, "");
+    conversationEmpty.hidden = true;
+    conversationContent.hidden = false;
+    threadPseudo.textContent = "Chargement…";
+    threadMessages.replaceChildren();
+    updateConversationSelection();
+    await loadSelectedConversation();
+    if (scroll && window.matchMedia("(max-width: 640px)").matches) {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      document.querySelector("[data-conversation-detail]")?.scrollIntoView({ behavior, block: "start" });
+    }
+  };
+
+  const changeConversationStatus = async (status) => {
+    if (!currentConversationId) return;
+    const conversationId = currentConversationId;
+    if (status === "blocked" && !window.confirm("Bloquer cette discussion sur ce navigateur ? Sans compte ni e-mail, une autre session peut démarrer un nouveau fil.")) return;
+
+    threadCloseButton.disabled = true;
+    threadBlockButton.disabled = true;
+    setStatus(replyStatus, status === "blocked" ? "Blocage de la discussion…" : "Mise à jour…");
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ conversationId, status }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || !data.conversation) {
+        setStatus(replyStatus, data.error || "Le statut n’a pas pu être changé.", "error");
+        return;
+      }
+      setStatus(replyStatus, status === "blocked" ? "Discussion bloquée." : "Statut mis à jour.");
+      await loadSelectedConversation({ quiet: true });
+      await loadConversations({ reset: true, quiet: true });
+    } catch {
+      setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      threadCloseButton.disabled = !currentConversationId || currentConversationStatus === "blocked";
+      threadBlockButton.disabled = !currentConversationId;
+    }
+  };
+
+  const removeConversation = async () => {
+    if (!currentConversationId || !window.confirm("Supprimer définitivement toute cette discussion ?")) return;
+    const conversationId = currentConversationId;
+    threadDeleteButton.disabled = true;
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ conversationId }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.deleted !== true) {
+        setStatus(replyStatus, data.error || "La discussion n’a pas pu être supprimée.", "error");
+        return;
+      }
+      currentConversationId = "";
+      currentConversationStatus = "";
+      conversationContent.hidden = true;
+      conversationEmpty.hidden = false;
+      setStatus(replyStatus, "Discussion supprimée.");
+      await loadConversations({ reset: true });
+    } catch {
+      setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      threadDeleteButton.disabled = false;
+    }
+  };
+
+  replyForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = replyInput.value.trim();
+    const conversationId = currentConversationId;
+    if (!conversationId || !message || !replyForm.reportValidity() || replySendButton.disabled) return;
+
+    replySendButton.disabled = true;
+    setStatus(replyStatus, "Envoi de ta réponse…");
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ conversationId, message }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(replyStatus, data.error || "Ta réponse n’a pas pu être envoyée.", "error");
+        if (response.status === 409) await loadSelectedConversation({ quiet: true });
+        return;
+      }
+      replyInput.value = "";
+      setStatus(replyStatus, "Réponse envoyée.");
+      await Promise.all([loadSelectedConversation({ quiet: true }), loadConversations({ reset: true, quiet: true })]);
+    } catch {
+      setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      replySendButton.disabled = false;
+    }
+  });
+
+  threadCloseButton?.addEventListener("click", () => {
+    const nextStatus = currentConversationStatus === "open" ? "closed" : "open";
+    void changeConversationStatus(nextStatus);
+  });
+  threadBlockButton?.addEventListener("click", () => {
+    const nextStatus = currentConversationStatus === "blocked" ? "open" : "blocked";
+    void changeConversationStatus(nextStatus);
+  });
+  threadDeleteButton?.addEventListener("click", () => void removeConversation());
+
+  const startAdminPolling = () => {
+    if (adminPollTimer) window.clearInterval(adminPollTimer);
+    adminPollTimer = window.setInterval(() => {
+      if (adminPanel.hidden) return;
+      void loadConversations({ reset: true, quiet: true });
+      if (currentConversationId) void loadSelectedConversation({ quiet: true });
+    }, 20_000);
+  };
+
+  inboxRefreshButton?.addEventListener("click", () => {
+    void loadInbox({ reset: true });
+    void loadConversations({ reset: true });
+    if (currentConversationId) void loadSelectedConversation({ quiet: true });
+  });
   inboxMoreButton?.addEventListener("click", () => void loadInbox());
+  conversationsMoreButton?.addEventListener("click", () => void loadConversations());
 
   const showAdmin = async () => {
     loginPanel.hidden = true;
     adminPanel.hidden = false;
     setStatus(loginStatus, "");
     setStatus(saveStatus, "");
-    await Promise.all([loadSettings(), loadInbox({ reset: true })]);
+    await Promise.all([
+      loadSettings(),
+      loadInbox({ reset: true }),
+      loadConversations({ reset: true }),
+    ]);
+    startAdminPolling();
   };
 
   loginForm?.addEventListener("submit", async (event) => {

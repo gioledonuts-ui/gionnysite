@@ -377,73 +377,107 @@
       class="contact-launcher"
       type="button"
       data-open-contact
-      aria-label="Écrire un message privé à Gionny"
+      aria-label="Ouvrir ta discussion privée avec Gionny"
       aria-haspopup="dialog"
       aria-expanded="false"
-      aria-controls="contact-dialog"
+      aria-controls="contact-widget"
       title="M’écrire"
     >
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M4.5 5.5h15v11h-9l-4.5 3v-14Z" />
         <path d="M8 9.5h8M8 13h5" />
       </svg>
-      <span class="sr-only">M’écrire</span>
+      <span class="contact-launcher-badge" data-contact-badge hidden aria-hidden="true"></span>
+      <span class="sr-only">M’écrire ou rouvrir la discussion</span>
     </button>
 
-    <dialog
-      class="contact-dialog"
-      id="contact-dialog"
-      aria-labelledby="contact-title"
-      aria-describedby="contact-copy"
-      data-contact-dialog
+    <aside
+      class="contact-widget"
+      id="contact-widget"
+      role="dialog"
+      aria-modal="false"
+      aria-labelledby="contact-widget-title"
+      data-contact-widget
+      hidden
     >
       <div class="contact-dialog-card">
         <div class="contact-dialog-topline">
-          <span class="contact-dialog-kicker">MESSAGE PRIVÉ · QG2GIONNY</span>
-          <button class="contact-dialog-close" type="button" data-close-contact aria-label="Fermer le formulaire">
-            <span aria-hidden="true">×</span>
+          <span class="contact-dialog-kicker" id="contact-widget-title">DISCUSSION PRIVÉE · QG2GIONNY</span>
+          <button class="contact-dialog-close" type="button" data-minimize-contact aria-label="Réduire la discussion">
+            <span aria-hidden="true">−</span>
           </button>
         </div>
-        <h2 id="contact-title">Écris-moi</h2>
-        <p id="contact-copy">Laisse ton pseudo et ton message. Seul Gionny pourra le lire dans son espace privé.</p>
-        <form class="contact-form" data-contact-form>
-          <label class="contact-field">
-            <span>Ton pseudo <strong aria-hidden="true">*</strong></span>
-            <input
-              name="pseudo"
-              type="text"
-              autocomplete="nickname"
-              minlength="2"
-              maxlength="32"
-              placeholder="Ex. : GioFan42"
-              required
-            />
-          </label>
-          <label class="contact-field">
-            <span>Ton message <strong aria-hidden="true">*</strong></span>
-            <textarea
-              name="message"
-              rows="5"
-              maxlength="1500"
-              placeholder="Écris ton message ici…"
-              required
-            ></textarea>
-          </label>
-          <div class="contact-honeypot" aria-hidden="true">
-            <label for="contact-website">Ne pas remplir</label>
-            <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+
+        <section class="contact-new-view" data-contact-new>
+          <h2 id="contact-title">Écris-moi</h2>
+          <p id="contact-copy">Ton message ouvre une discussion privée. Tu pourras revenir ici pour lire ma réponse.</p>
+          <form class="contact-form" data-contact-form>
+            <label class="contact-field">
+              <span>Ton pseudo <strong aria-hidden="true">*</strong></span>
+              <input
+                name="pseudo"
+                type="text"
+                autocomplete="nickname"
+                minlength="2"
+                maxlength="32"
+                placeholder="Ex. : GioFan42"
+                required
+              />
+            </label>
+            <label class="contact-field">
+              <span>Ton message <strong aria-hidden="true">*</strong></span>
+              <textarea
+                name="message"
+                rows="4"
+                maxlength="1500"
+                placeholder="Écris ton message ici…"
+                required
+              ></textarea>
+            </label>
+            <div class="contact-honeypot" aria-hidden="true">
+              <label for="contact-website">Ne pas remplir</label>
+              <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+            <p class="contact-privacy">La discussion reste privée et sera conservée jusqu’à suppression dans le panneau admin. Garde ce navigateur pour la retrouver; aucun e-mail ni compte ne sont demandés.</p>
+            <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
+            <button class="contact-send" type="submit" data-contact-submit>
+              <span>Envoyer le message</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 12h15M13 5l7 7-7 7" />
+              </svg>
+            </button>
+          </form>
+        </section>
+
+        <section class="contact-thread" data-contact-thread aria-labelledby="contact-thread-title" hidden>
+          <div class="contact-thread-heading">
+            <div>
+              <h2 id="contact-thread-title">Ta discussion</h2>
+              <p><span data-contact-thread-pseudo></span> · Réduis le panneau avec le bouton −, puis rouvre-le avec la bulle.</p>
+            </div>
+            <span class="contact-thread-state" data-contact-thread-state>Ouverte</span>
           </div>
-          <p class="contact-privacy">Seul Gionny pourra les lire dans le panneau admin. Ils y resteront jusqu’à leur suppression; aucune adresse e-mail n’est demandée.</p>
-          <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
-          <button class="contact-send" type="submit" data-contact-submit>
-            <span>Envoyer le message</span>
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 12h15M13 5l7 7-7 7" />
-            </svg>
-          </button>
-        </form>
+          <div class="contact-thread-messages" data-contact-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
+          <p class="contact-thread-status" data-contact-thread-status role="status" aria-live="polite"></p>
+          <form class="contact-reply-form" data-contact-reply-form>
+            <label class="contact-field">
+              <span>Ton message</span>
+              <textarea name="message" rows="2" maxlength="1500" placeholder="Écris ta réponse…" required></textarea>
+            </label>
+            <button class="contact-send" type="submit" data-contact-reply-submit>
+              <span>Envoyer</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 12h15M13 5l7 7-7 7" />
+              </svg>
+            </button>
+          </form>
+          <div class="contact-thread-closed" data-contact-closed hidden>
+            <p data-contact-closed-copy></p>
+            <button class="contact-new-conversation" type="button" data-new-conversation hidden>Commencer une nouvelle discussion</button>
+          </div>
+        </section>
       </div>
-    </dialog>
+    </aside>
 
     <dialog
       class="about-dialog"

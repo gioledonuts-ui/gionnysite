@@ -5061,7 +5061,7 @@ body {
   }
 }
 
-/* Diagonal gloss on the main glass panels and social cards. */
+/* Slow, one-way diagonal gloss on the main glass panels and social cards. */
 .welcome-panel::after,
 .networks-panel::after,
 .schedule-card::after {
@@ -5072,22 +5072,27 @@ body {
   background: linear-gradient(
       112deg,
       transparent 38%,
-      rgba(255, 255, 255, 0.025) 44%,
-      rgba(114, 214, 255, 0.2) 49%,
-      rgba(244, 250, 255, 0.25) 50%,
-      rgba(114, 214, 255, 0.1) 53%,
+      rgba(255, 255, 255, 0.035) 44%,
+      rgba(114, 214, 255, 0.3) 49%,
+      rgba(244, 250, 255, 0.4) 50%,
+      rgba(114, 214, 255, 0.16) 53%,
       transparent 61%
     ) 130% 0 / 230% 100% no-repeat;
   content: "";
   opacity: 0;
   pointer-events: none;
-  transition: background-position 760ms cubic-bezier(0.2, 0.72, 0.2, 1), opacity 170ms ease;
 }
 
 .schedule-card {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+}
+
+.welcome-panel,
+.networks-panel,
+.schedule-card {
+  transition: border-color 420ms ease, box-shadow 540ms ease;
 }
 
 .network-card::after {
@@ -5103,15 +5108,71 @@ body {
     linear-gradient(
         112deg,
         transparent 39%,
-        rgba(255, 255, 255, 0.035) 45%,
-        rgba(114, 214, 255, 0.22) 49%,
-        rgba(245, 250, 255, 0.28) 50%,
-        rgba(114, 214, 255, 0.12) 53%,
+        rgba(255, 255, 255, 0.045) 45%,
+        rgba(114, 214, 255, 0.32) 49%,
+        rgba(245, 250, 255, 0.42) 50%,
+        rgba(114, 214, 255, 0.18) 53%,
         transparent 61%
       ) 130% 0 / 230% 100% no-repeat;
   opacity: 0;
   transform: none;
-  transition: background-position 760ms cubic-bezier(0.2, 0.72, 0.2, 1), opacity 170ms ease;
+  transition: none;
+}
+
+.profile-frame::after {
+  position: absolute;
+  z-index: 1;
+  inset: 4px;
+  border-radius: inherit;
+  background: linear-gradient(
+      112deg,
+      transparent 37%,
+      rgba(255, 255, 255, 0.06) 45%,
+      rgba(114, 214, 255, 0.38) 49%,
+      rgba(250, 253, 255, 0.48) 50%,
+      rgba(114, 214, 255, 0.2) 53%,
+      transparent 62%
+    ) 130% 0 / 230% 100% no-repeat;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes diagonal-panel-shine {
+  0% {
+    background-position: 130% 0;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  88% {
+    background-position: -35% 0;
+    opacity: 0.82;
+  }
+  100% {
+    background-position: -35% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes diagonal-card-shine {
+  0% {
+    background-position: left 12px bottom, 130% 0;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.92;
+  }
+  88% {
+    background-position: left 12px bottom, -35% 0;
+    opacity: 0.88;
+  }
+  100% {
+    background-position: left 12px bottom, -35% 0;
+    opacity: 0;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -5121,15 +5182,17 @@ body {
   .welcome-panel:focus-within::after,
   .networks-panel:focus-within::after,
   .schedule-card:focus-within::after {
-    background-position: -35% 0;
-    opacity: 1;
+    animation: diagonal-panel-shine 1.8s cubic-bezier(0.42, 0, 0.58, 1) 1 both;
   }
 
   .network-card:hover::after,
   .network-card:focus-visible::after {
-    background-position: left 12px bottom, -35% 0;
-    opacity: 0.92;
-    transform: none;
+    animation: diagonal-card-shine 1.8s cubic-bezier(0.42, 0, 0.58, 1) 1 both;
+  }
+
+  .profile-trigger:hover .profile-frame::after,
+  .profile-trigger:focus-visible .profile-frame::after {
+    animation: diagonal-panel-shine 1.8s cubic-bezier(0.42, 0, 0.58, 1) 1 both;
   }
 
   .welcome-panel:hover,
@@ -5144,7 +5207,389 @@ body {
   .welcome-panel::after,
   .networks-panel::after,
   .schedule-card::after,
-  .network-card::after {
-    transition: none !important;
+  .network-card::after,
+  .profile-frame::after {
+    animation: none !important;
+  }
+}
+
+/* Compact, docked chat window: close means minimize, not discard. */
+.contact-launcher {
+  position: fixed;
+}
+
+.contact-launcher-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #07111f;
+  border-radius: 50%;
+  background: #ff4055;
+  box-shadow: 0 0 12px rgba(255, 38, 56, 0.72);
+}
+
+.contact-widget[hidden] {
+  display: none !important;
+}
+
+.contact-widget {
+  position: fixed;
+  z-index: 81;
+  right: calc(18px + env(safe-area-inset-right, 0px));
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  width: min(410px, calc(100vw - 32px));
+  height: min(540px, 76vh);
+  height: min(540px, 76dvh);
+  max-height: min(76vh, 670px);
+  max-height: min(76dvh, 670px);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(183, 210, 249, 0.2);
+  border-radius: 22px;
+  background: #091627;
+  color: #edf5ff;
+  box-shadow: 0 24px 75px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(114, 214, 255, 0.08);
+  animation: contact-widget-in 250ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.contact-widget .contact-dialog-card {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(16px, 4vw, 22px);
+  background:
+    radial-gradient(circle at 93% 0, rgba(79, 131, 244, 0.17), transparent 46%),
+    linear-gradient(150deg, rgba(17, 34, 59, 0.99), rgba(7, 17, 31, 0.995));
+}
+
+.contact-widget .contact-dialog-topline {
+  flex: 0 0 auto;
+}
+
+.contact-widget .contact-dialog-kicker {
+  font-size: 9px;
+}
+
+.contact-widget .contact-dialog-close {
+  width: 34px;
+  height: 34px;
+}
+
+.contact-widget .contact-dialog-close span {
+  font-size: 25px;
+}
+
+.contact-widget h2 {
+  margin: 13px 0 0;
+  color: #f1f7ff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(23px, 5vw, 29px);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.08;
+}
+
+#contact-copy {
+  margin: 8px 0 15px;
+  color: #b9c9df;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.contact-widget .contact-form {
+  gap: 9px;
+}
+
+.contact-widget .contact-field {
+  gap: 5px;
+  font-size: 10px;
+}
+
+.contact-widget .contact-field input {
+  min-height: 41px;
+}
+
+.contact-widget .contact-field textarea {
+  min-height: 88px;
+  max-height: 180px;
+}
+
+.contact-widget .contact-privacy {
+  font-size: 9px;
+}
+
+.contact-widget .contact-status {
+  min-height: 15px;
+  font-size: 10px;
+}
+
+.contact-widget button:focus-visible,
+.contact-widget input:focus-visible,
+.contact-widget textarea:focus-visible {
+  outline: 3px solid rgba(114, 214, 255, 0.8);
+  outline-offset: 3px;
+}
+
+.contact-thread {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.contact-thread-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0 12px;
+  border-bottom: 1px solid rgba(183, 210, 249, 0.12);
+}
+
+.contact-thread-heading h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.contact-thread-heading p {
+  margin: 4px 0 0;
+  color: #a9bdd7;
+  font-size: 10px;
+}
+
+.contact-thread-state {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid rgba(130, 227, 189, 0.25);
+  border-radius: 999px;
+  background: rgba(42, 151, 112, 0.1);
+  color: #9be6c7;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.contact-thread-state[data-state="closed"] {
+  border-color: rgba(255, 189, 114, 0.25);
+  background: rgba(180, 113, 31, 0.1);
+  color: #ffd08a;
+}
+
+.contact-thread-state[data-state="blocked"] {
+  border-color: rgba(255, 135, 145, 0.26);
+  background: rgba(255, 38, 56, 0.1);
+  color: #ff9ca6;
+}
+
+.contact-thread-messages {
+  display: flex;
+  min-height: 160px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 2px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.contact-chat-message {
+  display: grid;
+  width: fit-content;
+  max-width: 88%;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(183, 210, 249, 0.14);
+  border-radius: 12px 12px 12px 3px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.contact-chat-message--gionny {
+  align-self: flex-end;
+  border-color: rgba(114, 214, 255, 0.19);
+  border-radius: 12px 12px 3px 12px;
+  background: rgba(79, 131, 244, 0.16);
+}
+
+.contact-chat-sender {
+  color: var(--ice);
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.contact-chat-message--gionny .contact-chat-sender {
+  color: #b7caff;
+}
+
+.contact-chat-text {
+  margin: 0;
+  color: #e5eefb;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.contact-chat-date {
+  color: #8f9fb5;
+  font-size: 8px;
+  text-align: right;
+}
+
+.contact-thread-status {
+  min-height: 15px;
+  margin: 0 0 5px;
+  color: #9babc3;
+  font-size: 9px;
+}
+
+.contact-thread-status[data-kind="error"] {
+  color: #ff9ca6;
+}
+
+.contact-reply-form {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(183, 210, 249, 0.12);
+}
+
+.contact-reply-form .contact-field textarea {
+  min-height: 62px;
+  max-height: 112px;
+  resize: vertical;
+}
+
+.contact-reply-form .contact-send {
+  min-height: 39px;
+  justify-self: end;
+  padding-inline: 14px;
+}
+
+.contact-thread-closed {
+  padding: 11px 0 0;
+}
+
+.contact-thread-closed p {
+  margin: 0 0 9px;
+  color: #ffd08a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.contact-new-conversation {
+  width: 100%;
+  min-height: 39px;
+  border: 1px solid rgba(114, 214, 255, 0.26);
+  border-radius: 11px;
+  background: rgba(79, 131, 244, 0.14);
+  color: #dceaff;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.contact-new-conversation:hover {
+  background: rgba(79, 131, 244, 0.24);
+}
+
+@keyframes contact-widget-in {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .contact-widget {
+    right: calc(11px + env(safe-area-inset-right, 0px));
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 22px);
+    height: min(540px, 76vh);
+    height: min(540px, 76dvh);
+    max-height: min(76vh, 650px);
+    max-height: min(76dvh, 650px);
+  }
+}
+
+@media (max-height: 600px) {
+  .contact-widget {
+    height: min(540px, 70vh);
+    height: min(540px, 70dvh);
+    max-height: 70vh;
+    max-height: 70dvh;
+  }
+
+  .contact-new-view {
+    flex: 0 0 auto;
+  }
+
+  .contact-thread {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .contact-thread-messages {
+    min-height: 82px;
+    max-height: 24vh;
+    max-height: 24dvh;
+    flex: 0 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-widget {
+    animation: none !important;
+  }
+}
+
+.discord-cta::after {
+  left: -45%;
+  opacity: 0;
+  transition: none;
+}
+
+@keyframes diagonal-discord-shine {
+  0% {
+    left: -45%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.8;
+  }
+  88% {
+    left: 125%;
+    opacity: 0.72;
+  }
+  100% {
+    left: 125%;
+    opacity: 0;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .discord-cta:hover::after,
+  .discord-cta:focus-visible::after {
+    left: -45%;
+    animation: diagonal-discord-shine 1.8s cubic-bezier(0.42, 0, 0.58, 1) 1 both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .discord-cta::after {
+    animation: none !important;
   }
 }

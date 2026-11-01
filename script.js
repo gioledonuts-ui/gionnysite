@@ -357,11 +357,30 @@
   }
 
   const contactLauncher = document.querySelector("[data-open-contact]");
-  const contactDialog = document.querySelector("[data-contact-dialog]");
+  const contactWidget = document.querySelector("[data-contact-widget]");
+  const minimizeContactButton = document.querySelector("[data-minimize-contact]");
+  const contactNewView = document.querySelector("[data-contact-new]");
   const contactForm = document.querySelector("[data-contact-form]");
   const contactSubmit = document.querySelector("[data-contact-submit]");
   const contactStatus = document.querySelector("[data-contact-status]");
-  const closeContactButtons = contactDialog?.querySelectorAll("[data-close-contact]") || [];
+  const contactReplyForm = document.querySelector("[data-contact-reply-form]");
+  const contactReplySubmit = document.querySelector("[data-contact-reply-submit]");
+  const contactReplyStatus = document.querySelector("[data-contact-thread-status]");
+  const contactThread = document.querySelector("[data-contact-thread]");
+  const contactThreadMessages = document.querySelector("[data-contact-thread-messages]");
+  const contactThreadPseudo = document.querySelector("[data-contact-thread-pseudo]");
+  const contactThreadState = document.querySelector("[data-contact-thread-state]");
+  const contactThreadClosed = document.querySelector("[data-contact-closed]");
+  const contactThreadClosedCopy = document.querySelector("[data-contact-closed-copy]");
+  const newConversationButton = document.querySelector("[data-new-conversation]");
+  const contactBadge = document.querySelector("[data-contact-badge]");
+  const VISITOR_SEEN_PREFIX = "gionny:conversation:last-seen:v1:";
+
+  let visitorConversation = null;
+  let visitorConversationMessages = [];
+  let newConversationMode = false;
+  let visitorConversationLoading = false;
+  let visitorPollTimer = 0;
 
   const setContactStatus = (message, kind = "") => {
     if (!contactStatus) return;
@@ -370,25 +389,167 @@
     else delete contactStatus.dataset.kind;
   };
 
-  if (contactLauncher && contactDialog?.showModal) {
+  const setContactThreadStatus = (message, kind = "") => {
+    if (!contactReplyStatus) return;
+    contactReplyStatus.textContent = message;
+    if (kind) contactReplyStatus.dataset.kind = kind;
+    else delete contactReplyStatus.dataset.kind;
+  };
+
+  const readVisitorSeenId = (conversationId) => {
+    try {
+      return localStorage.getItem(`${VISITOR_SEEN_PREFIX}${conversationId}`) || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const markVisitorThreadSeen = () => {
+    if (!visitorConversation) return;
+    const lastGionnyMessage = [...visitorConversationMessages].reverse().find((message) => message.sender === "gionny");
+    if (!lastGionnyMessage) return;
+    try {
+      localStorage.setItem(`${VISITOR_SEEN_PREFIX}${visitorConversation.id}`, lastGionnyMessage.id);
+    } catch {
+      // A full or disabled local store must not prevent opening the conversation.
+    }
+    if (contactBadge) contactBadge.hidden = true;
+  };
+
+  const formatConversationTime = (value) => {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  };
+
+  const createVisitorChatMessage = (message) => {
+    const item = document.createElement("article");
+    const sender = message.sender === "gionny" ? "gionny" : "visitor";
+    item.className = `contact-chat-message contact-chat-message--${sender}`;
+
+    const name = document.createElement("span");
+    name.className = "contact-chat-sender";
+    name.textContent = sender === "gionny" ? "Gionny" : visitorConversation?.pseudo || "Toi";
+
+    const text = document.createElement("p");
+    text.className = "contact-chat-text";
+    text.textContent = typeof message.text === "string" ? message.text : "";
+
+    const date = document.createElement("time");
+    date.className = "contact-chat-date";
+    date.dateTime = message.createdAt;
+    date.textContent = formatConversationTime(message.createdAt);
+
+    item.append(name, text, date);
+    return item;
+  };
+
+  const renderVisitorConversation = ({ announceNewReply = false } = {}) => {
+    if (!visitorConversation || !contactThread || !contactNewView) return;
+    contactNewView.hidden = true;
+    contactThread.hidden = false;
+    contactThreadPseudo.textContent = visitorConversation.pseudo || "Ta discussion privée";
+    contactThreadState.textContent = visitorConversation.status === "blocked"
+      ? "Bloquée"
+      : visitorConversation.status === "closed"
+        ? "Fermée"
+        : "Ouverte";
+    contactThreadState.dataset.state = visitorConversation.status;
+
+    const canReply = visitorConversation.status === "open";
+    contactReplyForm.hidden = !canReply;
+    contactThreadClosed.hidden = canReply;
+    contactThreadClosedCopy.textContent = visitorConversation.status === "blocked"
+      ? "Cette discussion a été bloquée. Tu ne peux plus y envoyer de message."
+      : "Cette discussion est fermée. Tu peux démarrer un nouveau fil si tu as une autre question.";
+    newConversationButton.hidden = visitorConversation.status !== "closed";
+
+    const wasNearBottom = contactThreadMessages.scrollHeight - contactThreadMessages.scrollTop - contactThreadMessages.clientHeight < 80;
+    contactThreadMessages.replaceChildren(...visitorConversationMessages.map(createVisitorChatMessage));
+    if (wasNearBottom) contactThreadMessages.scrollTop = contactThreadMessages.scrollHeight;
+
+    const latestGionnyMessage = [...visitorConversationMessages].reverse().find((message) => message.sender === "gionny");
+    const seenId = readVisitorSeenId(visitorConversation.id);
+    const hasUnseenReply = Boolean(latestGionnyMessage && latestGionnyMessage.id !== seenId);
+    if (contactBadge) contactBadge.hidden = !hasUnseenReply || !contactWidget.hidden;
+    if (announceNewReply && hasUnseenReply && contactWidget.hidden) {
+      contactLauncher?.setAttribute("aria-label", "Une réponse t’attend dans ta discussion privée avec Gionny");
+    } else {
+      contactLauncher?.setAttribute("aria-label", "Ouvrir ta discussion privée avec Gionny");
+    }
+    if (!contactWidget.hidden) markVisitorThreadSeen();
+  };
+
+  const loadVisitorConversation = async ({ quiet = false } = {}) => {
+    if (!contactWidget || visitorConversationLoading) return;
+    visitorConversationLoading = true;
+    try {
+      const response = await fetch("/api/contact", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (!quiet) setContactStatus(data.error || "La discussion n’a pas pu être chargée.", "error");
+        return;
+      }
+
+      if (data.conversation && Array.isArray(data.messages)) {
+        visitorConversation = data.conversation;
+        visitorConversationMessages = data.messages;
+        renderVisitorConversation({ announceNewReply: true });
+      } else {
+        visitorConversation = null;
+        visitorConversationMessages = [];
+        newConversationMode = false;
+        contactThread.hidden = true;
+        contactNewView.hidden = false;
+        if (contactBadge) contactBadge.hidden = true;
+      }
+    } catch {
+      if (!quiet) setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
+    } finally {
+      visitorConversationLoading = false;
+    }
+  };
+
+  const openContactWidget = () => {
+    if (!contactWidget) return;
+    contactWidget.hidden = false;
+    contactLauncher?.setAttribute("aria-expanded", "true");
+    if (contactBadge) contactBadge.hidden = true;
+    if (visitorConversation && !newConversationMode) {
+      markVisitorThreadSeen();
+      void loadVisitorConversation({ quiet: true });
+      contactReplyForm?.querySelector("textarea")?.focus({ preventScroll: true });
+    } else {
+      contactForm?.elements.namedItem("pseudo")?.focus({ preventScroll: true });
+    }
+  };
+
+  const minimizeContactWidget = () => {
+    if (!contactWidget) return;
+    contactWidget.hidden = true;
+    contactLauncher?.setAttribute("aria-expanded", "false");
+    contactLauncher?.focus({ preventScroll: true });
+    if (visitorConversation && !newConversationMode) renderVisitorConversation({ announceNewReply: true });
+  };
+
+  if (contactLauncher && contactWidget) {
     contactLauncher.addEventListener("click", () => {
-      setContactStatus("");
-      contactDialog.showModal();
-      contactLauncher.setAttribute("aria-expanded", "true");
-      contactForm?.elements.namedItem("pseudo")?.focus();
+      if (contactWidget.hidden) openContactWidget();
+      else minimizeContactWidget();
     });
+    minimizeContactButton?.addEventListener("click", minimizeContactWidget);
 
-    closeContactButtons.forEach((button) => {
-      button.addEventListener("click", () => contactDialog.close());
-    });
-
-    contactDialog.addEventListener("click", (event) => {
-      if (event.target === contactDialog) contactDialog.close();
-    });
-
-    contactDialog.addEventListener("close", () => {
-      contactLauncher.setAttribute("aria-expanded", "false");
-      contactLauncher.focus({ preventScroll: true });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || contactWidget.hidden || document.querySelector("dialog[open]")) return;
+      minimizeContactWidget();
     });
 
     contactForm?.addEventListener("submit", async (event) => {
@@ -400,10 +561,10 @@
         pseudo: String(formData.get("pseudo") || ""),
         message: String(formData.get("message") || ""),
         website: String(formData.get("website") || ""),
+        newConversation: newConversationMode,
       };
-
       contactSubmit.disabled = true;
-      setContactStatus("Envoi de ton message…");
+      setContactStatus(newConversationMode ? "Ouverture d’une nouvelle discussion…" : "Envoi de ton message…");
 
       try {
         const response = await fetch("/api/contact", {
@@ -420,17 +581,90 @@
 
         if (!response.ok || data.ok !== true) {
           setContactStatus(data.error || "Ton message n’a pas pu être envoyé. Réessaie.", "error");
+          if (response.status === 409 || response.status === 403) await loadVisitorConversation({ quiet: true });
           return;
         }
 
-        contactForm.reset();
-        setContactStatus("Merci ! Ton message est bien arrivé à Gionny.", "success");
+        if (data.conversation) {
+          visitorConversation = data.conversation;
+          if (Array.isArray(data.messages)) visitorConversationMessages = data.messages;
+          else if (data.message) visitorConversationMessages.push(data.message);
+          newConversationMode = false;
+          contactForm.reset();
+          setContactStatus("");
+          renderVisitorConversation();
+          markVisitorThreadSeen();
+          contactReplyForm?.querySelector("textarea")?.focus({ preventScroll: true });
+        } else {
+          setContactStatus("Merci, ton message a bien été reçu.", "success");
+        }
       } catch {
         setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
       } finally {
         contactSubmit.disabled = false;
       }
     });
+
+    contactReplyForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!contactReplyForm.reportValidity() || !contactReplySubmit || contactReplySubmit.disabled) return;
+      const messageField = contactReplyForm.elements.namedItem("message");
+      const message = String(messageField?.value || "").trim();
+      if (!message) return;
+
+      contactReplySubmit.disabled = true;
+      setContactThreadStatus("Envoi de ton message…");
+      try {
+        const response = await fetch("/api/contact", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({ message }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.ok !== true) {
+          setContactThreadStatus(data.error || "Ton message n’a pas pu être envoyé.", "error");
+          if (response.status === 409 || response.status === 403 || response.status === 404) {
+            await loadVisitorConversation({ quiet: true });
+          }
+          return;
+        }
+        if (data.message) visitorConversationMessages.push(data.message);
+        if (data.conversation) visitorConversation = data.conversation;
+        messageField.value = "";
+        setContactThreadStatus("");
+        renderVisitorConversation();
+        markVisitorThreadSeen();
+      } catch {
+        setContactThreadStatus("Impossible de joindre le serveur. Réessaie.", "error");
+      } finally {
+        contactReplySubmit.disabled = false;
+      }
+    });
+
+    newConversationButton?.addEventListener("click", () => {
+      if (visitorConversation?.status !== "closed") return;
+      newConversationMode = true;
+      contactThread.hidden = true;
+      contactNewView.hidden = false;
+      setContactStatus("");
+      const pseudoInput = contactForm?.elements.namedItem("pseudo");
+      const messageInput = contactForm?.elements.namedItem("message");
+      if (pseudoInput) pseudoInput.value = visitorConversation.pseudo || "";
+      if (messageInput) messageInput.value = "";
+      messageInput?.focus({ preventScroll: true });
+    });
+
+    void loadVisitorConversation();
+    visitorPollTimer = window.setInterval(() => {
+      if (visitorConversation && !newConversationMode && !contactWidget.hidden) {
+        void loadVisitorConversation({ quiet: true });
+      }
+    }, 20_000);
   } else if (contactLauncher) {
     contactLauncher.hidden = true;
   }

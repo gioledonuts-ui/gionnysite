@@ -1,12 +1,18 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
+  addAdminReply,
   deleteContactMessage,
+  deleteConversation,
+  getConversationForAdmin,
   isContactMessagePath,
+  isConversationId,
   listContactMessages,
+  listConversations,
+  setConversationStatus,
 } from "../lib/contact-inbox.mjs";
 
-const MAX_BODY_BYTES = 4096;
+const MAX_BODY_BYTES = 6000;
 
 function setNoStore(response) {
   response.setHeader("Cache-Control", "no-store, private");
@@ -39,23 +45,43 @@ function readJsonBody(request) {
   }
 }
 
-function readCursor(request) {
-  const queryValue = request.query?.cursor;
-  if (typeof queryValue === "string") return queryValue;
-  if (Array.isArray(queryValue) && typeof queryValue[0] === "string") return queryValue[0];
+function queryValue(request, key) {
+  const value = request.query?.[key];
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
   try {
     return new URL(request.url || "/", `https://${request.headers?.host || "localhost"}`)
-      .searchParams.get("cursor") || "";
+      .searchParams.get(key) || "";
   } catch {
     return "";
   }
 }
 
+function readCursor(request) {
+  return queryValue(request, "cursor");
+}
+
+function cleanAdminMessage(value) {
+  if (typeof value !== "string") return "";
+  return value
+    .normalize("NFKC")
+    .replace(/\r\n?/gu, "\n")
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/gu, "")
+    .trim();
+}
+
+function conversationError(reason) {
+  if (reason === "blocked") return { status: 409, error: "Cette discussion est bloquée. Débloque-la pour répondre." };
+  if (reason === "closed") return { status: 409, error: "Cette discussion est fermée. Rouvre-la pour répondre." };
+  if (reason === "limit") return { status: 409, error: "Cette discussion a atteint sa limite de messages." };
+  return { status: 404, error: "Cette discussion est introuvable." };
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
 
-  if (request.method !== "GET" && request.method !== "DELETE") {
-    response.setHeader("Allow", "GET, DELETE");
+  if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
+    response.setHeader("Allow", "GET, POST, PATCH, DELETE");
     return response.status(405).json({ error: "Méthode non autorisée." });
   }
   if (!isSameOriginRequest(request)) {
@@ -70,18 +96,70 @@ export default async function handler(request, response) {
 
   try {
     if (request.method === "GET") {
+      const view = queryValue(request, "view");
       const cursor = readCursor(request);
       if (cursor.length > 2048) {
         return response.status(400).json({ error: "La demande de messages est invalide." });
       }
+
+      if (view === "conversations") {
+        return response.status(200).json(await listConversations(cursor));
+      }
+      if (view === "conversation") {
+        const id = queryValue(request, "id");
+        if (!isConversationId(id)) {
+          return response.status(400).json({ error: "Cette discussion est introuvable." });
+        }
+        const conversation = await getConversationForAdmin(id);
+        if (!conversation) return response.status(404).json({ error: "Cette discussion n’existe plus." });
+        return response.status(200).json(conversation);
+      }
+
       return response.status(200).json(await listContactMessages(cursor));
     }
 
     const body = readJsonBody(request);
-    if (!body || !isContactMessagePath(body.id)) {
-      return response.status(400).json({ error: "Ce message est introuvable." });
+    if (!body || typeof body !== "object") {
+      return response.status(400).json({ error: "La demande est incomplète." });
     }
 
+    if (request.method === "POST") {
+      if (!isConversationId(body.conversationId)) {
+        return response.status(400).json({ error: "Choisis une discussion valide." });
+      }
+      const message = cleanAdminMessage(body.message);
+      if (!message || message.length > 1500) {
+        return response.status(400).json({ error: "Écris une réponse de 1 à 1 500 caractères." });
+      }
+
+      const result = await addAdminReply(body.conversationId, message);
+      if (!result.ok) {
+        const failure = conversationError(result.reason);
+        return response.status(failure.status).json({ error: failure.error });
+      }
+      return response.status(201).json({ ok: true, conversation: result.conversation, message: result.message });
+    }
+
+    if (request.method === "PATCH") {
+      if (!isConversationId(body.conversationId) || !["open", "closed", "blocked"].includes(body.status)) {
+        return response.status(400).json({ error: "Le changement de statut est invalide." });
+      }
+      const conversation = await setConversationStatus(body.conversationId, body.status);
+      if (!conversation) return response.status(404).json({ error: "Cette discussion n’existe plus." });
+      return response.status(200).json({ conversation });
+    }
+
+    if (typeof body.conversationId === "string") {
+      if (!isConversationId(body.conversationId)) {
+        return response.status(400).json({ error: "Cette discussion est introuvable." });
+      }
+      const deleted = await deleteConversation(body.conversationId);
+      return response.status(200).json({ deleted });
+    }
+
+    if (!isContactMessagePath(body.id)) {
+      return response.status(400).json({ error: "Ce message est introuvable." });
+    }
     await deleteContactMessage(body.id);
     return response.status(200).json({ deleted: true });
   } catch (error) {

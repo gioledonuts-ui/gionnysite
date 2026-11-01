@@ -30,7 +30,7 @@ Le panneau n’a pas de lien dans la navigation du site. Après le déploiement,
 
 <https://qg2gionny.vercel.app/gestion-qg/>
 
-Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux, régler les horaires des lives et lire ou supprimer les messages reçus depuis la bulle de contact. Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
+Saisis le code d’accès à quatre caractères pour modifier les six liens sociaux, régler les horaires des lives et gérer les discussions reçues depuis la bulle de contact. Une session reste ouverte jusqu’à huit heures, puis le code sera redemandé. Le serveur limite aussi les tentatives répétées; le code court reste toutefois moins sûr qu’un mot de passe long.
 
 ### Stockage partagé requis
 
@@ -43,7 +43,11 @@ Les variables `GIONNY_ADMIN_PIN` et `GIONNY_ADMIN_SESSION_SECRET` sont conservé
 
 Avant l’activation de Blob, le site garde les liens et le planning par défaut et le panneau ne permet pas de sauvegarder. Le fichier partagé contient seulement les liens et horaires publics, pas le code d’accès.
 
-La bulle « M’écrire » demande obligatoirement un pseudo et un message. Les messages sont enregistrés séparément comme objets **privés** dans Vercel Blob (préfixe `gionny/inbox/`) : leur contenu n’est pas public et seule une session admin peut les consulter ou les supprimer. Ils restent dans la boîte jusqu’à suppression. Le formulaire limite la longueur des messages et ajoute un piège anti-robot ainsi qu’une limitation simple des envois répétés.
+La bulle « M’écrire » ouvre une mini-discussion : le visiteur envoie un premier message, puis peut réduire et rouvrir le fil depuis le même navigateur pour lire tes réponses et continuer la conversation. Aucun e-mail, compte ou code à recopier n’est demandé. Un cookie privé et protégé relie le navigateur au fil; si la personne efface les cookies ou change d’appareil/navigateur, elle ne pourra pas récupérer cette discussion. Il n’y a pas de notification e-mail.
+
+Les discussions et leurs messages sont conservés dans des objets **privés** Vercel Blob (préfixes `gionny/conversations/` et `gionny/conversation-messages/`). Ils ne sont pas accessibles publiquement : une session admin peut gérer tous les fils, tandis que le visiteur peut uniquement retrouver le sien grâce à son cookie privé. Dans le panneau, la liste des fils apparaît à gauche et le fil sélectionné à droite; tu peux répondre, fermer/réouvrir, bloquer ou supprimer une discussion. Le blocage empêche les réponses dans ce fil sur ce navigateur, mais ne vérifie pas l’identité réelle : sans compte ou e-mail, une personne peut contourner le blocage depuis un autre navigateur ou en effaçant ses cookies. L’inbox conserve aussi les anciens messages à sens unique (`gionny/inbox/`) : ils restent consultables/supprimables, mais ne peuvent pas être transformés en discussions.
+
+Le formulaire limite la longueur des messages, ajoute un piège anti-robot et limite les envois répétés.
 
 ## Données Twitch et YouTube sans clés
 

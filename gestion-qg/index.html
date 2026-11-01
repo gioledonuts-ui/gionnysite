@@ -26,7 +26,7 @@
         <div class="admin-header-copy">
           <p class="admin-eyebrow">ZONE PRIVÉE · QG2GIONNY</p>
           <h1>Administration <span>du QG</span></h1>
-          <p>Gère les liens sociaux et les horaires des lives.</p>
+          <p>Gère les liens sociaux, les horaires et tes discussions privées.</p>
         </div>
       </header>
 
@@ -213,14 +213,65 @@
           <div class="section-heading inbox-heading">
             <span class="section-number">03</span>
             <div>
-              <h3 id="inbox-title">Messages reçus</h3>
-              <p>Les messages des visiteurs sont privés et visibles uniquement ici.</p>
+              <h3 id="inbox-title">Discussions privées</h3>
+              <p>Ouvre un fil pour lire, répondre, fermer ou bloquer une discussion.</p>
             </div>
             <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh>Actualiser</button>
           </div>
-          <p class="inbox-status" data-inbox-status role="status" aria-live="polite">Chargement des messages…</p>
-          <div class="inbox-list" data-inbox-list aria-live="polite"></div>
-          <button class="quiet-button inbox-more" type="button" data-inbox-more hidden>Afficher les messages plus anciens</button>
+          <p class="inbox-status" data-conversations-status role="status" aria-live="polite">Chargement des discussions…</p>
+
+          <div class="conversation-layout">
+            <section class="conversation-sidebar" aria-label="Liste des discussions">
+              <div class="conversation-list" data-conversation-list aria-live="polite"></div>
+              <button class="quiet-button conversation-more" type="button" data-conversations-more hidden>Afficher les discussions plus anciennes</button>
+            </section>
+
+            <section class="conversation-detail" aria-label="Discussion sélectionnée">
+              <div class="conversation-empty" data-conversation-empty>
+                <span aria-hidden="true">✦</span>
+                <strong>Choisis une discussion</strong>
+                <p>Les messages et tes réponses s’afficheront ici.</p>
+              </div>
+              <div class="conversation-content" data-conversation-content hidden>
+                <header class="conversation-toolbar">
+                  <div class="conversation-identity">
+                    <h4 data-thread-pseudo>Visiteur</h4>
+                    <span class="thread-status" data-thread-status></span>
+                  </div>
+                  <div class="conversation-actions">
+                    <button class="quiet-button" type="button" data-thread-close>Fermer</button>
+                    <button class="quiet-button thread-block" type="button" data-thread-block>Bloquer</button>
+                    <button class="quiet-button thread-delete" type="button" data-thread-delete>Supprimer</button>
+                  </div>
+                </header>
+
+                <div class="conversation-history" data-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
+
+                <p class="thread-closed-note" data-thread-closed-note hidden></p>
+                <form class="conversation-reply-form" data-reply-form>
+                  <label class="admin-reply-field">
+                    <span class="sr-only">Ta réponse</span>
+                    <textarea data-reply-input rows="2" maxlength="1500" placeholder="Écris ta réponse…" required></textarea>
+                  </label>
+                  <div class="reply-submit-row">
+                    <p class="reply-status" data-reply-status role="status" aria-live="polite"></p>
+                    <button class="primary-button reply-send" type="submit" data-reply-send>
+                      <span>Répondre</span>
+                      <span aria-hidden="true">↗</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </section>
+          </div>
+
+          <button class="quiet-button inbox-more" type="button" data-inbox-more hidden>Afficher les messages anciens</button>
+          <details class="legacy-messages">
+            <summary>Anciens messages (avant les discussions)</summary>
+            <p>Ces messages ont été reçus avec l’ancien formulaire. Ils restent privés, mais ne peuvent pas recevoir de réponse dans le site.</p>
+            <p class="inbox-status" data-inbox-status role="status" aria-live="polite">Chargement des anciens messages…</p>
+            <div class="inbox-list" data-inbox-list aria-live="polite"></div>
+          </details>
         </section>
       </section>
 
