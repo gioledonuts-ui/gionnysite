@@ -6,6 +6,28 @@
   const visitedNetworks = new Set();
   let recentYouTubeUploads = [];
   let youtubeApiAvailable = false;
+  let latestTickerUpdates = null;
+  let configuredSocials = {};
+  let latestYouTubeUrl = "";
+
+  const DEFAULT_YOUTUBE_URL = "https://www.youtube.com/@gionnyyy";
+  const SOCIAL_HOSTS = {
+    twitch: new Set(["twitch.tv", "www.twitch.tv"]),
+    tiktok: new Set(["tiktok.com", "www.tiktok.com"]),
+    youtube: new Set(["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"]),
+    x: new Set(["x.com", "www.x.com", "twitter.com", "www.twitter.com"]),
+    instagram: new Set(["instagram.com", "www.instagram.com"]),
+    discord: new Set(["discord.gg", "discord.com", "www.discord.com"]),
+  };
+  const WEEKDAYS = [
+    { key: "monday", label: "Lundi" },
+    { key: "tuesday", label: "Mardi" },
+    { key: "wednesday", label: "Mercredi" },
+    { key: "thursday", label: "Jeudi" },
+    { key: "friday", label: "Vendredi" },
+    { key: "saturday", label: "Samedi" },
+    { key: "sunday", label: "Dimanche" },
+  ];
 
   try {
     const savedNetworks = JSON.parse(localStorage.getItem(storageKey) || "[]");
@@ -158,6 +180,127 @@
     return "https://www.twitch.tv/7gionny";
   };
 
+  const safeSocialUrl = (key, value) => {
+    try {
+      const parsed = new URL(value);
+      if (
+        parsed.protocol !== "https:" ||
+        parsed.username ||
+        parsed.password ||
+        (parsed.port && parsed.port !== "443") ||
+        !SOCIAL_HOSTS[key]?.has(parsed.hostname.toLowerCase())
+      ) {
+        return "";
+      }
+      parsed.hash = "";
+      return parsed.href;
+    } catch {
+      return "";
+    }
+  };
+
+  const isValidSiteConfig = (config) => {
+    if (!config || typeof config !== "object" || !config.socials || !config.schedule) return false;
+    if (Object.keys(SOCIAL_HOSTS).some((key) => !safeSocialUrl(key, config.socials[key]))) return false;
+    return WEEKDAYS.every(({ key }) => {
+      const day = config.schedule[key];
+      return (
+        day &&
+        typeof day.enabled === "boolean" &&
+        typeof day.time === "string" &&
+        /^(?:[01]\d|2[0-3]):[0-5]\d$/u.test(day.time)
+      );
+    });
+  };
+
+  const applyConfiguredLinks = () => {
+    document.querySelectorAll("[data-config-link]").forEach((link) => {
+      const key = link.dataset.configLink;
+      let url = safeSocialUrl(key, configuredSocials[key]);
+      if (!url) return;
+
+      const isYouTubeLink = key === "youtube" &&
+        (link.hasAttribute("data-youtube-card") || link.hasAttribute("data-ticker-youtube"));
+      if (isYouTubeLink && url === DEFAULT_YOUTUBE_URL && latestYouTubeUrl) {
+        url = latestYouTubeUrl;
+      }
+      link.href = url;
+    });
+  };
+
+  const formatScheduleTime = (value) => {
+    const [hour, minute] = value.split(":");
+    return `${Number(hour)}h${minute === "00" ? "" : minute}`;
+  };
+
+  const renderSchedule = (schedule) => {
+    const timeDisplay = document.querySelector("[data-schedule-time]");
+    const daysList = document.querySelector("[data-schedule-days]");
+    if (!timeDisplay || !daysList) return;
+
+    const activeDays = WEEKDAYS.filter(({ key }) => schedule[key].enabled);
+    const uniqueTimes = new Set(activeDays.map(({ key }) => schedule[key].time));
+    const sameTime = activeDays.length > 0 && uniqueTimes.size === 1;
+    const layout = activeDays.length === 0 ? "empty" : sameTime ? "common" : "varied";
+    timeDisplay.dataset.layout = layout;
+    daysList.dataset.layout = layout;
+    daysList.replaceChildren();
+
+    const description = document.querySelector(".schedule-copy p");
+    if (description) {
+      description.textContent = layout === "common"
+        ? "Horaire commun · heure française"
+        : layout === "varied"
+          ? "Heure française"
+          : "Pas de live programmé";
+    }
+
+    if (sameTime) {
+      const [hour, minute] = activeDays[0] ? schedule[activeDays[0].key].time.split(":") : ["22", "00"];
+      const hourLabel = document.createTextNode(String(Number(hour)));
+      const unit = document.createElement("span");
+      unit.textContent = "h";
+      timeDisplay.replaceChildren(hourLabel, unit);
+      if (minute !== "00") timeDisplay.append(document.createTextNode(minute));
+    } else {
+      timeDisplay.textContent = activeDays.length ? "Horaires\nvariés" : "—";
+    }
+
+    if (activeDays.length === 0) {
+      const emptyItem = document.createElement("li");
+      emptyItem.className = "schedule-empty";
+      emptyItem.textContent = "Aucun live programmé";
+      daysList.append(emptyItem);
+      return;
+    }
+
+    for (const { key, label } of activeDays) {
+      const item = document.createElement("li");
+      const dayName = document.createElement("span");
+      dayName.className = "schedule-day-name";
+      dayName.textContent = label;
+      item.append(dayName);
+
+      if (!sameTime) {
+        const hour = document.createElement("span");
+        hour.className = "schedule-day-time";
+        hour.textContent = formatScheduleTime(schedule[key].time);
+        item.append(hour);
+      }
+      daysList.append(item);
+    }
+  };
+
+  const applySiteConfig = (config) => {
+    if (!isValidSiteConfig(config)) return false;
+    configuredSocials = config.socials;
+    renderSchedule(config.schedule);
+
+    if (latestTickerUpdates) applyTickerUpdates(latestTickerUpdates);
+    else applyConfiguredLinks();
+    return true;
+  };
+
   const profileImage = document.querySelector("[data-profile-image]");
   if (profileImage) {
     const hideUnavailableProfileImage = () => (profileImage.hidden = true);
@@ -192,13 +335,8 @@
     }
   };
 
-  const setTickerLinks = (selector, url) => {
-    document.querySelectorAll(selector).forEach((link) => {
-      link.href = url;
-    });
-  };
-
   const applyTickerUpdates = (updates) => {
+    latestTickerUpdates = updates;
     const twitch = updates?.twitch;
     const twitchAvailable = twitch?.available === true && typeof twitch.isLive === "boolean";
     const isLive = twitchAvailable && twitch.isLive;
@@ -236,23 +374,19 @@
 
     const youtube = updates?.youtube;
     const youtubeUrl = safeYouTubeUrl(youtube?.url);
-    const youtubeVideoAvailable =
-      youtube?.available === true && youtubeUrl !== "https://www.youtube.com/@gionnyyy";
+    const youtubeVideoAvailable = youtube?.available === true && youtubeUrl !== DEFAULT_YOUTUBE_URL;
     const youtubeTitle = typeof youtube?.title === "string" ? youtube.title.trim() : "";
+    const configuredYouTubeUrl = safeSocialUrl("youtube", configuredSocials.youtube) || DEFAULT_YOUTUBE_URL;
+    const usesDefaultYouTubeChannel = configuredYouTubeUrl === DEFAULT_YOUTUBE_URL;
 
-    if (youtubeVideoAvailable) {
-      document.querySelectorAll("[data-video-title]").forEach((title) => {
-        title.textContent = youtubeTitle || "Voir la dernière vidéo";
-      });
-      setTickerLinks("[data-ticker-youtube]", youtubeUrl);
-      setTickerLinks("[data-youtube-card]", youtubeUrl);
-    } else {
-      document.querySelectorAll("[data-video-title]").forEach((title) => {
-        title.textContent = "Voir la chaîne YouTube";
-      });
-      setTickerLinks("[data-ticker-youtube]", "https://www.youtube.com/@gionnyyy");
-      setTickerLinks("[data-youtube-card]", "https://www.youtube.com/@gionnyyy");
-    }
+    latestYouTubeUrl = youtubeVideoAvailable && usesDefaultYouTubeChannel ? youtubeUrl : "";
+    document.querySelectorAll("[data-video-title]").forEach((title) => {
+      title.textContent = latestYouTubeUrl
+        ? youtubeTitle || "Voir la dernière vidéo"
+        : usesDefaultYouTubeChannel
+          ? "Voir la chaîne YouTube"
+          : "Ouvrir la chaîne YouTube";
+    });
 
     recentYouTubeUploads = Array.isArray(youtube?.uploads)
       ? youtube.uploads.filter(
@@ -263,14 +397,29 @@
             Number.isFinite(Date.parse(upload.publishedAt))
         )
       : [];
-    youtubeApiAvailable = youtube?.available === true;
+    youtubeApiAvailable = youtube?.available === true && usesDefaultYouTubeChannel;
     if (youtubeApiAvailable) {
       renderYouTubeVisitState(countUnseenYouTubeUploads(recentYouTubeUploads), true);
     } else {
       renderYouTubeVisitState(0, false);
     }
 
+    applyConfiguredLinks();
     ensureTickerCopies();
+  };
+
+  const refreshSiteConfig = async () => {
+    try {
+      const response = await fetch("/api/site-config", {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      applySiteConfig(data?.config);
+    } catch {
+      // Keep the static links and planning if the shared settings service is unavailable.
+    }
   };
 
   let updateInFlight = false;
@@ -384,6 +533,7 @@
     window.requestAnimationFrame(animateTicker);
   }
 
+  void refreshSiteConfig();
   void refreshTicker();
   window.setInterval(refreshTicker, 60_000);
   document.addEventListener("visibilitychange", () => {

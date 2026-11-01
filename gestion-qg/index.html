@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07111f" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Administration · QG2GIONNY</title>
+    <link rel="icon" href="/assets/gionny-profile.jpg" type="image/jpeg" />
+    <link rel="stylesheet" href="/gestion-qg/admin.css" />
+    <script src="/gestion-qg/admin.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <div class="admin-glow admin-glow--blue" aria-hidden="true"></div>
+    <div class="admin-glow admin-glow--red" aria-hidden="true"></div>
+    <main class="admin-shell">
+      <a class="admin-back" href="/">
+        <span aria-hidden="true">←</span>
+        Retour au site
+      </a>
+
+      <header class="admin-header">
+        <div class="admin-avatar-frame">
+          <img src="/assets/gionny-profile.jpg" alt="" />
+        </div>
+        <div class="admin-header-copy">
+          <p class="admin-eyebrow">ZONE PRIVÉE · QG2GIONNY</p>
+          <h1>Administration <span>du QG</span></h1>
+          <p>Gère les liens sociaux et les horaires des lives.</p>
+        </div>
+      </header>
+
+      <section class="login-card" data-login-panel aria-labelledby="login-title">
+        <div class="card-symbol" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="4.5" y="10" width="15" height="11" rx="3" />
+            <path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3" />
+          </svg>
+        </div>
+        <p class="admin-eyebrow">ACCÈS PROTÉGÉ</p>
+        <h2 id="login-title">Entre ton code</h2>
+        <p class="login-description">Saisis le code d’accès à 4 caractères pour ouvrir le panneau.</p>
+        <form id="login-form" class="login-form">
+          <label for="admin-password">Code d’accès</label>
+          <input
+            id="admin-password"
+            name="password"
+            type="password"
+            inputmode="text"
+            autocomplete="current-password"
+            autocapitalize="characters"
+            minlength="4"
+            maxlength="4"
+            pattern="[A-Za-z0-9]{4}"
+            required
+            aria-describedby="login-status"
+          />
+          <button class="primary-button" type="submit" data-login-button>
+            <span>Ouvrir le panneau</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <p id="login-status" class="form-status" data-login-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="admin-panel" data-admin-panel aria-labelledby="settings-title" hidden>
+        <div class="admin-toolbar">
+          <div>
+            <p class="admin-eyebrow">ESPACE ADMIN</p>
+            <h2 id="settings-title">Tes réglages</h2>
+          </div>
+          <button class="quiet-button" type="button" data-logout>Se déconnecter</button>
+        </div>
+
+        <div class="storage-notice" data-storage-notice role="status" aria-live="polite"></div>
+
+        <form id="settings-form" class="settings-form">
+          <section class="settings-section" aria-labelledby="socials-title">
+            <div class="section-heading">
+              <span class="section-number">01</span>
+              <div>
+                <h3 id="socials-title">Liens sociaux</h3>
+                <p>Colle l’adresse complète que les visiteurs ouvriront.</p>
+              </div>
+            </div>
+            <div class="social-fields">
+              <label class="input-field">
+                <span>Twitch</span>
+                <input type="url" name="socials.twitch" value="https://www.twitch.tv/7gionny" maxlength="300" required />
+              </label>
+              <label class="input-field">
+                <span>TikTok</span>
+                <input type="url" name="socials.tiktok" value="https://www.tiktok.com/@gio_nny" maxlength="300" required />
+              </label>
+              <label class="input-field">
+                <span>YouTube</span>
+                <input type="url" name="socials.youtube" value="https://www.youtube.com/@gionnyyy" maxlength="300" required />
+              </label>
+              <label class="input-field">
+                <span>X</span>
+                <input type="url" name="socials.x" value="https://x.com/nny_gio" maxlength="300" required />
+              </label>
+              <label class="input-field">
+                <span>Instagram</span>
+                <input type="url" name="socials.instagram" value="https://www.instagram.com/nny_gio/" maxlength="300" required />
+              </label>
+              <label class="input-field">
+                <span>Discord</span>
+                <input type="url" name="socials.discord" value="https://discord.gg/nPACfBTnPx" maxlength="300" required />
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-section" aria-labelledby="schedule-title">
+            <div class="section-heading">
+              <span class="section-number">02</span>
+              <div>
+                <h3 id="schedule-title">Planning des lives</h3>
+                <p>Active les jours voulus et règle chaque heure en heure française.</p>
+              </div>
+            </div>
+            <div class="day-grid">
+              <div class="day-row" data-day-row="monday">
+                <label class="day-toggle" for="day-monday">
+                  <input id="day-monday" type="checkbox" data-day-enabled="monday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Lundi</span>
+                </label>
+                <label class="time-field" for="time-monday">
+                  <span class="sr-only">Heure du lundi</span>
+                  <input id="time-monday" type="time" value="22:00" step="60" data-day-time="monday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="tuesday">
+                <label class="day-toggle" for="day-tuesday">
+                  <input id="day-tuesday" type="checkbox" checked data-day-enabled="tuesday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Mardi</span>
+                </label>
+                <label class="time-field" for="time-tuesday">
+                  <span class="sr-only">Heure du mardi</span>
+                  <input id="time-tuesday" type="time" value="22:00" step="60" data-day-time="tuesday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="wednesday">
+                <label class="day-toggle" for="day-wednesday">
+                  <input id="day-wednesday" type="checkbox" checked data-day-enabled="wednesday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Mercredi</span>
+                </label>
+                <label class="time-field" for="time-wednesday">
+                  <span class="sr-only">Heure du mercredi</span>
+                  <input id="time-wednesday" type="time" value="22:00" step="60" data-day-time="wednesday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="thursday">
+                <label class="day-toggle" for="day-thursday">
+                  <input id="day-thursday" type="checkbox" data-day-enabled="thursday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Jeudi</span>
+                </label>
+                <label class="time-field" for="time-thursday">
+                  <span class="sr-only">Heure du jeudi</span>
+                  <input id="time-thursday" type="time" value="22:00" step="60" data-day-time="thursday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="friday">
+                <label class="day-toggle" for="day-friday">
+                  <input id="day-friday" type="checkbox" data-day-enabled="friday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Vendredi</span>
+                </label>
+                <label class="time-field" for="time-friday">
+                  <span class="sr-only">Heure du vendredi</span>
+                  <input id="time-friday" type="time" value="22:00" step="60" data-day-time="friday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="saturday">
+                <label class="day-toggle" for="day-saturday">
+                  <input id="day-saturday" type="checkbox" checked data-day-enabled="saturday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Samedi</span>
+                </label>
+                <label class="time-field" for="time-saturday">
+                  <span class="sr-only">Heure du samedi</span>
+                  <input id="time-saturday" type="time" value="22:00" step="60" data-day-time="saturday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="sunday">
+                <label class="day-toggle" for="day-sunday">
+                  <input id="day-sunday" type="checkbox" checked data-day-enabled="sunday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Dimanche</span>
+                </label>
+                <label class="time-field" for="time-sunday">
+                  <span class="sr-only">Heure du dimanche</span>
+                  <input id="time-sunday" type="time" value="22:00" step="60" data-day-time="sunday" />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <div class="save-row">
+            <p class="save-status" data-save-status role="status" aria-live="polite"></p>
+            <button class="primary-button save-button" type="submit" data-save-button>
+              <span>Enregistrer les changements</span>
+              <span aria-hidden="true">✓</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <footer class="admin-footer">Modifications du site · visibles par tous après enregistrement</footer>
+    </main>
+  </body>
+</html>
