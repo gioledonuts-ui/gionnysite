@@ -125,21 +125,33 @@
       <main class="hub-layout" id="main">
         <section class="welcome-panel" aria-labelledby="welcome-title">
           <div class="welcome-identity">
-            <div class="profile-frame">
-              <span class="profile-frame-glow" aria-hidden="true"></span>
-              <img
-                class="profile-avatar"
-                src="/assets/gionny-profile.jpg"
-                data-profile-image
-                alt="Photo de profil de Gionny"
-              />
-            </div>
-            <div class="welcome-intro">
-              <h1 id="welcome-title">
-                Bienvenue dans le <span class="heading-accent">QG</span>
-                <span class="welcome-name">de Gionny</span>
-              </h1>
+            <button
+              class="profile-trigger"
+              type="button"
+              data-open-about
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="about-dialog"
+              aria-label="Qui suis-je ? Découvre la présentation de Gionny"
+            >
+              <span class="profile-frame" data-profile-frame>
+                <span class="profile-frame-glow" aria-hidden="true"></span>
+                <img
+                  class="profile-avatar"
+                  src="/assets/gionny-profile.jpg"
+                  data-profile-image
+                  alt=""
+                />
+                <span class="profile-tooltip" aria-hidden="true">Qui suis-je ?</span>
+              </span>
               <span class="creator-handle">@7gionny</span>
+            </button>
+            <div class="welcome-intro">
+              <h1
+                id="welcome-title"
+                data-intro-title
+                aria-label="Bienvenue dans le QG de Gionny"
+              >Bienvenue dans le <span class="heading-accent">QG</span> <span class="welcome-name">de Gionny</span></h1>
               <p class="welcome-copy">
                 La commu, les lives et les meilleurs moments sont ici.
               </p>
@@ -360,5 +372,26 @@
         </section>
       </main>
     </div>
+
+    <dialog
+      class="about-dialog"
+      id="about-dialog"
+      aria-labelledby="about-dialog-title"
+      aria-describedby="about-dialog-copy"
+      data-about-dialog
+    >
+      <div class="about-dialog-card">
+        <div class="about-dialog-topline">
+          <span class="about-dialog-kicker">LE QG · QUI SUIS-JE ?</span>
+          <button class="about-dialog-close" type="button" data-close-about aria-label="Fermer la présentation">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="about-dialog-mark" aria-hidden="true">?</div>
+        <h2 id="about-dialog-title">Qui suis-je ?</h2>
+        <p id="about-dialog-copy">Attends frérot, je me présente bientôt.</p>
+        <button class="about-dialog-done" type="button" data-close-about>Ça marche</button>
+      </div>
+    </dialog>
   </body>
 </html>

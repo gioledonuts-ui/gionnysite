@@ -301,6 +301,61 @@
     return true;
   };
 
+  const introTitle = document.querySelector("[data-intro-title]");
+  if (introTitle) {
+    const walker = document.createTreeWalker(introTitle, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    let characterIndex = 0;
+    for (const textNode of textNodes) {
+      const fragment = document.createDocumentFragment();
+      const pieces = (textNode.textContent || "").match(/\s+|\S+/gu) || [];
+      for (const piece of pieces) {
+        if (/^\s+$/u.test(piece)) {
+          fragment.append(document.createTextNode(piece));
+          continue;
+        }
+
+        const word = document.createElement("span");
+        word.className = "intro-word";
+        for (const character of Array.from(piece)) {
+          const span = document.createElement("span");
+          span.className = "intro-character";
+          span.setAttribute("aria-hidden", "true");
+          span.style.animationDelay = `${420 + characterIndex * 34}ms`;
+          span.textContent = character;
+          word.append(span);
+          characterIndex += 1;
+        }
+        fragment.append(word);
+      }
+      textNode.replaceWith(fragment);
+    }
+  }
+
+  const profileTrigger = document.querySelector("[data-open-about]");
+  const aboutDialog = document.querySelector("[data-about-dialog]");
+  const closeAboutButtons = aboutDialog?.querySelectorAll("[data-close-about]") || [];
+  if (profileTrigger && aboutDialog?.showModal) {
+    profileTrigger.setAttribute("aria-expanded", "false");
+    profileTrigger.addEventListener("click", () => {
+      aboutDialog.showModal();
+      profileTrigger.setAttribute("aria-expanded", "true");
+      aboutDialog.querySelector("[data-close-about]")?.focus();
+    });
+    closeAboutButtons.forEach((button) => {
+      button.addEventListener("click", () => aboutDialog.close());
+    });
+    aboutDialog.addEventListener("click", (event) => {
+      if (event.target === aboutDialog) aboutDialog.close();
+    });
+    aboutDialog.addEventListener("close", () => {
+      profileTrigger.setAttribute("aria-expanded", "false");
+      profileTrigger.focus({ preventScroll: true });
+    });
+  }
+
   const profileImage = document.querySelector("[data-profile-image]");
   if (profileImage) {
     const hideUnavailableProfileImage = () => (profileImage.hidden = true);
