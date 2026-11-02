@@ -26,6 +26,7 @@ import {
   listVisitorAccounts,
   registerVisitorAccount,
   setVisitorAccountRole,
+  setVisitorAccountBadges,
   updateVisitorAccountProfile,
 } from "../lib/contact-inbox.mjs";
 
@@ -153,6 +154,53 @@ test("account messages persist and return the exact account pseudo", async () =>
   assert.equal(storedMessage.pseudo, "MembreTest");
 });
 
+test("verified badges and 38-bar voice peaks persist across member and Admin views", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "MembreVerifie");
+  const memberId = (await listVisitorAccounts("", store)).members[0].id;
+  const given = await setVisitorAccountBadges(memberId, ["verified"], store);
+  assert.equal(given.ok, true);
+  assert.deepEqual(given.member.badges, ["verified"]);
+
+  const first = await addAccountReply(member.sessionToken, {
+    subject: "💬 Discussion",
+    message: "Mon badge est visible.",
+  }, store);
+  assert.equal(first.ok, true);
+  assert.equal(first.conversation.subject, "Discussion");
+  assert.deepEqual(first.message.badges, ["verified"]);
+
+  const peaks = Array.from({ length: 38 }, (_, index) => (index % 10) / 10);
+  const audioBytes = Buffer.from("private-member-voice");
+  const voice = await addAccountReply(member.sessionToken, {
+    subject: "Discussion",
+    message: "",
+    audioBytes,
+    audioMimeType: "audio/webm",
+    audioPeaks: peaks,
+  }, store);
+  assert.equal(voice.ok, true);
+  assert.equal(voice.message.kind, "audio");
+  assert.deepEqual(voice.message.audioPeaks, peaks);
+  assert.deepEqual(voice.message.badges, ["verified"]);
+
+  const memberThread = await getAccountConversation(member.sessionToken, store);
+  assert.deepEqual(memberThread.conversation.memberBadges, ["verified"]);
+  assert.deepEqual(memberThread.messages[1].audioPeaks, peaks);
+  assert.deepEqual(memberThread.messages[1].badges, ["verified"]);
+  const adminThread = await getConversationForAdmin(voice.conversation.id, store);
+  assert.deepEqual(adminThread.conversation.memberBadges, ["verified"]);
+  assert.deepEqual(adminThread.messages[1].audioPeaks, peaks);
+  assert.deepEqual(adminThread.messages[1].badges, ["verified"]);
+
+  const removed = await setVisitorAccountBadges(memberId, [], store);
+  assert.equal(removed.ok, true);
+  assert.deepEqual(removed.member.badges, []);
+  const refreshed = await getConversationForAdmin(voice.conversation.id, store);
+  assert.deepEqual(refreshed.conversation.memberBadges, []);
+  assert.deepEqual(refreshed.messages[0].badges, []);
+});
+
 test("a client-provided Hôte flag cannot turn an unassigned account into the Hôte", async () => {
   const store = new MemoryBlobStore();
   const member = await createAccount(store, "MembreTest");
@@ -206,7 +254,10 @@ test("historical messages inherit the linked pseudo and never expose the legacy 
 
   const result = await getConversationForAdmin(id, store);
   assert.equal(result.conversation.pseudo, "MembreRéel");
+  assert.equal(result.conversation.subject, "Discussion");
   assert.equal(result.messages[0].pseudo, "MembreRéel");
+  const filteredByLegacySubject = await listConversations("", store, { subject: "💬 Discussion" });
+  assert.ok(filteredByLegacySubject.conversations.some((conversation) => conversation.id === id));
   assert.equal(result.messages[0].sender, "visitor");
   assert.equal(result.messages[0].isHost, false);
 

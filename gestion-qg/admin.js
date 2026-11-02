@@ -10,10 +10,8 @@
   ];
   const SOCIALS = ["twitch", "tiktok", "youtube", "x", "instagram", "discord"];
   const SOCIAL_INFO = ["twitch", "tiktok", "youtube", "x", "instagram"];
-  const CHAT_SUBJECTS = ["🎤 Passer en live", "💡 Idée vidéo / React", "📖 Histoire / Anecdote", "❓ Question", "💬 Discussion"];
+  const CHAT_SUBJECTS = ["Passer en live", "Idée vidéo / React", "Histoire / Anecdote", "Question", "Discussion"];
   const ADMIN_MAX_VOICE_BYTES = 200_000;
-  const ADMIN_MAX_VOICE_SECONDS = 60;
-  const ADMIN_VOICE_MIME_TYPES = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"];
   const loginPanel = document.querySelector("[data-login-panel]");
   const adminPanel = document.querySelector("[data-admin-panel]");
   const adminTabs = [...document.querySelectorAll("[data-admin-tab]")];
@@ -61,6 +59,7 @@
   const conversationContent = document.querySelector("[data-conversation-content]");
   const threadPseudo = document.querySelector("[data-thread-pseudo]");
   const threadHostCrown = document.querySelector("[data-thread-host-crown]");
+  const threadVerifiedBadge = document.querySelector("[data-thread-verified-badge]");
   const threadStatus = document.querySelector("[data-thread-status]");
   const threadSubject = document.querySelector("[data-thread-subject]");
   const threadAvatar = document.querySelector("[data-thread-avatar]");
@@ -83,7 +82,10 @@
   const adminImagePreviewImg = document.querySelector("[data-admin-image-preview-img]");
   const adminImageRemove = document.querySelector("[data-admin-image-remove]");
   const adminImageOption = document.querySelector("[data-admin-chat-image-option]");
-  const adminVoiceRecordButton = document.querySelector("[data-admin-voice-record]");
+  const adminComposeAction = document.querySelector("[data-admin-compose-action]");
+  const adminComposeMic = adminComposeAction?.querySelector("[data-admin-compose-mic]");
+  const adminComposeSend = adminComposeAction?.querySelector("[data-admin-compose-send]");
+  const adminInputPill = document.querySelector("[data-admin-input-pill]");
   const adminVoicePanel = document.querySelector("[data-admin-voice-panel]");
   const adminVoiceRecordingControls = document.querySelector("[data-admin-voice-recording-controls]");
   const adminVoiceWave = document.querySelector("[data-admin-voice-wave]");
@@ -91,9 +93,8 @@
   const adminVoiceCancelButton = document.querySelector("[data-admin-voice-cancel]");
   const adminVoiceStopButton = document.querySelector("[data-admin-voice-stop]");
   const adminVoicePreview = document.querySelector("[data-admin-voice-preview]");
-  const adminVoicePreviewActions = document.querySelector("[data-admin-voice-preview-actions]");
-  const adminVoiceRetryButton = document.querySelector("[data-admin-voice-retry]");
   const adminVoiceSendButton = document.querySelector("[data-admin-voice-send]");
+  const adminVoiceStatus = document.querySelector("[data-admin-voice-status]");
 
   let storageConfigured = false;
   let saving = false;
@@ -172,7 +173,8 @@
 
   const showLogin = (message = "") => {
     hostSessionActive = false;
-    adminVoiceState?.reset();
+    if (adminVoiceState?.mode === "recording") adminVoiceState.cancel();
+    else adminVoiceState?.reset();
     if (adminPollTimer) window.clearInterval(adminPollTimer);
     if (adminPresenceTimer) window.clearInterval(adminPresenceTimer);
     adminPollTimer = 0;
@@ -429,16 +431,40 @@
     badge.setAttribute("role", "img");
     badge.setAttribute("aria-label", "Compte Hôte");
     badge.title = "Compte Hôte";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 20 20");
-    svg.setAttribute("aria-hidden", "true");
-    const crown = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    crown.setAttribute("d", "m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z");
-    const base = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    base.setAttribute("d", "M4 17.2h12");
-    svg.append(crown, base);
-    badge.append(svg);
+    if (typeof window.qgIcon === "function") badge.append(window.qgIcon("crown", "host-crown-icon"));
     return badge;
+  };
+
+  const createVerifiedBadge = (className = "verified-badge") => {
+    const badge = document.createElement("span");
+    badge.className = className;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", "Membre vérifié");
+    badge.title = "Membre vérifié";
+    if (typeof window.qgIcon === "function") badge.append(window.qgIcon("verified", "verified-badge-icon"));
+    return badge;
+  };
+
+  const normalizeSubject = (value) => {
+    const clean = typeof value === "string" ? value.normalize("NFKC").replace(/^[^\p{L}\p{N}]+/u, "").trim() : "";
+    return CHAT_SUBJECTS.includes(clean) ? clean : "Discussion";
+  };
+
+  const subjectIcon = (subject) => ({
+    "Passer en live": "live",
+    "Idée vidéo / React": "bulb",
+    "Histoire / Anecdote": "book",
+    Question: "help",
+    Discussion: "chat",
+  }[subject] || "chat");
+
+  const renderSubjectLabel = (element, subject) => {
+    if (!element) return;
+    const clean = normalizeSubject(subject);
+    const text = document.createElement("span");
+    text.textContent = clean;
+    const icon = typeof window.qgIcon === "function" ? window.qgIcon(subjectIcon(clean), "subject-label-icon") : null;
+    element.replaceChildren(...(icon ? [icon, text] : [text]));
   };
 
   const createMemberAvatar = () => {
@@ -451,6 +477,7 @@
 
   const memberSignature = (member) => JSON.stringify([
     member.pseudo, member.role, member.status, member.createdAt, member.conversationId,
+    Array.isArray(member.badges) ? member.badges.join(",") : "",
   ]);
 
   const createMemberItem = (member) => {
@@ -471,6 +498,9 @@
     pseudo.className = "member-row-pseudo";
     pseudo.textContent = member.pseudo || "Membre";
     nameLine.append(pseudo);
+    if (Array.isArray(member.badges) && member.badges.includes("verified")) {
+      nameLine.append(createVerifiedBadge("member-row-verified-badge"));
+    }
     if (member.role === "host") {
       nameLine.append(createHostCrownBadge("member-row-crown"));
       const hostBadge = document.createElement("span");
@@ -506,10 +536,21 @@
     const writeButton = document.createElement("button");
     writeButton.className = "member-action-button member-action-button--write";
     writeButton.type = "button";
-    writeButton.textContent = "💬 Écrire";
+    if (typeof window.qgIcon === "function") writeButton.append(window.qgIcon("chat"));
+    const writeLabel = document.createElement("span");
+    writeLabel.textContent = "Écrire";
+    writeButton.append(writeLabel);
     writeButton.setAttribute("aria-label", `Écrire à ${member.pseudo || "ce membre"}`);
     writeButton.title = member.conversationId ? "Ouvrir sa discussion" : "Démarrer une discussion sans envoyer de message";
     writeButton.addEventListener("click", () => void writeToMember(member, writeButton));
+
+    const badgeButton = document.createElement("button");
+    badgeButton.className = "member-action-button member-action-button--verified";
+    badgeButton.type = "button";
+    const hasVerifiedBadge = Array.isArray(member.badges) && member.badges.includes("verified");
+    badgeButton.textContent = hasVerifiedBadge ? "Retirer Validé" : "Donner Validé";
+    badgeButton.setAttribute("aria-label", `${hasVerifiedBadge ? "Retirer" : "Donner"} le badge Validé ${hasVerifiedBadge ? "de" : "à"} ${member.pseudo || "ce membre"}`);
+    badgeButton.addEventListener("click", () => void changeMemberVerified(member, badgeButton));
 
     const roleButton = document.createElement("button");
     roleButton.className = "member-action-button";
@@ -533,7 +574,7 @@
     deleteButton.title = member.role === "host" ? "Retire d’abord le rôle Hôte" : "";
     deleteButton.addEventListener("click", () => void removeMember(member, deleteButton));
 
-    actions.append(writeButton, viewButton, roleButton, banButton, deleteButton);
+    actions.append(writeButton, viewButton, badgeButton, roleButton, banButton, deleteButton);
     row.append(identity, actions);
     return row;
   };
@@ -597,7 +638,8 @@
       const validMember = (member) => member && typeof member === "object" &&
         typeof member.id === "string" && /^[0-9a-f-]{36}$/iu.test(member.id) &&
         typeof member.pseudo === "string" && member.pseudo.trim().length > 0 &&
-        ["member", "host"].includes(member.role) && ["active", "banned"].includes(member.status);
+        ["member", "host"].includes(member.role) && ["active", "banned"].includes(member.status) &&
+        (member.badges === undefined || (Array.isArray(member.badges) && member.badges.every((badge) => badge === "verified")));
       if (!Array.isArray(data.members) || !data.members.every(validMember) ||
           (data.cursor !== null && data.cursor !== undefined && typeof data.cursor !== "string") ||
           typeof data.hasMore !== "boolean") {
@@ -689,6 +731,14 @@
       : `Retirer le rôle Hôte de ${member.pseudo} ?`;
     if (!window.confirm(confirmation)) return;
     await performMemberPatch(member, { role: nextRole }, button);
+  };
+
+  const changeMemberVerified = async (member, button) => {
+    const badges = Array.isArray(member.badges) ? member.badges : [];
+    const nextBadges = badges.includes("verified")
+      ? badges.filter((badge) => badge !== "verified")
+      : [...badges, "verified"];
+    await performMemberPatch(member, { badges: nextBadges }, button);
   };
 
   const changeMemberBan = async (member, button) => {
@@ -797,7 +847,12 @@
 
     const allFavorite = selected.length > 0 && selected.every((conversation) => conversation.favorite === true);
     const allRead = selected.length > 0 && selected.every((conversation) => conversation.adminUnread !== true);
-    if (bulkFavoriteButton) bulkFavoriteButton.textContent = allFavorite ? "☆ Retirer des favoris" : "⭐ Mettre en favoris";
+    if (bulkFavoriteButton) {
+      const label = document.createElement("span");
+      label.textContent = allFavorite ? "Retirer des favoris" : "Mettre en favoris";
+      const icon = typeof window.qgIcon === "function" ? window.qgIcon(allFavorite ? "star-filled" : "star") : null;
+      bulkFavoriteButton.replaceChildren(...(icon ? [icon, label] : [label]));
+    }
     if (bulkReadButton) bulkReadButton.textContent = allRead ? "Marquer comme non lu" : "Marquer comme lu";
     if (bulkCloseButton) bulkCloseButton.disabled = !selected.some((conversation) => conversation.status === "open");
 
@@ -842,6 +897,7 @@
     conversation.hasImage,
     conversation.isHost,
     conversation.avatarData,
+    Array.isArray(conversation.memberBadges) ? conversation.memberBadges.join(",") : "",
   ]);
 
   const createConversationListItem = (conversation) => {
@@ -872,7 +928,7 @@
       ? `Retirer ${conversation.pseudo || "Membre"} des favoris`
       : `Ajouter ${conversation.pseudo || "Membre"} aux favoris`);
     favorite.title = conversation.favorite ? "Retirer des favoris" : "Ajouter aux favoris";
-    favorite.textContent = conversation.favorite ? "★" : "☆";
+    if (typeof window.qgIcon === "function") favorite.append(window.qgIcon(conversation.favorite ? "star-filled" : "star"));
     favorite.addEventListener("click", () => void toggleConversationFavorite(conversation.id));
 
     const openButton = document.createElement("button");
@@ -904,7 +960,7 @@
 
     const subject = document.createElement("span");
     subject.className = "conversation-list-subject";
-    subject.textContent = typeof conversation.subject === "string" ? conversation.subject : "💬 Discussion";
+    renderSubjectLabel(subject, conversation.subject);
 
     const unread = document.createElement("span");
     unread.className = "conversation-list-unread";
@@ -916,8 +972,9 @@
     status.dataset.state = conversation.status;
     status.textContent = statusLabel(conversation.status);
     head.append(pseudo);
-    if (conversation.isHost) {
-      head.append(createHostCrownBadge("conversation-list-host-crown"));
+    if (conversation.isHost) head.append(createHostCrownBadge("conversation-list-host-crown"));
+    if (Array.isArray(conversation.memberBadges) && conversation.memberBadges.includes("verified")) {
+      head.append(createVerifiedBadge("conversation-list-verified-badge"));
     }
     head.append(subject, unread, status);
 
@@ -1130,6 +1187,9 @@
     name.className = "thread-message-sender";
     name.textContent = senderPseudo;
     if (isHostMessage) name.append(createHostCrownBadge("thread-message-host-crown"));
+    else if ((Array.isArray(message.badges) && message.badges.includes("verified")) || ownerConversation?.memberBadges?.includes("verified")) {
+      name.append(createVerifiedBadge("thread-message-verified-badge"));
+    }
     identity.append(avatar, name);
     item.append(identity);
 
@@ -1138,7 +1198,7 @@
         ? message.previewUrl
         : `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
       const player = typeof window.createQGVoicePlayer === "function"
-        ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`)
+        ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`, { peaks: message.audioPeaks })
         : document.createElement("p");
       if (player.tagName === "P") player.textContent = "Le lecteur vocal est indisponible.";
       player.classList.add("thread-message-audio");
@@ -1184,7 +1244,7 @@
       receipt.dataset.state = message.pending ? "sending" : message.read === true ? "read" : "sent";
       receipt.setAttribute("aria-label", message.pending ? "Envoi en cours" : message.read === true ? "Message lu" : "Message envoyé");
       receipt.title = message.pending ? "Envoi en cours" : message.read === true ? "Lu" : "Envoyé";
-      receipt.textContent = message.pending ? "✓" : "✓✓";
+      if (typeof window.qgIcon === "function") receipt.append(window.qgIcon(message.pending ? "check" : "check-double", "chat-receipt-icon"));
       meta.append(receipt);
     }
     item.append(meta);
@@ -1209,7 +1269,8 @@
       threadAvatarFallback.textContent = (String(conversation.pseudo || "M").trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
     }
     if (threadHostCrown) threadHostCrown.hidden = conversation.isHost !== true;
-    if (threadSubject) threadSubject.textContent = conversation.subject || "💬 Discussion";
+    if (threadVerifiedBadge) threadVerifiedBadge.hidden = !conversation.memberBadges?.includes("verified");
+    renderSubjectLabel(threadSubject, conversation.subject);
     threadStatus.textContent = statusLabel(conversation.status);
     threadStatus.dataset.state = conversation.status;
     threadCloseButton.disabled = conversation.status === "blocked";
@@ -1219,11 +1280,10 @@
 
     const isOpen = conversation.status === "open";
     replyForm.hidden = !isOpen;
-    if (adminVoiceState) {
-      adminVoiceState.recordButton.disabled = !isOpen || adminVoiceState.sending;
-      if (replySendButton) replySendButton.disabled = !isOpen || adminVoiceState.sending || Boolean(adminVoiceState.recordedBlob) || adminVoiceState.recorder?.state === "recording";
-      if (adminChatMenuToggle) adminChatMenuToggle.disabled = !isOpen || adminVoiceState.sending || Boolean(adminVoiceState.recordedBlob) || adminVoiceState.recorder?.state === "recording";
-    }
+    const voiceActive = Boolean(adminVoiceState && (adminVoiceState.mode !== "idle" || adminVoiceState.sending));
+    adminVoiceState?.syncAvailability();
+    if (replySendButton) replySendButton.disabled = !isOpen || voiceActive;
+    if (adminChatMenuToggle) adminChatMenuToggle.disabled = !hostSessionActive || !isOpen || voiceActive;
     threadClosedNote.hidden = isOpen;
     threadClosedNote.textContent = conversation.status === "blocked"
       ? "Cette discussion est bloquée. Débloque-la pour pouvoir répondre à nouveau."
@@ -1231,7 +1291,7 @@
 
     const messages = Array.isArray(data.messages) ? data.messages : [];
     const messageSignature = messages.map((message) =>
-      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}:${message.read === true}:${message.avatarData || ""}`
+      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}:${message.read === true}:${message.avatarData || ""}:${Array.isArray(message.audioPeaks) ? message.audioPeaks.join(",") : ""}:${Array.isArray(message.badges) ? message.badges.join(",") : ""}`
     ).join("|");
     if (threadMessages.dataset.messageSignature !== messageSignature) {
       const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
@@ -1328,7 +1388,7 @@
 
   const selectConversation = async (id, { scroll = false, markRead = true } = {}) => {
     if (!id) return;
-    if (id !== currentConversationId && adminVoiceState && !adminVoiceState.sending) adminVoiceState.reset();
+    if (id !== currentConversationId && adminVoiceState && !adminVoiceState.sending) adminVoiceState.cancel();
     currentConversationId = id;
     setStatus(replyStatus, "");
     conversationEmpty.hidden = true;
@@ -1601,6 +1661,7 @@
     if (adminImagePreview) adminImagePreview.hidden = true;
     adminImagePreviewImg?.removeAttribute("src");
     if (adminChatImageInput) adminChatImageInput.value = "";
+    adminVoiceState?.syncAvailability();
   };
 
   adminChatMenuToggle?.addEventListener("click", () => {
@@ -1613,7 +1674,7 @@
     adminChatSubjectOptions.hidden = !adminChatSubjectOptions.hidden;
     adminChatSubjectToggle.setAttribute("aria-expanded", String(!adminChatSubjectOptions.hidden));
     if (!adminChatSubjectOptions.hidden) {
-      const selectedSubject = conversationRecords.get(currentConversationId)?.subject || "💬 Discussion";
+      const selectedSubject = normalizeSubject(conversationRecords.get(currentConversationId)?.subject);
       adminChatSubjectOptions.querySelectorAll("[data-admin-chat-subject-value]").forEach((option) => {
         option.setAttribute("aria-pressed", String(option.dataset.adminChatSubjectValue === selectedSubject));
       });
@@ -1625,6 +1686,7 @@
   });
   adminImageRemove?.addEventListener("click", () => {
     clearAdminImage();
+    updateAdminComposeAction();
     replyInput?.focus({ preventScroll: true });
   });
   adminChatSubjectOptions?.querySelectorAll("[data-admin-chat-subject-value]").forEach((button) => {
@@ -1656,7 +1718,7 @@
   adminChatImageInput?.addEventListener("change", async () => {
     const file = adminChatImageInput.files?.[0];
     if (!file) return;
-    if (adminVoiceState?.recordedBlob || adminVoiceState?.recorder?.state === "recording") {
+    if (adminVoiceState && (adminVoiceState.mode !== "idle" || adminVoiceState.sending)) {
       setStatus(replyStatus, "Envoie ou supprime le vocal avant de joindre une image.", "error");
       adminChatImageInput.value = "";
       return;
@@ -1680,353 +1742,139 @@
       if (adminImagePreviewImg) adminImagePreviewImg.src = adminImagePreviewUrl;
       if (adminImagePreview) adminImagePreview.hidden = false;
       setStatus(replyStatus, `Image prête · ${Math.round(blob.size / 1024)} Ko.`, "success");
+      updateAdminComposeAction();
     } catch (error) {
       setStatus(replyStatus, error instanceof Error ? error.message : "L’image n’a pas pu être compressée.", "error");
     } finally {
       adminChatImageInput.value = "";
     }
   });
-  const formatAdminVoiceDuration = (seconds) => {
-    const wholeSeconds = Math.max(0, Math.floor(seconds));
-    return `${Math.floor(wholeSeconds / 60)}:${String(wholeSeconds % 60).padStart(2, "0")}`;
+  const updateAdminComposeAction = () => {
+    const hasPayload = Boolean(adminImageBlob || String(replyInput?.value || "").trim());
+    if (adminComposeAction) adminComposeAction.dataset.mode = hasPayload ? "send" : "voice";
+    if (adminComposeMic) adminComposeMic.hidden = hasPayload;
+    if (adminComposeSend) adminComposeSend.hidden = !hasPayload;
+    if (adminComposeAction) {
+      adminComposeAction.setAttribute("aria-label", hasPayload ? "Envoyer la réponse" : "Enregistrer un message vocal");
+      adminComposeAction.title = hasPayload ? "Envoyer" : "Message vocal";
+    }
+    adminVoiceState?.syncAvailability();
   };
 
-  if (adminVoiceRecordButton && adminVoicePanel && adminVoiceRecordingControls && adminVoiceTimer &&
-      adminVoiceCancelButton && adminVoiceStopButton && adminVoicePreview && adminVoicePreviewActions &&
-      adminVoiceRetryButton && adminVoiceSendButton && replyForm) {
-    for (let index = 0; index < 28; index += 1) {
-      const bar = document.createElement("span");
-      bar.style.setProperty("--wave-height", `${20 + ((index * 17 + 11) % 72)}%`);
-      bar.style.setProperty("--wave-delay", `${-(index * 37)}ms`);
-      adminVoiceWave?.append(bar);
+  const uploadAdminVoice = async (audioBlob, audioPeaks = [], voice = adminVoiceState) => {
+    const conversationId = currentConversationId;
+    if (!conversationId || currentConversationStatus !== "open" || !hostSessionActive || !audioBlob?.size) return false;
+    if (audioBlob.size > ADMIN_MAX_VOICE_BYTES) {
+      voice?.setStatus("Ce vocal dépasse 200 Ko. Recommence avec un enregistrement plus court.", "error");
+      return false;
     }
 
-    const state = {
-      recordButton: adminVoiceRecordButton,
-      panel: adminVoicePanel,
-      recordingControls: adminVoiceRecordingControls,
-      timer: adminVoiceTimer,
-      cancelButton: adminVoiceCancelButton,
-      stopButton: adminVoiceStopButton,
-      preview: adminVoicePreview,
-      previewActions: adminVoicePreviewActions,
-      retryButton: adminVoiceRetryButton,
-      sendButton: adminVoiceSendButton,
-      recorder: null,
-      stream: null,
-      chunks: [],
-      recordedBlob: null,
-      previewUrl: "",
-      previewPlayer: null,
-      timerId: 0,
-      startedAt: 0,
-      byteCount: 0,
-      captureRequest: 0,
-      cancelled: false,
-      overflow: false,
-      durationReached: false,
-      sending: false,
-      stopStream() {
-        this.stream?.getTracks().forEach((track) => track.stop());
-        this.stream = null;
-      },
-      reset() {
-        const wasRecording = Boolean(this.recorder && this.recorder.state !== "inactive");
-        this.captureRequest += 1;
-        window.clearInterval(this.timerId);
-        this.timerId = 0;
-        if (wasRecording) {
-          this.cancelled = true;
-          try { this.recorder.stop(); } catch { /* Ignore a recorder already stopping. */ }
-        }
-        this.stopStream();
-        if (this.previewPlayer) this.previewPlayer.querySelector("audio")?.pause();
-        if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
-        this.previewUrl = "";
-        this.previewPlayer = null;
-        this.recorder = null;
-        this.chunks = [];
-        this.recordedBlob = null;
-        this.byteCount = 0;
-        this.overflow = false;
-        this.durationReached = false;
-        this.preview.replaceChildren();
-        this.preview.hidden = true;
-        this.previewActions.hidden = true;
-        this.recordingControls.hidden = false;
-        this.panel.hidden = true;
-        this.panel.dataset.recording = "false";
-        this.panel.dataset.state = "idle";
-        this.recordButton.hidden = false;
-        this.recordButton.disabled = !currentConversationId || currentConversationStatus !== "open";
-        this.cancelButton.disabled = false;
-        this.stopButton.disabled = false;
-        this.stopButton.hidden = false;
-        this.sendButton.disabled = false;
-        this.retryButton.disabled = false;
-        if (replySendButton && !this.sending) replySendButton.disabled = false;
-        if (adminChatMenuToggle) adminChatMenuToggle.disabled = false;
-        this.timer.textContent = "0:00 / 1:00";
-        if (!wasRecording) this.cancelled = false;
-      },
-      cancel() {
-        this.cancelled = true;
-        if (this.recorder && this.recorder.state !== "inactive") {
-          try { this.recorder.stop(); } catch { this.reset(); }
-        } else {
-          this.reset();
-        }
-      },
-      setStatus(message, kind = "") {
-        setStatus(replyStatus, message, kind);
-      },
-    };
-    adminVoiceState = state;
+    voice?.previewPlayer?.querySelector("audio")?.pause();
+    const pendingNode = createThreadMessage({
+      id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      sender: "gionny",
+      pseudo: adminIdentityPseudo?.textContent || "Gionny",
+      isHost: true,
+      text: "",
+      createdAt: new Date().toISOString(),
+      kind: "audio",
+      hasAudio: true,
+      audioPeaks,
+      pending: true,
+      previewUrl: voice?.previewUrl || "",
+    });
+    threadMessages?.append(pendingNode);
+    if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
 
-    const updateAdminVoiceTimer = () => {
-      const elapsed = Math.min(ADMIN_MAX_VOICE_SECONDS, (performance.now() - state.startedAt) / 1000);
-      state.timer.textContent = `${formatAdminVoiceDuration(elapsed)} / 1:00`;
-      if (elapsed >= ADMIN_MAX_VOICE_SECONDS && state.recorder?.state === "recording") {
-        state.durationReached = true;
-        state.setStatus("Une minute maximum atteinte. Préparation de l’aperçu…");
-        state.stopButton.disabled = true;
-        state.recorder.stop();
-      }
-    };
-
-    const uploadAdminVoice = async (audioBlob) => {
-      const conversationId = currentConversationId;
-      if (!conversationId || currentConversationStatus !== "open" || state.sending || !audioBlob?.size) return;
-      if (audioBlob.size > ADMIN_MAX_VOICE_BYTES) {
-        state.setStatus("Ce vocal dépasse 200 Ko. Supprime-le puis recommence plus court.", "error");
-        return;
-      }
-
-      state.sending = true;
-      state.sendButton.disabled = true;
-      state.recordButton.disabled = true;
-      if (replySendButton) replySendButton.disabled = true;
-      if (adminChatMenuToggle) adminChatMenuToggle.disabled = true;
-      state.setStatus("Envoi du vocal…");
-      state.previewPlayer?.querySelector("audio")?.pause();
-      const pendingNode = createThreadMessage({
-        id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        sender: "gionny",
-        pseudo: adminIdentityPseudo?.textContent || "Gionny",
-        isHost: true,
-        text: "",
-        createdAt: new Date().toISOString(),
-        kind: "audio",
-        hasAudio: true,
-        pending: true,
-        previewUrl: state.previewUrl,
+    try {
+      const response = await fetch("/api/contact-audio", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": audioBlob.type || "audio/webm",
+          "X-Admin-Reply": "true",
+          "X-Conversation-Id": conversationId,
+          "X-Voice-Peaks": Array.from(audioPeaks).map((peak) => Math.round(Math.max(0, Math.min(1, Number(peak) || 0)) * 100) / 100).join(","),
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: audioBlob,
       });
-      threadMessages?.append(pendingNode);
-      if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
-
-      try {
-        const response = await fetch("/api/contact-audio", {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": audioBlob.type || "audio/webm",
-            "X-Admin-Reply": "true",
-            "X-Conversation-Id": conversationId,
-          },
-          credentials: "same-origin",
-          cache: "no-store",
-          body: audioBlob,
-        });
-        const data = await readJson(response);
-        if (response.status === 401) {
-          pendingNode.remove();
-          state.reset();
-          showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
-          return;
-        }
-        if (!response.ok || data.ok !== true) {
-          pendingNode.remove();
-          if (currentConversationId === conversationId) {
-            state.setStatus(data.error || "Le vocal n’a pas pu être envoyé. Réessaie.", "error");
-            if (response.status === 409) await loadSelectedConversation({ quiet: true });
-          } else {
-            state.reset();
-          }
-          return;
-        }
+      const data = await readJson(response);
+      if (response.status === 401) {
         pendingNode.remove();
-        state.reset();
-        if (currentConversationId === conversationId) setStatus(replyStatus, "Vocal envoyé.", "success");
-        await Promise.all([
-          loadSelectedConversation({ quiet: true }),
-          loadConversations({ reset: true, quiet: true }),
-        ]);
-      } catch {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return false;
+      }
+      if (!response.ok || data.ok !== true) {
         pendingNode.remove();
-        if (currentConversationId === conversationId) state.setStatus("Impossible de joindre le serveur. Réessaie.", "error");
-        else state.reset();
-      } finally {
-        state.sending = false;
-        state.sendButton.disabled = false;
-        state.recordButton.disabled = !currentConversationId || currentConversationStatus !== "open";
-        if (replySendButton) replySendButton.disabled = currentConversationStatus !== "open" || Boolean(state.recordedBlob);
-        if (adminChatMenuToggle) adminChatMenuToggle.disabled = currentConversationStatus !== "open" || Boolean(state.recordedBlob);
-      }
-    };
-
-    state.recordButton.addEventListener("click", async () => {
-      if (state.sending || state.recorder?.state === "recording") return;
-      if (!currentConversationId || currentConversationStatus !== "open") {
-        state.setStatus("Ouvre d’abord une discussion active.", "error");
-        return;
-      }
-      if (adminImageBlob || String(replyInput?.value || "").trim()) {
-        state.setStatus("Envoie ou retire le texte et l’image avant d’enregistrer un vocal.", "error");
-        return;
-      }
-      if (!navigator.mediaDevices?.getUserMedia || typeof window.MediaRecorder !== "function") {
-        state.setStatus("L’enregistrement vocal n’est pas disponible dans ce navigateur.", "error");
-        return;
-      }
-
-      const requestId = ++state.captureRequest;
-      closeAdminChatMenu();
-      state.recordButton.disabled = true;
-      state.setStatus("Autorise l’accès au micro…");
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (requestId !== state.captureRequest || adminPanel.hidden || currentConversationStatus !== "open") {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
+        if (currentConversationId === conversationId) {
+          voice?.setStatus(data.error || "Le vocal n’a pas pu être envoyé. Réessaie.", "error");
+          if (response.status === 409) await loadSelectedConversation({ quiet: true });
         }
-        state.stream = stream;
-        const preferredType = ADMIN_VOICE_MIME_TYPES.find((type) => window.MediaRecorder.isTypeSupported?.(type));
-        let recorder;
-        try {
-          recorder = new window.MediaRecorder(stream, {
-            audioBitsPerSecond: 24_000,
-            ...(preferredType ? { mimeType: preferredType } : {}),
-          });
-        } catch {
-          recorder = new window.MediaRecorder(stream, { audioBitsPerSecond: 24_000 });
-        }
-        state.recorder = recorder;
-        state.chunks = [];
-        state.byteCount = 0;
-        state.startedAt = performance.now();
-        state.cancelled = false;
-        state.overflow = false;
-        state.durationReached = false;
-        state.recordButton.hidden = true;
-        state.panel.hidden = false;
-        state.panel.dataset.recording = "true";
-        state.panel.dataset.state = "recording";
-        state.recordingControls.hidden = false;
-        state.preview.hidden = true;
-        state.previewActions.hidden = true;
-        state.stopButton.hidden = false;
-        state.stopButton.disabled = false;
-        state.cancelButton.disabled = false;
-        if (replySendButton) replySendButton.disabled = true;
-        if (adminChatMenuToggle) adminChatMenuToggle.disabled = true;
-        state.timer.textContent = "0:00 / 1:00";
-        state.setStatus("Enregistrement en cours…");
-
-        recorder.addEventListener("dataavailable", (event) => {
-          if (state.cancelled || !event.data?.size) return;
-          if (performance.now() - state.startedAt >= ADMIN_MAX_VOICE_SECONDS * 1000 && recorder.state === "recording") {
-            state.durationReached = true;
-            state.stopButton.disabled = true;
-            recorder.stop();
-          }
-          state.byteCount += event.data.size;
-          if (state.byteCount > ADMIN_MAX_VOICE_BYTES) {
-            state.overflow = true;
-            state.setStatus("Vocal trop volumineux (maximum 200 Ko). Il a été supprimé.", "error");
-            if (recorder.state !== "inactive") recorder.stop();
-            return;
-          }
-          state.chunks.push(event.data);
-        });
-
-        recorder.addEventListener("stop", () => {
-          window.clearInterval(state.timerId);
-          state.timerId = 0;
-          state.stopStream();
-          state.recorder = null;
-          state.panel.dataset.recording = "false";
-          if (state.cancelled) {
-            state.reset();
-            return;
-          }
-          if (state.overflow) {
-            state.reset();
-            state.setStatus("Ce vocal dépasse la limite de 200 Ko. Supprime-le puis recommence plus court.", "error");
-            return;
-          }
-          state.recordedBlob = new Blob(state.chunks, { type: recorder.mimeType || preferredType || "audio/webm" });
-          if (!state.recordedBlob.size) {
-            state.reset();
-            state.setStatus("Aucun son n’a été enregistré. Réessaie.", "error");
-            return;
-          }
-          if (typeof window.createQGVoicePlayer !== "function") {
-            state.reset();
-            state.setStatus("L’aperçu vocal personnalisé n’est pas disponible. Le vocal n’a pas été envoyé.", "error");
-            return;
-          }
-          state.previewUrl = URL.createObjectURL(state.recordedBlob);
-          state.previewPlayer = window.createQGVoicePlayer(state.previewUrl, "l’aperçu du message vocal");
-          state.previewPlayer.classList.add("qg-voice-player--preview");
-          state.preview.replaceChildren(state.previewPlayer);
-          state.recordingControls.hidden = true;
-          state.stopButton.hidden = true;
-          state.preview.hidden = false;
-          state.previewActions.hidden = false;
-          state.panel.dataset.state = "preview";
-          state.setStatus(state.durationReached
-            ? "Une minute maximum atteinte. Écoute l’aperçu avant de l’envoyer."
-            : "Aperçu prêt. Écoute-le, recommence ou supprime-le, puis clique sur Envoyer le vocal.");
-        }, { once: true });
-
-        recorder.start(500);
-        state.timerId = window.setInterval(updateAdminVoiceTimer, 200);
-        updateAdminVoiceTimer();
-      } catch (error) {
-        if (requestId !== state.captureRequest) return;
-        state.reset();
-        state.setStatus(error?.name === "NotAllowedError"
-          ? "Le micro est bloqué. Autorise-le dans les réglages du navigateur."
-          : "Impossible de démarrer le micro sur cet appareil.", "error");
+        return false;
       }
-    });
+      pendingNode.remove();
+      if (currentConversationId === conversationId) {
+        setStatus(replyStatus, "Vocal envoyé.", "success");
+        await loadSelectedConversation({ quiet: true });
+      }
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      return true;
+    } catch {
+      pendingNode.remove();
+      if (currentConversationId === conversationId) voice?.setStatus("Impossible de joindre le serveur. Réessaie.", "error");
+      return false;
+    }
+  };
 
-    state.stopButton.addEventListener("click", () => {
-      if (state.recorder?.state !== "recording") return;
-      state.durationReached = false;
-      state.setStatus("Préparation de l’aperçu…");
-      state.stopButton.disabled = true;
-      state.recorder.stop();
-    });
-    state.cancelButton.addEventListener("click", () => {
-      state.cancel();
-      if (!state.recorder) state.setStatus("Vocal supprimé.", "success");
-    });
-    state.retryButton.addEventListener("click", () => {
-      if (state.sending) return;
-      state.reset();
-      state.setStatus("Vocal supprimé. Tu peux en enregistrer un autre.", "success");
-      state.recordButton.focus({ preventScroll: true });
-    });
-    state.sendButton.addEventListener("click", () => {
-      if (state.sending || !state.recordedBlob || state.recorder?.state === "recording") return;
-      void uploadAdminVoice(state.recordedBlob);
+  if (adminComposeAction && adminInputPill && adminVoicePanel && adminVoiceRecordingControls &&
+      adminVoiceWave && adminVoiceTimer && adminVoiceCancelButton && adminVoiceStopButton &&
+      adminVoicePreview && adminVoiceSendButton && adminVoiceStatus && replyForm &&
+      typeof window.createQGVoiceComposer === "function") {
+    adminVoiceState = window.createQGVoiceComposer({
+      inputPill: adminInputPill,
+      panel: adminVoicePanel,
+      liveControls: adminVoiceRecordingControls,
+      waveform: adminVoiceWave,
+      timer: adminVoiceTimer,
+      stopButton: adminVoiceStopButton,
+      cancelButton: adminVoiceCancelButton,
+      sendButton: adminVoiceSendButton,
+      preview: adminVoicePreview,
+      composeButton: adminComposeAction,
+      plusButton: adminChatMenuToggle,
+      status: adminVoiceStatus,
+      label: "réponse vocale",
+      canRecord: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open" && !adminImageBlob && !String(replyInput?.value || "").trim()),
+      canSend: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open" && (adminImageBlob || String(replyInput?.value || "").trim())),
+      canUsePlus: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open"),
+      onSend: (blob, peaks, voice) => uploadAdminVoice(blob, peaks, voice),
     });
   }
+
+  adminComposeAction?.addEventListener("click", (event) => {
+    if (String(replyInput?.value || "").trim() || adminImageBlob) return;
+    event.preventDefault();
+    closeAdminChatMenu();
+    void adminVoiceState?.start();
+  });
+  replyForm?.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-admin-compose-action]");
+    if (!actionButton || !replyForm.contains(actionButton)) return;
+    if (!String(replyInput?.value || "").trim() && !adminImageBlob) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    if (replySendButton && !replySendButton.disabled) replyForm.requestSubmit(replySendButton);
+  }, true);
+
+  updateAdminComposeAction();
 
   replyInput?.addEventListener("input", () => {
     replyInput.style.height = "auto";
     replyInput.style.height = `${Math.min(replyInput.scrollHeight, 112)}px`;
+    updateAdminComposeAction();
   });
   replyInput?.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
@@ -2084,7 +1932,7 @@
     const message = String(replyInput?.value || "").trim();
     const conversationId = currentConversationId;
     const sendingImage = Boolean(adminImageBlob);
-    if (adminVoiceState && (adminVoiceState.sending || adminVoiceState.recordedBlob || adminVoiceState.recorder?.state === "recording")) {
+    if (adminVoiceState && (adminVoiceState.sending || adminVoiceState.mode !== "idle")) {
       setStatus(replyStatus, "Envoie ou supprime le vocal avant d’envoyer un autre message.", "error");
       return;
     }
@@ -2147,6 +1995,7 @@
       replyInput.value = "";
       replyInput.style.height = "auto";
       clearAdminImage();
+      updateAdminComposeAction();
       setStatus(replyStatus, sendingImage ? "Image envoyée." : "Réponse envoyée.", "success");
       await Promise.all([loadSelectedConversation({ quiet: true }), loadConversations({ reset: true, quiet: true })]);
     } catch {

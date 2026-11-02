@@ -11,8 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/gestion-qg/admin.css" />
+    <link rel="stylesheet" href="/ui-refresh.css" />
     <script src="/image-tools.js" defer></script>
+    <script src="/icons.js" defer></script>
     <script src="/audio-player.js" defer></script>
+    <script src="/voice-recorder.js" defer></script>
     <script src="/gestion-qg/admin.js" defer></script>
   </head>
   <body class="admin-body">
@@ -22,7 +25,7 @@
       <div class="admin-layout">
         <aside class="admin-sidebar" aria-label="Navigation Admin">
           <a class="admin-back" href="/">
-            <span aria-hidden="true">←</span>
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-left"></use></svg>
             Retour au site
           </a>
 
@@ -33,7 +36,7 @@
             <div class="admin-header-copy">
               <p class="admin-eyebrow">QG2GIONNY</p>
               <h1>Administration <span>du QG</span></h1>
-              <p class="admin-identity-label"><span data-admin-identity-pseudo>Gionny</span><span aria-hidden="true"> · Hôte 👑</span></p>
+              <p class="admin-identity-label"><span data-admin-identity-pseudo>Gionny</span><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg><span>Hôte</span></p>
             </div>
           </header>
 
@@ -43,9 +46,9 @@
           </div>
 
           <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist" aria-orientation="vertical" hidden>
-            <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations" aria-label="Discussions"><span aria-hidden="true">💬</span> Discussions<span class="admin-tab-unread-count" data-admin-unread-count hidden>0</span></button>
-            <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><span aria-hidden="true">👥</span> Membres</button>
-            <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><span aria-hidden="true">⚙️</span> Réglages</button>
+            <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations" aria-label="Discussions"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-discussions"></use></svg> Discussions<span class="admin-tab-unread-count" data-admin-unread-count hidden>0</span></button>
+            <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-users"></use></svg> Membres</button>
+            <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-settings"></use></svg> Réglages</button>
           </nav>
           <button class="quiet-button admin-sidebar-logout" type="button" data-logout hidden>Se déconnecter</button>
           <p class="admin-sidebar-footnote">Panneau de gestion sécurisé</p>
@@ -79,7 +82,7 @@
           />
           <button class="primary-button" type="submit" data-login-button>
             <span>Ouvrir le panneau</span>
-            <span aria-hidden="true">→</span>
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg>
           </button>
           <p id="login-status" class="form-status" data-login-status role="status" aria-live="polite"></p>
         </form>
@@ -255,7 +258,7 @@
             <p class="save-status" data-save-status role="status" aria-live="polite"></p>
             <button class="primary-button save-button" type="submit" data-save-button>
               <span>Enregistrer les changements</span>
-              <span aria-hidden="true">✓</span>
+              <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg>
             </button>
           </div>
           </form>
@@ -279,7 +282,7 @@
           <section class="settings-section inbox-section" aria-labelledby="inbox-title">
           <div class="section-heading inbox-heading">
             <h3 class="sr-only" id="inbox-title">Discussions privées</h3>
-            <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh aria-label="Actualiser les discussions">↻</button>
+            <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh aria-label="Actualiser les discussions"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-rotate"></use></svg></button>
           </div>
           <p class="inbox-status" data-conversations-status role="status" aria-live="polite">Chargement des discussions…</p>
 
@@ -287,18 +290,18 @@
             <div class="mail-filter-tabs" role="group" aria-label="Filtrer les discussions">
               <button class="mail-filter-tab" type="button" aria-pressed="true" data-mail-filter="all">Tous</button>
               <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="unread">Non lus</button>
-              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="favorites">⭐ Favoris</button>
-              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="audio">🎤 Contient un vocal</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="favorites"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-star"></use></svg> Favoris</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="audio"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg> Contient un vocal</button>
             </div>
             <label class="mail-subject-filter">
               <span>Sujet</span>
               <select data-conversation-subject-filter>
                 <option value="">Tous les sujets</option>
-                <option value="🎤 Passer en live">🎤 Passer en live</option>
-                <option value="💡 Idée vidéo / React">💡 Idée vidéo / React</option>
-                <option value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</option>
-                <option value="❓ Question">❓ Question</option>
-                <option value="💬 Discussion">💬 Discussion</option>
+                <option value="Passer en live">Passer en live</option>
+                <option value="Idée vidéo / React">Idée vidéo / React</option>
+                <option value="Histoire / Anecdote">Histoire / Anecdote</option>
+                <option value="Question">Question</option>
+                <option value="Discussion">Discussion</option>
               </select>
             </label>
           </div>
@@ -306,7 +309,7 @@
           <div class="mail-bulk-toolbar" data-bulk-toolbar hidden>
             <span class="mail-selection-count" data-selection-count></span>
             <div class="mail-bulk-actions">
-              <button type="button" class="quiet-button" data-bulk-favorite>⭐ Mettre en favoris</button>
+              <button type="button" class="quiet-button" data-bulk-favorite><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-star"></use></svg> Mettre en favoris</button>
               <button type="button" class="quiet-button" data-bulk-read>Marquer comme lu</button>
               <button type="button" class="quiet-button" data-bulk-close>Fermer</button>
               <button type="button" class="mail-bulk-delete" data-bulk-delete>Supprimer la sélection</button>
@@ -329,7 +332,7 @@
 
             <section class="conversation-detail" aria-label="Discussion sélectionnée">
               <div class="conversation-empty" data-conversation-empty>
-                <span aria-hidden="true">✦</span>
+                <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-sparkle"></use></svg>
                 <strong>Choisis une discussion</strong>
                 <p>Les messages et tes réponses s’afficheront ici.</p>
               </div>
@@ -338,7 +341,7 @@
                   <div class="conversation-identity">
                     <img class="thread-member-avatar" data-thread-avatar alt="" hidden />
                     <span class="thread-member-avatar-fallback" data-thread-avatar-fallback aria-hidden="true"></span>
-                    <h4><span data-thread-pseudo>Membre</span><span class="conversation-host-crown" data-thread-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span></h4>
+                    <h4><span data-thread-pseudo>Membre</span><span class="conversation-host-crown" data-thread-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span><span class="verified-badge" data-thread-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span></h4>
                     <span class="thread-status" data-thread-status></span>
                     <span class="thread-subject" data-thread-subject></span>
                   </div>
@@ -356,45 +359,40 @@
                   <input type="file" accept="image/*" data-admin-chat-image-input hidden />
                   <div class="chat-image-preview admin-chat-image-preview" data-admin-image-preview hidden>
                     <img data-admin-image-preview-img alt="Aperçu de l’image à joindre" />
-                    <button type="button" data-admin-image-remove aria-label="Retirer l’image">×</button>
+                    <button type="button" data-admin-image-remove aria-label="Retirer l’image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
                   </div>
-                  <div class="admin-chat-compose-row">
-                    <button class="admin-chat-plus" type="button" data-admin-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false">+</button>
-                    <div class="admin-chat-input-wrap">
+                  <div class="admin-chat-compose-row x-chat-compose-row" data-admin-compose-row>
+                    <button class="admin-chat-plus x-chat-plus" type="button" data-admin-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
+                    <button class="x-chat-cancel-button" type="button" data-admin-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
+                    <div class="admin-chat-input-wrap x-chat-input-pill" data-admin-input-pill>
                       <div class="chat-attachment-menu admin-chat-menu" data-admin-chat-menu hidden>
-                        <button type="button" class="chat-menu-option" data-admin-chat-image-option><span aria-hidden="true">▧</span> Joindre une image</button>
-                        <button type="button" class="chat-menu-option" data-admin-chat-subject-toggle aria-expanded="false"><span aria-hidden="true">⌁</span> Changer le sujet</button>
+                        <button type="button" class="chat-menu-option" data-admin-chat-image-option><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg> Joindre une image</button>
+                        <button type="button" class="chat-menu-option" data-admin-chat-subject-toggle aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-tag"></use></svg> Changer le sujet</button>
                         <div class="chat-subject-options" data-admin-chat-subject-options hidden>
-                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="🎤 Passer en live">🎤 Passer en live</button>
-                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="💡 Idée vidéo / React">💡 Idée vidéo / React</button>
-                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</button>
-                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="❓ Question">❓ Question</button>
-                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="💬 Discussion">💬 Discussion</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="Passer en live"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Passer en live</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="Idée vidéo / React"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-bulb"></use></svg> Idée vidéo / React</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="Histoire / Anecdote"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-book"></use></svg> Histoire / Anecdote</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="Question"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-help"></use></svg> Question</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="Discussion"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussion</button>
                         </div>
                       </div>
                       <textarea data-reply-input rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse"></textarea>
-                      <button class="admin-chat-voice-record" type="button" data-admin-voice-record aria-label="Enregistrer un message vocal" title="Message vocal">
-                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>
-                      </button>
-                      <button class="primary-button reply-send" type="submit" data-reply-send aria-label="Envoyer la réponse" title="Envoyer la réponse">
-                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
-                      </button>
+                      <button class="admin-chat-voice-record x-chat-action" type="button" data-admin-compose-action aria-label="Enregistrer un message vocal" title="Message vocal"><svg class="qg-icon" data-admin-compose-mic aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg><svg class="qg-icon" data-admin-compose-send hidden aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg></button>
+                    </div>
+                    <div class="admin-voice-panel x-voice-panel" data-admin-voice-panel data-state="idle" hidden>
+                      <div class="admin-voice-pill x-voice-pill" data-admin-voice-pill>
+                        <div class="admin-voice-recording-controls x-voice-live" data-admin-voice-recording-controls hidden>
+                          <span class="admin-voice-timer x-voice-timer" data-admin-voice-timer>0:00</span>
+                          <div class="admin-voice-wave x-voice-wave" data-admin-voice-wave aria-hidden="true"></div>
+                          <button type="button" class="admin-voice-action admin-voice-stop x-voice-stop" data-admin-voice-stop aria-label="Arrêter l’enregistrement"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-stop"></use></svg></button>
+                        </div>
+                        <div class="admin-voice-preview x-voice-preview" data-admin-voice-preview hidden></div>
+                        <button type="button" class="admin-voice-action admin-voice-send x-voice-send" data-admin-voice-send aria-label="Envoyer le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg></button>
+                      </div>
                     </div>
                   </div>
-                  <div class="admin-voice-panel" data-admin-voice-panel data-state="idle" hidden>
-                    <div class="admin-voice-recording-controls" data-admin-voice-recording-controls>
-                      <span class="admin-voice-live-dot" aria-hidden="true"></span>
-                      <div class="admin-voice-wave" data-admin-voice-wave aria-hidden="true"></div>
-                      <span class="admin-voice-timer" data-admin-voice-timer>0:00 / 1:00</span>
-                      <button type="button" class="admin-voice-action admin-voice-cancel" data-admin-voice-cancel aria-label="Annuler et supprimer le vocal">🗑 Annuler</button>
-                      <button type="button" class="admin-voice-action admin-voice-stop" data-admin-voice-stop aria-label="Arrêter l’enregistrement">⏹ Arrêter</button>
-                    </div>
-                    <div class="admin-voice-preview" data-admin-voice-preview hidden></div>
-                    <div class="admin-voice-preview-actions" data-admin-voice-preview-actions hidden>
-                      <button type="button" class="admin-voice-action admin-voice-retry" data-admin-voice-retry>↻ Recommencer / supprimer</button>
-                      <button type="button" class="admin-voice-action admin-voice-send" data-admin-voice-send>Envoyer le vocal</button>
-                    </div>
-                  </div>
+                  <p class="admin-voice-status" data-admin-voice-status role="status" aria-live="polite" hidden></p>
+                  <button class="sr-only" type="submit" data-reply-send>Envoyer la réponse</button>
                   <div class="reply-submit-row"><p class="reply-status" data-reply-status role="status" aria-live="polite"></p></div>
                 </form>
               </div>

@@ -578,9 +578,6 @@ a:focus-visible {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.discord-cta[data-visited="true"] .discord-action-default {
-  display: none;
-}
 
 .visited-badge {
   display: inline-flex;

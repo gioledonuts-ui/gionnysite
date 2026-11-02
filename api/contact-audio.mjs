@@ -3,11 +3,11 @@ import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAccountReply,
   addAdminAudioReply,
-  CONVERSATION_SUBJECTS,
   getAccountConversation,
   getAdminReplyIdentity,
   getConversationAudio,
   isConversationId,
+  isConversationSubject,
   readAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
 
@@ -39,6 +39,11 @@ function queryValue(request, key) {
 function firstHeader(value) {
   if (Array.isArray(value)) value = value[0];
   return typeof value === "string" ? value.split(",")[0].trim() : "";
+}
+
+function fullHeader(value) {
+  if (Array.isArray(value)) value = value[0];
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function clientKey(request) {
@@ -105,6 +110,14 @@ async function readAudioBody(request) {
   return !tooLarge && total > 0 ? Buffer.concat(chunks, total) : null;
 }
 
+function parseVoicePeaks(value) {
+  if (!value) return [];
+  const parts = value.split(",");
+  if (parts.length !== 38) return null;
+  const peaks = parts.map((part) => Number(part));
+  return peaks.every((peak) => Number.isFinite(peak) && peak >= 0 && peak <= 1) ? peaks : null;
+}
+
 function sendJson(response, status, data) {
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   return response.status(status).json(data);
@@ -168,9 +181,11 @@ export default async function handler(request, response) {
     } catch {
       requestedSubject = "";
     }
-    if (!adminReply && !CONVERSATION_SUBJECTS.includes(requestedSubject)) {
+    if (!adminReply && !isConversationSubject(requestedSubject)) {
       return sendJson(response, 400, { error: "Choisis un sujet pour ta discussion." });
     }
+    const audioPeaks = parseVoicePeaks(fullHeader(request.headers?.["x-voice-peaks"]));
+    if (audioPeaks === null) return sendJson(response, 400, { error: "Le profil vocal est invalide." });
     const bytes = await readAudioBody(request);
     if (!bytes) return sendJson(response, 400, { error: "Le vocal est vide ou dépasse la limite de 200 Ko." });
     const subject = requestedSubject;
@@ -180,7 +195,7 @@ export default async function handler(request, response) {
         const conversationId = firstHeader(request.headers?.["x-conversation-id"]);
         if (!isConversationId(conversationId)) return sendJson(response, 400, { error: "Choisis une discussion valide." });
         const identity = await getAdminReplyIdentity(request);
-        const result = await addAdminAudioReply(conversationId, bytes, mimeType, identity);
+        const result = await addAdminAudioReply(conversationId, bytes, mimeType, identity, undefined, audioPeaks);
         if (!result.ok) {
           const failure = conversationError(result.reason);
           return sendJson(response, failure.status, { error: failure.error });
@@ -193,6 +208,7 @@ export default async function handler(request, response) {
         subject,
         audioBytes: bytes,
         audioMimeType: mimeType,
+        audioPeaks,
         newConversation: firstHeader(request.headers?.["x-new-conversation"]) === "true",
       });
       if (!result.ok) {

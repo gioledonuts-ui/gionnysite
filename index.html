@@ -24,12 +24,15 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/ui-refresh.css" />
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
     <script src="/image-tools.js" defer></script>
+    <script src="/icons.js" defer></script>
     <script src="/audio-player.js" defer></script>
+    <script src="/voice-recorder.js" defer></script>
     <script src="/script.js" defer></script>
   </head>
   <body>
@@ -129,7 +132,7 @@
           </div>
           <div class="welcome-account-bar" data-member-access role="group" aria-label="Accès au compte">
             <div class="welcome-account-identity">
-              <span class="member-visitor" data-member-visitor>👤 Non connecté</span>
+              <span class="member-visitor" data-member-visitor><svg class="qg-icon member-visitor-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-user"></use></svg> Non connecté</span>
               <span class="member-identity" data-member-identity hidden>
                 <span class="member-profile-avatar" aria-hidden="true">
                   <img class="member-avatar-image" data-member-avatar alt="" hidden />
@@ -139,10 +142,8 @@
                     <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
                   </svg>
                 </span>
-                <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden>
-                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg>
-                </span>
-                <span class="member-profile-pseudo" data-member-pseudo></span>
+                <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span>
+                <span class="member-profile-name-line"><span class="member-profile-pseudo" data-member-pseudo></span><span class="verified-badge" data-member-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span></span>
               </span>
             </div>
             <div class="member-access-actions" data-member-logged-out>
@@ -158,6 +159,7 @@
                 aria-expanded="false"
                 aria-controls="profile-dialog"
               >Mon Profil</button>
+              <a class="member-access-button member-access-button--admin" href="/gestion-qg/" data-host-admin-link hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Admin</a>
               <button class="member-access-button member-access-button--logout" type="button" data-contact-logout>Déconnexion</button>
             </div>
             <span class="site-presence" data-site-presence hidden aria-live="polite">
@@ -219,7 +221,7 @@
                 </svg>
               </span>
               <span class="discord-content">
-                <span class="discord-topline">
+                <span class="discord-topline creator-slide-topline">
                   <span class="discord-community-pill">
                     <svg class="discord-community-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -232,6 +234,7 @@
                     <span class="discord-online-dot" aria-hidden="true"></span>
                     <span class="discord-online-copy"><span data-discord-online-count>0</span> en ligne</span>
                   </span>
+                  <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
                 </span>
                 <span class="discord-copy">
                   <span class="discord-overline">ON SE RETROUVE SUR</span>
@@ -247,13 +250,7 @@
                 </span>
                 <span class="discord-footer">
                   <span class="discord-action">
-                    <span class="discord-action-default">REJOINDRE <span aria-hidden="true">↗</span></span>
-                    <span class="visited-badge" aria-live="polite" hidden>
-                      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-                        <path d="m3.5 8.2 3 3 6-6.2" />
-                      </svg>
-                      Déjà visité
-                    </span>
+                    <span class="discord-action-default">REJOINDRE <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span>
                   </span>
                   <span class="discord-community-meta">
                     <span class="discord-member-count" data-discord-member-count hidden></span>
@@ -283,9 +280,10 @@
               </span>
               <span class="discord-content">
                 <span class="discord-topline creator-slide-topline" aria-live="polite">
-                  <span class="creator-state-pill" data-carousel-twitch-live-label hidden>📺 STREAM LIVE</span>
+                  <span class="creator-state-pill" data-carousel-twitch-live-label hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Stream live</span>
                   <span class="creator-state-pill creator-state-pill--channel" data-carousel-twitch-channel><svg class="creator-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h17v12l-5 5h-4l-3 3v-3H4V3Zm4 3v8h2V6H8Zm5 0v8h2V6h-2Z"/></svg> CHAÎNE OFFICIELLE</span>
-                  <span class="creator-state-pill creator-state-pill--live" data-carousel-twitch-live hidden>🔴 En direct</span>
+                  <span class="creator-state-pill creator-state-pill--live" data-carousel-twitch-live hidden><span class="creator-live-dot" aria-hidden="true"></span> En direct</span>
+                  <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
                 </span>
                 <span class="discord-copy">
                   <span class="discord-overline">ON SE RETROUVE SUR</span>
@@ -299,11 +297,7 @@
                 </span>
                 <span class="discord-footer creator-slide-footer">
                   <span class="discord-action">
-                    <span class="discord-action-default">REJOINDRE TWITCH <span aria-hidden="true">↗</span></span>
-                    <span class="visited-badge" aria-live="polite" hidden>
-                      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg>
-                      Déjà visité
-                    </span>
+                    <span class="discord-action-default">REJOINDRE TWITCH <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span>
                   </span>
                   <span class="discord-community-meta"><span class="discord-invite">@7gionny</span></span>
                 </span>
@@ -332,7 +326,7 @@
                 <span class="discord-topline creator-slide-topline">
                   <span class="creator-state-pill creator-state-pill--youtube"><svg class="creator-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.2 7a3.2 3.2 0 0 0-2.2-2.3C19.2 4.2 12 4.2 12 4.2s-7.2 0-9 .5A3.2 3.2 0 0 0 .8 7C.3 8.8.3 12 .3 12s0 3.2.5 5a3.2 3.2 0 0 0 2.2 2.3c1.8.5 9 .5 9 .5s7.2 0 9-.5a3.2 3.2 0 0 0 2.2-2.3c.5-1.8.5-5 .5-5s0-3.2-.5-5ZM9.7 15.6V8.4l6.1 3.6-6.1 3.6Z"/></svg> DERNIÈRES VIDÉOS</span>
                   <span class="creator-state-pill creator-state-pill--new" data-youtube-count aria-live="polite" hidden></span>
-                  <span class="creator-state-pill creator-state-pill--visited" data-youtube-visited aria-live="polite" hidden>✓ DÉJÀ VISITÉ</span>
+                  <span class="creator-state-pill creator-state-pill--visited" data-youtube-visited aria-live="polite" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg> Déjà visité</span>
                 </span>
                 <span class="discord-copy">
                   <span class="discord-overline">LES DERNIERS CONTENUS</span>
@@ -345,7 +339,7 @@
                   <span class="discord-detail" data-carousel-youtube-detail>Vidéos, replays de live et meilleurs moments sur YouTube.</span>
                 </span>
                 <span class="discord-footer creator-slide-footer">
-                  <span class="discord-action"><span class="discord-action-default">VOIR LES VIDÉOS <span aria-hidden="true">↗</span></span></span>
+                  <span class="discord-action"><span class="discord-action-default">VOIR LA CHAÎNE <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span></span>
                   <span class="discord-community-meta"><span class="discord-invite">@gionnyyy</span></span>
                 </span>
               </span>
@@ -383,10 +377,10 @@
                 <li>Dimanche</li>
               </ul>
               <p class="schedule-countdown" data-next-live-countdown aria-live="off">
-                <span data-next-live-prefix>⏳ Prochain live dans :</span>
+                <span data-next-live-prefix><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg> Prochain live dans :</span>
                 <strong data-next-live-value>--h --m --s</strong>
               </p>
-              <p class="schedule-countdown-live" data-current-live role="status" hidden>🔴 EN DIRECT ACTUELLEMENT</p>
+              <p class="schedule-countdown-live" data-current-live role="status" hidden><span class="creator-live-dot" aria-hidden="true"></span> EN DIRECT ACTUELLEMENT</p>
             </section>
           </div>
         </section>
@@ -402,7 +396,7 @@
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Rejoindre le chat sur Twitch <span aria-hidden="true">↗</span>
+                Rejoindre le chat sur Twitch <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg>
               </a>
             </div>
             <div class="live-player-video" data-twitch-player></div>
@@ -594,7 +588,7 @@
       </main>
       <footer class="site-footer" aria-label="Pied de page">
         <div class="site-footer-brand">
-          <p class="site-footer-copyright">Le QG de Gionny © 2026 — Tous droits réservés.</p>
+          <p class="site-footer-copyright">Le QG de Gionny — Copyright 2026. Tous droits réservés.</p>
           <p class="site-footer-tagline">La commu, les lives et les meilleurs moments.</p>
         </div>
         <nav class="site-footer-nav" aria-label="Liens rapides">
@@ -621,7 +615,6 @@
             aria-expanded="false"
             aria-controls="legal-dialog"
           >Mentions légales &amp; Confidentialité</button>
-          <a class="site-footer-admin" href="/gestion-qg/">Accès Admin</a>
         </div>
       </footer>
     </div>
@@ -659,16 +652,16 @@
         <div class="contact-dialog-topline">
           <img class="contact-header-avatar" src="/assets/gionny-profile.jpg" alt="" />
           <div class="contact-header-identity">
-            <strong id="contact-widget-title">Gionny <span aria-label="Hôte">👑</span></strong>
-            <span class="contact-header-subject" data-contact-header-subject>💬 Discussion</span>
+            <strong id="contact-widget-title">Gionny <svg class="qg-icon host-crown-icon" role="img" aria-label="Hôte"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></strong>
+            <span class="contact-header-subject" data-contact-header-subject>Discussion</span>
           </div>
           <button class="contact-dialog-close" type="button" data-minimize-contact aria-label="Réduire la discussion">
-            <span aria-hidden="true">⌄</span>
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chevron-down"></use></svg>
           </button>
         </div>
 
         <section class="contact-auth" data-contact-auth aria-labelledby="contact-title">
-          <div class="chat-welcome-mark" aria-hidden="true">✦</div>
+          <div class="chat-welcome-mark" aria-hidden="true"><svg class="qg-icon"><use href="/assets/qg-icons.svg#icon-sparkle"></use></svg></div>
           <h2 id="contact-title">La discussion privée de Gionny</h2>
           <p id="contact-copy">Connecte-toi pour reprendre ton fil, ou crée rapidement un compte sans e-mail.</p>
           <div class="contact-auth-tabs" role="tablist" aria-label="Compte de discussion">
@@ -697,53 +690,51 @@
           <div class="contact-compose-heading">
             <div>
               <h2>Nouvelle discussion</h2>
-              <p><span data-account-pseudo></span><span class="contact-host-crown" data-account-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span></p>
+              <p><span data-account-pseudo></span><span class="contact-host-crown" data-account-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span><span class="verified-badge" data-account-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span></p>
             </div>
             <button class="contact-logout" type="button" data-contact-logout>Déconnexion</button>
           </div>
           <form class="contact-form contact-chat-composer" data-contact-form data-chat-composer>
-            <input type="hidden" name="subject" value="💬 Discussion" data-chat-subject-select />
+            <input type="hidden" name="subject" value="Discussion" data-chat-subject-select />
             <input type="file" accept="image/*" data-chat-image-input hidden />
             <div class="chat-image-preview" data-chat-image-preview hidden>
               <img data-chat-image-preview-img alt="Aperçu de l’image à joindre" />
-              <button type="button" data-chat-image-remove aria-label="Retirer l’image">×</button>
+              <button type="button" data-chat-image-remove aria-label="Retirer l’image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
             </div>
-            <div class="chat-compose-row">
-              <button class="chat-plus-button" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false">+</button>
-              <div class="chat-input-surface">
+            <div class="chat-compose-row x-chat-compose-row">
+              <button class="chat-plus-button x-chat-plus" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
+              <button class="x-chat-cancel-button" type="button" data-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
+              <div class="chat-input-surface x-chat-input-pill" data-chat-input-surface>
                 <div class="chat-attachment-menu" data-chat-menu hidden>
-              <button type="button" class="chat-menu-option" data-chat-image-option><span aria-hidden="true">▧</span> Joindre une image</button>
-              <button type="button" class="chat-menu-option" data-chat-subject-toggle aria-expanded="false"><span aria-hidden="true">⌁</span> Changer le sujet</button>
-              <div class="chat-subject-options" data-chat-subject-options hidden>              <button type="button" class="chat-subject-option" data-chat-subject-value="🎤 Passer en live">🎤 Passer en live</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="💡 Idée vidéo / React">💡 Idée vidéo / React</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="❓ Question">❓ Question</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="💬 Discussion">💬 Discussion</button></div>
-            </div>
-                <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ton message" data-chat-message></textarea>
-                <div class="contact-voice" data-voice-controls>
-                <button class="contact-voice-record" type="button" data-voice-record data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
-                  <svg data-compose-mic viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>
-                  <svg data-compose-send-icon hidden viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
-                </button>
-                <div class="contact-voice-recorder" data-voice-recorder data-state="recording" hidden>
-                  <div class="contact-voice-recording-controls" data-voice-recording-controls>
-                    <span class="contact-voice-live-dot" aria-hidden="true"></span>
-                    <div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
-                    <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
-                    <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑 Annuler</button>
-                    <button type="button" class="contact-voice-stop" data-voice-stop aria-label="Arrêter l’enregistrement">⏹ Arrêter</button>
-                  </div>
-                  <div class="contact-voice-preview" data-voice-preview hidden></div>
-                  <div class="contact-voice-preview-actions" data-voice-preview-actions hidden>
-                    <button type="button" class="contact-voice-trash" data-voice-retry>↻ Recommencer / supprimer</button>
-                    <button type="button" class="contact-voice-send" data-voice-send>Envoyer le vocal</button>
+                  <button type="button" class="chat-menu-option" data-chat-image-option><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg> Joindre une image</button>
+                  <button type="button" class="chat-menu-option" data-chat-subject-toggle aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-tag"></use></svg> Changer le sujet</button>
+                  <div class="chat-subject-options" data-chat-subject-options hidden>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Passer en live"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Passer en live</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Idée vidéo / React"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-bulb"></use></svg> Idée vidéo / React</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Histoire / Anecdote"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-book"></use></svg> Histoire / Anecdote</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Question"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-help"></use></svg> Question</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Discussion"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussion</button>
                   </div>
                 </div>
-                <p class="contact-voice-status" data-voice-status role="status" aria-live="polite"></p>
+                <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ton message" data-chat-message></textarea>
+                <button class="contact-voice-record x-chat-action" type="button" data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
+                  <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg>
+                  <svg class="qg-icon" data-compose-send-icon hidden aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg>
+                </button>
               </div>
+              <div class="contact-voice x-voice-panel" data-voice-controls data-state="idle" hidden>
+                <div class="contact-voice-recorder x-voice-pill" data-voice-recorder data-state="idle">
+                  <div class="contact-voice-recording-controls x-voice-live" data-voice-recording-controls hidden>
+                    <span class="contact-voice-timer x-voice-timer" data-voice-timer>0:00</span>
+                    <div class="contact-voice-wave x-voice-wave" data-voice-wave aria-hidden="true"></div>
+                    <button type="button" class="contact-voice-stop x-voice-stop" data-voice-stop aria-label="Arrêter l’enregistrement"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-stop"></use></svg></button>
+                  </div>
+                  <div class="contact-voice-preview x-voice-preview" data-voice-preview hidden></div>
+                  <button type="button" class="contact-voice-send x-voice-send" data-voice-send aria-label="Envoyer le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg></button>
+                </div>
               </div>
             </div>
+            <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Ne pas remplir</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
             <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
             <p class="contact-privacy">Discussion privée · vocaux jusqu’à 1 min / 200 Ko.</p>
@@ -755,7 +746,7 @@
           <div class="contact-thread-heading">
             <div>
               <h2 id="contact-thread-title">Ta discussion</h2>
-              <p><span data-contact-thread-pseudo></span><span class="contact-host-crown" data-contact-thread-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span> · <span data-contact-thread-subject></span></p>
+              <p><span data-contact-thread-pseudo></span><span class="contact-host-crown" data-contact-thread-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span><span class="verified-badge" data-contact-thread-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span> · <span data-contact-thread-subject></span></p>
             </div>
             <div class="contact-thread-actions">
               <span class="contact-thread-state" data-contact-thread-state>Ouverte</span>
@@ -765,48 +756,46 @@
           <div class="contact-thread-messages" data-contact-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
           <p class="contact-thread-status" data-contact-thread-status role="status" aria-live="polite"></p>
           <form class="contact-reply-form contact-chat-composer" data-contact-reply-form data-chat-composer>
-            <input type="hidden" name="subject" value="💬 Discussion" data-chat-subject-select />
+            <input type="hidden" name="subject" value="Discussion" data-chat-subject-select />
             <input type="file" accept="image/*" data-chat-image-input hidden />
             <div class="chat-image-preview" data-chat-image-preview hidden>
               <img data-chat-image-preview-img alt="Aperçu de l’image à joindre" />
-              <button type="button" data-chat-image-remove aria-label="Retirer l’image">×</button>
+              <button type="button" data-chat-image-remove aria-label="Retirer l’image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
             </div>
-            <div class="chat-compose-row">
-              <button class="chat-plus-button" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false">+</button>
-              <div class="chat-input-surface">
+            <div class="chat-compose-row x-chat-compose-row">
+              <button class="chat-plus-button x-chat-plus" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
+              <button class="x-chat-cancel-button" type="button" data-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
+              <div class="chat-input-surface x-chat-input-pill" data-chat-input-surface>
                 <div class="chat-attachment-menu" data-chat-menu hidden>
-              <button type="button" class="chat-menu-option" data-chat-image-option><span aria-hidden="true">▧</span> Joindre une image</button>
-              <button type="button" class="chat-menu-option" data-chat-subject-toggle aria-expanded="false"><span aria-hidden="true">⌁</span> Changer le sujet</button>
-              <div class="chat-subject-options" data-chat-subject-options hidden>              <button type="button" class="chat-subject-option" data-chat-subject-value="🎤 Passer en live">🎤 Passer en live</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="💡 Idée vidéo / React">💡 Idée vidéo / React</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="❓ Question">❓ Question</button>
-              <button type="button" class="chat-subject-option" data-chat-subject-value="💬 Discussion">💬 Discussion</button></div>
-            </div>
-                <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse" data-chat-message></textarea>
-                <div class="contact-voice" data-voice-controls>
-                <button class="contact-voice-record" type="button" data-voice-record data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
-                  <svg data-compose-mic viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>
-                  <svg data-compose-send-icon hidden viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
-                </button>
-                <div class="contact-voice-recorder" data-voice-recorder data-state="recording" hidden>
-                  <div class="contact-voice-recording-controls" data-voice-recording-controls>
-                    <span class="contact-voice-live-dot" aria-hidden="true"></span>
-                    <div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
-                    <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
-                    <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑 Annuler</button>
-                    <button type="button" class="contact-voice-stop" data-voice-stop aria-label="Arrêter l’enregistrement">⏹ Arrêter</button>
-                  </div>
-                  <div class="contact-voice-preview" data-voice-preview hidden></div>
-                  <div class="contact-voice-preview-actions" data-voice-preview-actions hidden>
-                    <button type="button" class="contact-voice-trash" data-voice-retry>↻ Recommencer / supprimer</button>
-                    <button type="button" class="contact-voice-send" data-voice-send>Envoyer le vocal</button>
+                  <button type="button" class="chat-menu-option" data-chat-image-option><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg> Joindre une image</button>
+                  <button type="button" class="chat-menu-option" data-chat-subject-toggle aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-tag"></use></svg> Changer le sujet</button>
+                  <div class="chat-subject-options" data-chat-subject-options hidden>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Passer en live"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Passer en live</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Idée vidéo / React"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-bulb"></use></svg> Idée vidéo / React</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Histoire / Anecdote"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-book"></use></svg> Histoire / Anecdote</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Question"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-help"></use></svg> Question</button>
+                    <button type="button" class="chat-subject-option" data-chat-subject-value="Discussion"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussion</button>
                   </div>
                 </div>
-                <p class="contact-voice-status" data-voice-status role="status" aria-live="polite"></p>
+                <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse" data-chat-message></textarea>
+                <button class="contact-voice-record x-chat-action" type="button" data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
+                  <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg>
+                  <svg class="qg-icon" data-compose-send-icon hidden aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg>
+                </button>
               </div>
+              <div class="contact-voice x-voice-panel" data-voice-controls data-state="idle" hidden>
+                <div class="contact-voice-recorder x-voice-pill" data-voice-recorder data-state="idle">
+                  <div class="contact-voice-recording-controls x-voice-live" data-voice-recording-controls hidden>
+                    <span class="contact-voice-timer x-voice-timer" data-voice-timer>0:00</span>
+                    <div class="contact-voice-wave x-voice-wave" data-voice-wave aria-hidden="true"></div>
+                    <button type="button" class="contact-voice-stop x-voice-stop" data-voice-stop aria-label="Arrêter l’enregistrement"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-stop"></use></svg></button>
+                  </div>
+                  <div class="contact-voice-preview x-voice-preview" data-voice-preview hidden></div>
+                  <button type="button" class="contact-voice-send x-voice-send" data-voice-send aria-label="Envoyer le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg></button>
+                </div>
               </div>
             </div>
+            <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <button class="sr-only" type="submit" data-contact-reply-submit>Envoyer</button>
           </form>
           <div class="contact-thread-closed" data-contact-closed hidden>
@@ -827,7 +816,7 @@
       <div class="profile-dialog-card">
         <div class="profile-dialog-topline">
           <span class="profile-dialog-kicker">ESPACE MEMBRE · COMPTE</span>
-          <button class="profile-dialog-close" type="button" data-profile-close aria-label="Fermer Mon Profil"><span aria-hidden="true">×</span></button>
+          <button class="profile-dialog-close" type="button" data-profile-close aria-label="Fermer Mon Profil"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
         </div>
         <div class="profile-dialog-identity">
           <div class="profile-avatar-editor">
@@ -844,8 +833,9 @@
             <h2 id="profile-dialog-title">Mon Profil</h2>
             <div class="profile-username-display">
               <span data-profile-display-name></span>
-              <span class="profile-dialog-crown" data-profile-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span>
-              <button class="profile-pseudo-edit" type="button" data-profile-pseudo-edit aria-label="Modifier le pseudo">✎</button>
+              <span class="profile-dialog-crown" data-profile-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span>
+              <span class="verified-badge" data-profile-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span>
+              <button class="profile-pseudo-edit" type="button" data-profile-pseudo-edit aria-label="Modifier le pseudo"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-edit"></use></svg></button>
             </div>
             <p id="profile-dialog-copy">Compte de discussion privé · aucun e-mail associé.</p>
           </div>
@@ -865,7 +855,7 @@
         </form>
         <section class="profile-password-section" aria-labelledby="profile-password-title">
           <button class="profile-password-toggle" type="button" data-profile-password-toggle aria-expanded="false" aria-controls="profile-password-form">
-            <span id="profile-password-title">Changer mon mot de passe</span><span aria-hidden="true">＋</span>
+            <span id="profile-password-title">Changer mon mot de passe</span><span class="profile-password-toggle-icons" aria-hidden="true"><svg data-password-toggle-plus class="qg-icon"><use href="/assets/qg-icons.svg#icon-plus"></use></svg><svg data-password-toggle-minus class="qg-icon" hidden><use href="/assets/qg-icons.svg#icon-minus"></use></svg></span>
           </button>
           <form class="profile-password-form" id="profile-password-form" data-profile-password-form hidden>
             <label class="contact-field"><span>Mot de passe actuel</span><input name="currentPassword" type="password" autocomplete="current-password" maxlength="128" required /></label>
@@ -892,7 +882,7 @@
         <div class="about-dialog-topline">
           <span class="about-dialog-kicker">LE QG · QUI SUIS-JE ?</span>
           <button class="about-dialog-close" type="button" data-close-about aria-label="Fermer la présentation">
-            <span aria-hidden="true">×</span>
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg>
           </button>
         </div>
         <div class="about-dialog-mark" aria-hidden="true">?</div>
@@ -916,7 +906,7 @@
             <h2 id="legal-dialog-title">Mentions légales &amp; Confidentialité</h2>
           </div>
           <button class="legal-dialog-close" type="button" data-close-legal aria-label="Fermer les mentions légales">
-            <span aria-hidden="true">×</span>
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg>
           </button>
         </div>
         <div class="legal-dialog-content" id="legal-dialog-copy" tabindex="0">
@@ -945,7 +935,10 @@
             </p>
           </section>
         </div>
-        <button class="legal-dialog-done" type="button" data-close-legal>Fermer</button>
+        <div class="legal-dialog-actions">
+          <a class="legal-admin-button" href="/gestion-qg/"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Accès Admin</a>
+          <button class="legal-dialog-done" type="button" data-close-legal>Fermer</button>
+        </div>
       </div>
     </dialog>
   </body>

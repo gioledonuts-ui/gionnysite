@@ -3,11 +3,11 @@ import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAccountReply,
   addAdminImageReply,
-  CONVERSATION_SUBJECTS,
   getAccountConversation,
   getAdminReplyIdentity,
   getConversationImage,
   isConversationId,
+  isConversationSubject,
   readAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
 
@@ -182,7 +182,7 @@ export default async function handler(request, response) {
     const encodedSubject = firstHeader(request.headers?.["x-conversation-subject"]);
     let subject = "";
     try { subject = decodeURIComponent(encodedSubject); } catch { /* invalid subject below */ }
-    if (!CONVERSATION_SUBJECTS.includes(subject)) return sendJson(response, 400, { error: "Choisis un sujet pour ta discussion." });
+    if (!isConversationSubject(subject)) return sendJson(response, 400, { error: "Choisis un sujet pour ta discussion." });
     try {
       const result = await addAccountReply(sessionToken, {
         message,

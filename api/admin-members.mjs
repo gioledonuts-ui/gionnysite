@@ -5,6 +5,7 @@ import {
   isConversationId,
   listVisitorAccounts,
   setVisitorAccountBanned,
+  setVisitorAccountBadges,
   setVisitorAccountRole,
 } from "../lib/contact-inbox.mjs";
 
@@ -56,7 +57,7 @@ function memberError(reason) {
   if (reason === "not_found") return { status: 404, error: "Ce membre n’existe plus." };
   if (reason === "host") return { status: 409, error: "Retire d’abord le rôle Hôte avant de bannir ou supprimer ce compte." };
   if (reason === "banned") return { status: 409, error: "Un compte banni ne peut pas devenir Hôte." };
-  if (reason === "invalid_role" || reason === "invalid_status") return { status: 400, error: "Cette action sur le membre n’est pas valide." };
+  if (reason === "invalid_role" || reason === "invalid_status" || reason === "invalid_badges") return { status: 400, error: "Cette action sur le membre n’est pas valide." };
   return { status: 409, error: "Cette action sur le membre n’a pas pu être effectuée." };
 }
 
@@ -85,10 +86,15 @@ export default async function handler(request, response) {
     if (request.method === "PATCH") {
       const hasRole = Object.hasOwn(body, "role");
       const hasBanned = Object.hasOwn(body, "banned");
-      if (hasRole === hasBanned) return response.status(400).json({ error: "Choisis une seule action pour ce membre." });
+      const hasBadges = Object.hasOwn(body, "badges");
+      if ([hasRole, hasBanned, hasBadges].filter(Boolean).length !== 1) {
+        return response.status(400).json({ error: "Choisis une seule action pour ce membre." });
+      }
       const result = hasRole
         ? await setVisitorAccountRole(body.id, body.role)
-        : await setVisitorAccountBanned(body.id, body.banned);
+        : hasBanned
+          ? await setVisitorAccountBanned(body.id, body.banned)
+          : await setVisitorAccountBadges(body.id, body.badges);
       if (!result.ok) {
         const failure = memberError(result.reason);
         return response.status(failure.status).json({ error: failure.error });

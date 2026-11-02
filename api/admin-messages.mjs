@@ -3,7 +3,6 @@ import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAdminImageReply,
   addAdminReply,
-  CONVERSATION_SUBJECTS,
   countUnreadConversations,
   deleteContactMessage,
   deleteConversation,
@@ -11,6 +10,7 @@ import {
   getConversationForAdmin,
   isContactMessagePath,
   isConversationId,
+  isConversationSubject,
   listContactMessages,
   listConversations,
   markConversationReadByAdmin,
@@ -116,7 +116,7 @@ export default async function handler(request, response) {
       if (view === "conversations") {
         const filter = queryValue(request, "filter") || "all";
         const subject = queryValue(request, "subject");
-        if (!["all", "unread", "favorites", "audio"].includes(filter) || (subject && !CONVERSATION_SUBJECTS.includes(subject))) {
+        if (!["all", "unread", "favorites", "audio"].includes(filter) || (subject && !isConversationSubject(subject))) {
           return response.status(400).json({ error: "Les filtres de conversations sont invalides." });
         }
         const result = await listConversations(cursor, undefined, { filter, subject });
@@ -195,7 +195,7 @@ export default async function handler(request, response) {
         (typeof body.favorite === "boolean") ||
         (typeof body.unread === "boolean") ||
         ["open", "closed", "blocked"].includes(body.status) ||
-        CONVERSATION_SUBJECTS.includes(body.subject);
+        isConversationSubject(body.subject);
       if (!operationIsValid) return response.status(400).json({ error: "L’action de boîte mail est invalide." });
 
       const isBulk = Array.isArray(body.conversationIds);
