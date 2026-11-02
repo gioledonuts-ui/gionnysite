@@ -34,7 +34,7 @@
       document.body.style.overflow = "hidden";
       body.style.position = "fixed";
       body.style.top = `${-scrollY}px`;
-      body.style.left = `${-scrollX}px`;
+      body.style.left = "0";
       body.style.right = "0";
       body.style.width = "100%";
       if (scrollbarWidth > 0) {
@@ -136,21 +136,23 @@
   }
 
   const renderYouTubeVisitState = (unseenCount, available = youtubeApiAvailable) => {
-    const card = document.querySelector("[data-youtube-card]");
-    const countBadge = card?.querySelector("[data-youtube-count]");
-    const visitedBadge = card?.querySelector("[data-youtube-visited]");
-    if (!countBadge || !visitedBadge) return;
-
     const count = Math.max(0, Number(unseenCount) || 0);
-    countBadge.hidden = !available || count === 0;
-    visitedBadge.hidden = available ? count > 0 : !visitedNetworks.has("youtube");
-
-    if (count > 0) {
-      countBadge.textContent = String(Math.min(count, 3));
-      countBadge.setAttribute(
-        "aria-label",
-        `${count} nouvelle${count > 1 ? "s" : ""} vidéo${count > 1 ? "s" : ""}`
-      );
+    document.querySelectorAll("[data-youtube-count]").forEach((countBadge) => {
+      countBadge.hidden = !available || count === 0;
+      if (count > 0) {
+        countBadge.textContent = String(Math.min(count, 3));
+        countBadge.setAttribute(
+          "aria-label",
+          `${count} nouvelle${count > 1 ? "s" : ""} vidéo${count > 1 ? "s" : ""}`
+        );
+      }
+    });
+    document.querySelectorAll("[data-youtube-visited]").forEach((visitedBadge) => {
+      visitedBadge.hidden = available ? count > 0 : !visitedNetworks.has("youtube");
+    });
+    const youtubeSlideLabel = document.querySelector('[data-carousel-slide="youtube"] .creator-state-pill--youtube');
+    if (youtubeSlideLabel) {
+      youtubeSlideLabel.hidden = available ? count > 0 : visitedNetworks.has("youtube");
     }
   };
 
@@ -202,7 +204,7 @@
   const showVisitedState = (link) => {
     if (link.dataset.network === "youtube") return;
     const badge = link.querySelector(".visited-badge");
-    const twitchIsLive = link.matches('[data-twitch-card][data-live="true"]');
+    const twitchIsLive = link.dataset.network === "twitch" && link.dataset.live === "true";
     if (badge) badge.hidden = twitchIsLive;
     link.dataset.visited = "true";
   };
@@ -347,7 +349,7 @@
       if (!url) return;
 
       const isYouTubeLink = key === "youtube" &&
-        (link.hasAttribute("data-youtube-card") || link.hasAttribute("data-ticker-youtube"));
+        (link.hasAttribute("data-youtube-card") || link.hasAttribute("data-ticker-youtube") || link.hasAttribute("data-carousel-youtube"));
       if (isYouTubeLink && url === DEFAULT_YOUTUBE_URL && latestYouTubeUrl) {
         url = latestYouTubeUrl;
       }
@@ -701,39 +703,6 @@
     return true;
   };
 
-  const introTitle = document.querySelector("[data-intro-title]");
-  if (introTitle) {
-    const walker = document.createTreeWalker(introTitle, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
-
-    let characterIndex = 0;
-    for (const textNode of textNodes) {
-      const fragment = document.createDocumentFragment();
-      const pieces = (textNode.textContent || "").match(/\s+|\S+/gu) || [];
-      for (const piece of pieces) {
-        if (/^\s+$/u.test(piece)) {
-          fragment.append(document.createTextNode(piece));
-          continue;
-        }
-
-        const word = document.createElement("span");
-        word.className = "intro-word";
-        for (const character of Array.from(piece)) {
-          const span = document.createElement("span");
-          span.className = "intro-character";
-          span.setAttribute("aria-hidden", "true");
-          span.style.animationDelay = `${420 + characterIndex * 34}ms`;
-          span.textContent = character;
-          word.append(span);
-          characterIndex += 1;
-        }
-        fragment.append(word);
-      }
-      textNode.replaceWith(fragment);
-    }
-  }
-
   const profileTrigger = document.querySelector("[data-open-about]");
   const aboutDialog = document.querySelector("[data-about-dialog]");
   const closeAboutButtons = aboutDialog?.querySelectorAll("[data-close-about]") || [];
@@ -794,9 +763,15 @@
   const authSubmitLabel = document.querySelector("[data-auth-submit-label]");
   const authStatus = document.querySelector("[data-auth-status]");
   const authTabs = [...document.querySelectorAll("[data-auth-tab]")];
+  const memberAccessBar = document.querySelector("[data-member-access]");
+  const memberVisitorIdentity = document.querySelector("[data-member-visitor]");
+  const memberIdentity = document.querySelector("[data-member-identity]");
   const memberLoggedOut = document.querySelector("[data-member-logged-out]");
   const memberLoggedIn = document.querySelector("[data-member-logged-in]");
   const memberPseudo = document.querySelector("[data-member-pseudo]");
+  const welcomeTitle = document.querySelector("[data-intro-title]");
+  const welcomeName = document.querySelector("[data-welcome-name]");
+  const welcomeComma = document.querySelector("[data-welcome-comma]");
   const memberCrown = document.querySelector("[data-member-crown]");
   const memberLoginButton = document.querySelector("[data-member-login]");
   const memberRegisterButton = document.querySelector("[data-member-register]");
@@ -848,6 +823,7 @@
   let visitorPollTimer = 0;
   let authMode = "register";
   const voiceControlStates = [];
+  let lastContactTrigger = null;
 
   const setStatusNode = (node, message, kind = "") => {
     if (!node) return;
@@ -876,6 +852,13 @@
       tab.setAttribute("aria-selected", String(selected));
       tab.tabIndex = selected ? 0 : -1;
     });
+    const pseudo = authForm?.elements.namedItem("pseudo");
+    if (pseudo) {
+      pseudo.minLength = authMode === "login" ? 2 : 3;
+      pseudo.maxLength = authMode === "login" ? 32 : 16;
+      pseudo.pattern = authMode === "login" ? "" : "\\S(?:.*\\S)?";
+      pseudo.title = authMode === "login" ? "Ton pseudo de connexion." : "3 à 16 caractères, sans espace au début ni à la fin.";
+    }
     const password = authForm?.elements.namedItem("password");
     if (password) {
       password.autocomplete = authMode === "login" ? "current-password" : "new-password";
@@ -921,7 +904,10 @@
       return;
     }
     const isHost = visitorAccount.role === "host";
-    const hasChanged = profilePseudoInput.value.normalize("NFKC").trim().replace(/\s+/gu, " ") !== visitorAccount.pseudo;
+    const rawPseudo = profilePseudoInput.value.normalize("NFKC");
+    const cleanedPseudo = rawPseudo.replace(/[\u0000-\u001f\u007f-\u009f]/gu, " ").replace(/\s+/gu, " ");
+    const pseudoIsValid = rawPseudo === rawPseudo.trim() && cleanedPseudo.length >= 3 && cleanedPseudo.length <= 16;
+    const hasChanged = cleanedPseudo !== visitorAccount.pseudo;
     const lastChange = typeof visitorAccount.lastUsernameChange === "string"
       ? Date.parse(visitorAccount.lastUsernameChange)
       : Number.NaN;
@@ -937,7 +923,7 @@
           : "Tu peux modifier ton pseudo une fois tous les 15 jours.";
       setStatusNode(profileCooldownStatus, message, daysRemaining > 0 ? "warning" : "");
     }
-    profilePseudoSubmit.disabled = profileSaving || !hasChanged || daysRemaining > 0;
+    profilePseudoSubmit.disabled = profileSaving || !pseudoIsValid || !hasChanged || daysRemaining > 0;
     if (profilePasswordSubmit) profilePasswordSubmit.disabled = profileSaving;
   };
 
@@ -1040,9 +1026,23 @@
   const renderMemberAccess = () => {
     const isConnected = Boolean(visitorAccount);
     const isHost = visitorAccount?.role === "host";
+    const pseudo = isConnected ? visitorAccount.pseudo || "" : "";
+    if (memberVisitorIdentity) memberVisitorIdentity.hidden = isConnected;
+    if (memberIdentity) memberIdentity.hidden = !isConnected;
     if (memberLoggedOut) memberLoggedOut.hidden = isConnected;
     if (memberLoggedIn) memberLoggedIn.hidden = !isConnected;
-    if (memberPseudo) memberPseudo.textContent = isConnected ? visitorAccount.pseudo || "" : "";
+    if (memberPseudo) memberPseudo.textContent = pseudo;
+    if (welcomeName) {
+      welcomeName.textContent = pseudo;
+      welcomeName.hidden = !isConnected;
+    }
+    if (welcomeComma) welcomeComma.hidden = !isConnected;
+    if (welcomeTitle) {
+      welcomeTitle.setAttribute(
+        "aria-label",
+        isConnected ? `Bienvenue ${pseudo}, dans le QG de Gionny` : "Bienvenue dans le QG de Gionny"
+      );
+    }
     if (memberCrown) memberCrown.hidden = !isHost;
     if (profileCrown) profileCrown.hidden = !isHost;
     if (accountHostCrown) accountHostCrown.hidden = !isHost;
@@ -1050,7 +1050,7 @@
     if (profileOpenButton) {
       profileOpenButton.setAttribute(
         "aria-label",
-        isConnected ? `Mon profil : ${visitorAccount.pseudo || "membre"}` : "Mon profil"
+        isConnected ? `Mon profil : ${pseudo || "membre"}` : "Mon profil"
       );
     }
     if (profileDialog?.open) updateProfilePseudoControls();
@@ -1105,13 +1105,29 @@
     }
   };
 
-  const openContactWidget = () => {
+  const openContactWidget = ({ context = "launcher", trigger = contactLauncher } = {}) => {
     if (!contactWidget) return;
+    const opensAtHero = context === "top";
+    const anchorRect = opensAtHero ? memberAccessBar?.getBoundingClientRect() : null;
+    lastContactTrigger = trigger || contactLauncher;
+    contactWidget.dataset.openContext = opensAtHero ? "top" : "launcher";
+    if (anchorRect) {
+      const preferredTop = Math.round(anchorRect.bottom + 9);
+      const top = Math.max(10, Math.min(preferredTop, Math.max(10, window.innerHeight - 220)));
+      const right = Math.max(12, Math.round(window.innerWidth - anchorRect.right));
+      contactWidget.style.setProperty("--contact-top", `${top}px`);
+      contactWidget.style.setProperty("--contact-right", `${right}px`);
+    } else {
+      contactWidget.style.removeProperty("--contact-top");
+      contactWidget.style.removeProperty("--contact-right");
+    }
     contactWidget.hidden = false;
     if (contactScrim) contactScrim.hidden = false;
     document.body.classList.add("contact-page-open");
     lockBackgroundScroll("contact-widget");
     contactLauncher?.setAttribute("aria-expanded", "true");
+    memberLoginButton?.setAttribute("aria-expanded", String(trigger === memberLoginButton));
+    memberRegisterButton?.setAttribute("aria-expanded", String(trigger === memberRegisterButton));
     if (contactBadge) contactBadge.hidden = true;
     if (visitorConversation && !newConversationMode) {
       markVisitorThreadSeen();
@@ -1128,11 +1144,18 @@
     if (!contactWidget) return;
     voiceControlStates.forEach((state) => state.cancel());
     contactWidget.hidden = true;
+    delete contactWidget.dataset.openContext;
+    contactWidget.style.removeProperty("--contact-top");
+    contactWidget.style.removeProperty("--contact-right");
     if (contactScrim) contactScrim.hidden = true;
     document.body.classList.remove("contact-page-open");
     unlockBackgroundScroll("contact-widget");
     contactLauncher?.setAttribute("aria-expanded", "false");
-    contactLauncher?.focus({ preventScroll: true });
+    memberLoginButton?.setAttribute("aria-expanded", "false");
+    memberRegisterButton?.setAttribute("aria-expanded", "false");
+    const trigger = lastContactTrigger && !lastContactTrigger.closest("[hidden]") ? lastContactTrigger : contactLauncher;
+    trigger?.focus({ preventScroll: true });
+    lastContactTrigger = null;
     if (visitorConversation && !newConversationMode) renderVisitorConversation({ announceNewReply: true });
   };
 
@@ -1178,15 +1201,24 @@
   authTabs.forEach((tab) => tab.addEventListener("click", () => setAuthMode(tab.dataset.authTab)));
   memberLoginButton?.addEventListener("click", () => {
     setAuthMode("login");
-    openContactWidget();
+    openContactWidget({ context: "top", trigger: memberLoginButton });
   });
   memberRegisterButton?.addEventListener("click", () => {
     setAuthMode("register");
-    openContactWidget();
+    openContactWidget({ context: "top", trigger: memberRegisterButton });
   });
 
-  const openProfileDialog = () => {
+  const openProfileDialog = (event) => {
     if (!visitorAccount || !profileDialog?.showModal) return;
+    const trigger = event?.currentTarget || profileOpenButton;
+    const triggerRect = (memberLoggedIn?.getBoundingClientRect() || trigger?.getBoundingClientRect());
+    if (triggerRect) {
+      profileDialog.dataset.openContext = "top";
+      const preferredTop = Math.round(triggerRect.bottom + 9);
+      const top = Math.max(10, Math.min(preferredTop, Math.max(10, window.innerHeight - 220)));
+      profileDialog.style.setProperty("--profile-dialog-top", `${top}px`);
+      profileDialog.style.setProperty("--profile-dialog-right", `${Math.max(12, Math.round(window.innerWidth - triggerRect.right))}px`);
+    }
     if (profilePseudoInput) profilePseudoInput.value = visitorAccount.pseudo || "";
     if (profilePseudoStatus) setStatusNode(profilePseudoStatus, "");
     if (profilePasswordStatus) setStatusNode(profilePasswordStatus, "");
@@ -1208,8 +1240,11 @@
   });
   profileDialog?.addEventListener("close", () => {
     unlockBackgroundScroll("profile-dialog");
+    delete profileDialog.dataset.openContext;
+    profileDialog.style.removeProperty("--profile-dialog-top");
+    profileDialog.style.removeProperty("--profile-dialog-right");
     profileOpenButton?.setAttribute("aria-expanded", "false");
-    if (profileOpenButton && !profileOpenButton.hidden) profileOpenButton.focus({ preventScroll: true });
+    if (profileOpenButton && !profileOpenButton.closest("[hidden]")) profileOpenButton.focus({ preventScroll: true });
   });
   profilePseudoInput?.addEventListener("input", updateProfilePseudoControls);
   profilePasswordToggle?.addEventListener("click", () => {
@@ -1660,7 +1695,7 @@
 
   if (contactLauncher && contactWidget) {
     contactLauncher.addEventListener("click", () => {
-      if (contactWidget.hidden) openContactWidget();
+      if (contactWidget.hidden) openContactWidget({ context: "launcher", trigger: contactLauncher });
       else minimizeContactWidget();
     });
     minimizeContactButton?.addEventListener("click", minimizeContactWidget);
@@ -1751,6 +1786,30 @@
     updateScheduleCountdown();
     renderLivePlayer(isLive, twitch);
 
+    const twitchSlide = document.querySelector('[data-carousel-slide="twitch"]');
+    if (twitchSlide) {
+      twitchSlide.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
+      const liveLabel = twitchSlide.querySelector("[data-carousel-twitch-live-label]");
+      const channelLabel = twitchSlide.querySelector("[data-carousel-twitch-channel]");
+      const liveBadge = twitchSlide.querySelector("[data-carousel-twitch-live]");
+      const detail = twitchSlide.querySelector("[data-carousel-twitch-copy]");
+      if (liveLabel) liveLabel.hidden = !isLive;
+      if (channelLabel) channelLabel.hidden = isLive;
+      if (liveBadge) liveBadge.hidden = !isLive;
+      const visitedBadge = twitchSlide.querySelector(".visited-badge");
+      if (visitedBadge) visitedBadge.hidden = isLive || !visitedNetworks.has("twitch");
+      if (detail) {
+        detail.textContent = !twitchAvailable
+          ? "La chaîne officielle de Gionny : retrouve ici les prochains lives."
+          : isLive
+            ? streamTitle
+              ? `En direct : ${streamTitle}`
+              : "Gionny est en direct. Rejoins le chat et la commu sur Twitch."
+            : "Retrouve-moi sur la chaîne pour les prochains lives et les bons moments avec la commu.";
+      }
+      twitchSlide.href = safeTwitchUrl(twitch?.url);
+    }
+
     document.querySelectorAll("[data-ticker-live]").forEach((item) => {
       item.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
       const label = item.querySelector("[data-live-label]");
@@ -1796,6 +1855,12 @@
           ? "Voir la chaîne YouTube"
           : "Ouvrir la chaîne YouTube";
     });
+    const carouselYouTubeDetail = document.querySelector("[data-carousel-youtube-detail]");
+    if (carouselYouTubeDetail) {
+      carouselYouTubeDetail.textContent = latestYouTubeUrl && youtubeTitle
+        ? `Dernière vidéo : ${youtubeTitle}`
+        : "Vidéos, replays de live et meilleurs moments sur YouTube.";
+    }
 
     recentYouTubeUploads = Array.isArray(youtube?.uploads)
       ? youtube.uploads.filter(
@@ -1816,6 +1881,65 @@
     applyConfiguredLinks();
     ensureTickerCopies();
   };
+
+  const carousel = document.querySelector("[data-social-carousel]");
+  if (carousel) {
+    const slides = [...carousel.querySelectorAll("[data-carousel-slide]")];
+    const dots = [...carousel.querySelectorAll("[data-carousel-dot]")];
+    const nextButton = carousel.querySelector("[data-carousel-next]");
+    let activeSlideIndex = Math.max(0, slides.findIndex((slide) => slide.dataset.active === "true"));
+    let swipeOrigin = null;
+    let ignoreSlideClickUntil = 0;
+
+    const showCarouselSlide = (requestedIndex) => {
+      if (!slides.length) return;
+      activeSlideIndex = (requestedIndex + slides.length) % slides.length;
+      slides.forEach((slide, index) => {
+        const isActive = index === activeSlideIndex;
+        slide.hidden = !isActive;
+        slide.dataset.active = String(isActive);
+        slide.setAttribute("aria-hidden", String(!isActive));
+      });
+      dots.forEach((dot, index) => dot.setAttribute("aria-current", String(index === activeSlideIndex)));
+      if (nextButton) {
+        const nextSlide = slides[(activeSlideIndex + 1) % slides.length];
+        const nextName = nextSlide?.dataset.carouselSlide || "suivant";
+        nextButton.setAttribute("aria-label", `Afficher ${nextName === "youtube" ? "YouTube" : nextName === "twitch" ? "Twitch" : "Discord"}`);
+      }
+    };
+
+    dots.forEach((dot, index) => dot.addEventListener("click", () => showCarouselSlide(index)));
+    nextButton?.addEventListener("click", () => showCarouselSlide(activeSlideIndex + 1));
+    carousel.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        showCarouselSlide(activeSlideIndex + 1);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        showCarouselSlide(activeSlideIndex - 1);
+      }
+    });
+    carousel.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      swipeOrigin = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+    }, { passive: true });
+    window.addEventListener("pointerup", (event) => {
+      if (!swipeOrigin || event.pointerId !== swipeOrigin.pointerId) return;
+      const deltaX = event.clientX - swipeOrigin.x;
+      const deltaY = event.clientY - swipeOrigin.y;
+      swipeOrigin = null;
+      if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.2) return;
+      showCarouselSlide(activeSlideIndex + (deltaX < 0 ? 1 : -1));
+      ignoreSlideClickUntil = performance.now() + 450;
+    }, { passive: true });
+    window.addEventListener("pointercancel", () => { swipeOrigin = null; }, { passive: true });
+    carousel.addEventListener("click", (event) => {
+      if (performance.now() >= ignoreSlideClickUntil || !event.target.closest("[data-carousel-slide]")) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+    showCarouselSlide(activeSlideIndex);
+  }
 
   const refreshSiteConfig = async () => {
     try {
@@ -1849,10 +1973,8 @@
   };
 
   if (ticker && tickerTrack && tickerSet) {
-    let keyboardFocus = false;
     let mouseHovering = false;
     let touching = false;
-    let resumeAt = 0;
     let lastFrame = 0;
 
     ensureTickerCopies();
@@ -1860,16 +1982,6 @@
     document.fonts?.ready.then(ensureTickerCopies);
     window.addEventListener("resize", ensureTickerCopies, { passive: true });
 
-    ticker.addEventListener("focusin", () => {
-      keyboardFocus = true;
-      tickerPosition = ticker.scrollLeft;
-    });
-    ticker.addEventListener("focusout", (event) => {
-      if (!ticker.contains(event.relatedTarget)) {
-        keyboardFocus = false;
-        tickerPosition = ticker.scrollLeft;
-      }
-    });
     ticker.addEventListener("pointerenter", (event) => {
       if (event.pointerType !== "mouse") return;
       mouseHovering = true;
@@ -1877,59 +1989,35 @@
     });
     ticker.addEventListener("pointerleave", (event) => {
       if (event.pointerType !== "mouse") return;
-      mouseHovering = false;
       tickerPosition = ticker.scrollLeft;
-      resumeAt = performance.now() + 1000;
+      mouseHovering = false;
     });
     ticker.addEventListener("pointerdown", (event) => {
-      if (event.pointerType !== "mouse") {
-        touching = true;
-        tickerPosition = ticker.scrollLeft;
-      }
-    });
-    ticker.addEventListener(
-      "touchstart",
-      () => {
-        touching = true;
-        tickerPosition = ticker.scrollLeft;
-      },
-      { passive: true }
-    );
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      touching = true;
+      tickerPosition = ticker.scrollLeft;
+    }, { passive: true });
+    ticker.addEventListener("touchstart", () => {
+      touching = true;
+      tickerPosition = ticker.scrollLeft;
+    }, { passive: true });
 
     const finishTouch = () => {
       if (!touching) return;
-      touching = false;
       tickerPosition = ticker.scrollLeft;
-      resumeAt = performance.now() + 2600;
+      touching = false;
     };
     window.addEventListener("pointerup", finishTouch, { passive: true });
-    window.addEventListener(
-      "pointercancel",
-      (event) => {
-        if (event.pointerType !== "touch") finishTouch();
-      },
-      { passive: true }
-    );
+    window.addEventListener("pointercancel", finishTouch, { passive: true });
     window.addEventListener("touchend", finishTouch, { passive: true });
     window.addEventListener("touchcancel", finishTouch, { passive: true });
-    ticker.addEventListener(
-      "wheel",
-      () => {
-        resumeAt = performance.now() + 2600;
-        window.requestAnimationFrame(() => {
-          tickerPosition = ticker.scrollLeft;
-        });
-      },
-      { passive: true }
-    );
 
-    // Keep the ticker moving even with reduced motion enabled, as requested.
     const animateTicker = (now) => {
       if (!lastFrame) lastFrame = now;
       const elapsed = Math.min(now - lastFrame, 120);
       lastFrame = now;
 
-      if (!keyboardFocus && !mouseHovering && !touching && !document.hidden && now >= resumeAt) {
+      if (!mouseHovering && !touching && !document.hidden) {
         tickerCycleWidth = tickerSet.getBoundingClientRect().width;
         if (tickerCycleWidth > 0) {
           tickerPosition = (tickerPosition + elapsed * 0.045) % tickerCycleWidth;

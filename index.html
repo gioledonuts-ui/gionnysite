@@ -2,7 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <meta name="theme-color" content="#07111f" />
     <meta
       name="description"
@@ -20,7 +20,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800;900&amp;display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
@@ -33,6 +33,7 @@
   <body>
     <div class="ambient-glow ambient-glow--blue" aria-hidden="true"></div>
     <div class="ambient-glow ambient-glow--cyan" aria-hidden="true"></div>
+    <div class="ambient-glow ambient-glow--ice" aria-hidden="true"></div>
     <div class="ambient-grid" aria-hidden="true"></div>
 
     <a class="skip-link" href="#main">Aller au contenu</a>
@@ -116,39 +117,43 @@
             </div>
           </div>
         </div>
-        <div class="member-access" aria-label="Accès au compte">
-          <div class="member-access-actions" data-member-logged-out>
-            <button class="member-access-button" type="button" data-member-login>Se connecter</button>
-            <button class="member-access-button member-access-button--accent" type="button" data-member-register>S’inscrire</button>
-          </div>
-          <button
-            class="member-profile-chip"
-            type="button"
-            data-member-logged-in
-            data-member-profile
-            aria-haspopup="dialog"
-            aria-expanded="false"
-            aria-controls="profile-dialog"
-            hidden
-          >
-            <span class="member-profile-avatar" aria-hidden="true">
-              <svg viewBox="0 0 40 40" fill="none">
-                <circle cx="20" cy="20" r="19" />
-                <circle cx="20" cy="15" r="6" />
-                <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
-              </svg>
-            </span>
-            <span class="member-profile-pseudo" data-member-pseudo></span>
-            <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden>
-              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg>
-            </span>
-            <span class="member-profile-chevron" aria-hidden="true">⌄</span>
-          </button>
-        </div>
       </header>
 
       <main class="hub-layout" id="main">
         <section class="welcome-panel" aria-labelledby="welcome-title">
+          <div class="welcome-account-bar" data-member-access role="group" aria-label="Accès au compte">
+            <div class="welcome-account-identity">
+              <span class="member-visitor" data-member-visitor>👤 Visiteur</span>
+              <span class="member-identity" data-member-identity hidden>
+                <span class="member-profile-avatar" aria-hidden="true">
+                  <svg viewBox="0 0 40 40" fill="none">
+                    <circle cx="20" cy="20" r="19" />
+                    <circle cx="20" cy="15" r="6" />
+                    <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
+                  </svg>
+                </span>
+                <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden>
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg>
+                </span>
+                <span class="member-profile-pseudo" data-member-pseudo></span>
+              </span>
+            </div>
+            <div class="member-access-actions" data-member-logged-out>
+              <button class="member-access-button" type="button" data-member-login>Se connecter</button>
+              <button class="member-access-button member-access-button--accent" type="button" data-member-register>S’inscrire</button>
+            </div>
+            <div class="member-access-actions member-access-actions--connected" data-member-logged-in hidden>
+              <button
+                class="member-access-button member-access-button--profile"
+                type="button"
+                data-member-profile
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-controls="profile-dialog"
+              >Mon Profil</button>
+              <button class="member-access-button member-access-button--logout" type="button" data-contact-logout>Déconnexion</button>
+            </div>
+          </div>
           <div class="welcome-identity">
             <button
               class="profile-trigger"
@@ -176,7 +181,7 @@
                 id="welcome-title"
                 data-intro-title
                 aria-label="Bienvenue dans le QG de Gionny"
-              >Bienvenue dans le <span class="heading-accent">QG</span> <span class="welcome-name">de Gionny</span></h1>
+              >Bienvenue <span class="welcome-name" data-welcome-name hidden></span><span class="welcome-name-comma" data-welcome-comma hidden>,</span> dans le <span class="heading-accent">QG</span> <span class="welcome-tail">de Gionny</span></h1>
               <p class="welcome-copy">
                 La commu, les lives et les meilleurs moments sont ici.
               </p>
@@ -184,8 +189,12 @@
           </div>
 
           <div class="welcome-actions">
+            <div class="creator-carousel" data-social-carousel role="region" aria-roledescription="carrousel" aria-label="Réseaux principaux de Gionny">
             <a
-              class="discord-cta"
+              class="discord-cta creator-slide creator-slide--discord"
+              data-carousel-slide="discord"
+              data-active="true"
+              aria-hidden="false"
               href="https://discord.gg/nPACfBTnPx"
               target="_blank"
               rel="noopener noreferrer"
@@ -242,6 +251,104 @@
                 </span>
               </span>
             </a>
+            <a
+              class="discord-cta creator-slide creator-slide--twitch"
+              data-carousel-slide="twitch"
+              data-carousel-twitch
+              hidden
+              data-live="unknown"
+              aria-hidden="true"
+              href="https://www.twitch.tv/7gionny"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-network="twitch"
+              data-config-link="twitch"
+              aria-label="Ouvrir la chaîne Twitch officielle de Gionny, @7gionny"
+            >
+              <span class="discord-watermark creator-watermark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                </svg>
+              </span>
+              <span class="discord-content">
+                <span class="discord-topline creator-slide-topline" aria-live="polite">
+                  <span class="creator-state-pill" data-carousel-twitch-live-label hidden>📺 STREAM LIVE</span>
+                  <span class="creator-state-pill creator-state-pill--channel" data-carousel-twitch-channel>🟣 CHAÎNE OFFICIELLE</span>
+                  <span class="creator-state-pill creator-state-pill--live" data-carousel-twitch-live hidden>🔴 En direct</span>
+                </span>
+                <span class="discord-copy">
+                  <span class="discord-overline">ON SE RETROUVE SUR</span>
+                  <strong>
+                    <svg class="creator-title-mark creator-title-mark--twitch" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                    </svg>
+                    <span>TWITCH</span>
+                  </strong>
+                  <span class="discord-detail" data-carousel-twitch-copy>Retrouve-moi en direct pour les streams, les jeux et les bons moments avec la commu.</span>
+                </span>
+                <span class="discord-footer creator-slide-footer">
+                  <span class="discord-action">
+                    <span class="discord-action-default">REJOINDRE TWITCH <span aria-hidden="true">↗</span></span>
+                    <span class="visited-badge" aria-live="polite" hidden>
+                      <svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg>
+                      Déjà visité
+                    </span>
+                  </span>
+                  <span class="discord-community-meta"><span class="discord-invite">@7gionny</span></span>
+                </span>
+              </span>
+            </a>
+
+            <a
+              class="discord-cta creator-slide creator-slide--youtube"
+              data-carousel-slide="youtube"
+              data-carousel-youtube
+              hidden
+              aria-hidden="true"
+              href="https://www.youtube.com/@gionnyyy"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-network="youtube"
+              data-config-link="youtube"
+              aria-label="Voir les vidéos et replays de Gionny sur YouTube, @gionnyyy"
+            >
+              <span class="discord-watermark creator-watermark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+              </span>
+              <span class="discord-content">
+                <span class="discord-topline creator-slide-topline">
+                  <span class="creator-state-pill creator-state-pill--youtube">VIDÉOS &amp; REPLAYS</span>
+                  <span class="creator-state-pill creator-state-pill--new" data-youtube-count aria-live="polite" hidden></span>
+                  <span class="creator-state-pill creator-state-pill--visited" data-youtube-visited aria-live="polite" hidden>✓ DÉJÀ VISITÉ</span>
+                </span>
+                <span class="discord-copy">
+                  <span class="discord-overline">LES DERNIERS CONTENUS</span>
+                  <strong>
+                    <svg class="creator-title-mark creator-title-mark--youtube" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                    </svg>
+                    <span>YOUTUBE</span>
+                  </strong>
+                  <span class="discord-detail" data-carousel-youtube-detail>Vidéos, replays de live et meilleurs moments sur YouTube.</span>
+                </span>
+                <span class="discord-footer creator-slide-footer">
+                  <span class="discord-action"><span class="discord-action-default">VOIR LES VIDÉOS <span aria-hidden="true">↗</span></span></span>
+                  <span class="discord-community-meta"><span class="discord-invite">@gionnyyy</span></span>
+                </span>
+              </span>
+            </a>
+
+            <button class="creator-carousel-next" type="button" data-carousel-next aria-label="Afficher le réseau suivant">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+            </button>
+            <div class="creator-carousel-dots" role="group" aria-label="Choisir un réseau">
+              <button class="creator-carousel-dot" type="button" data-carousel-dot="discord" aria-label="Discord" aria-current="true"></button>
+              <button class="creator-carousel-dot" type="button" data-carousel-dot="twitch" aria-label="Twitch" aria-current="false"></button>
+              <button class="creator-carousel-dot" type="button" data-carousel-dot="youtube" aria-label="YouTube" aria-current="false"></button>
+            </div>
+            </div>
 
             <section class="schedule-card" aria-labelledby="schedule-title">
               <div class="schedule-topline">
@@ -476,7 +583,7 @@
       </main>
       <footer class="site-footer" aria-label="Pied de page">
         <div class="site-footer-brand">
-          <p class="site-footer-copyright">Le QG de Gionny © 2025 — Tous droits réservés.</p>
+          <p class="site-footer-copyright">Le QG de Gionny © 2026 — Tous droits réservés.</p>
           <p class="site-footer-tagline">La commu, les lives et les meilleurs moments.</p>
         </div>
         <nav class="site-footer-nav" aria-label="Liens rapides">
@@ -555,7 +662,7 @@
           <form class="contact-auth-form" id="contact-auth-form" data-auth-form>
             <label class="contact-field">
               <span>Ton pseudo</span>
-              <input name="pseudo" type="text" autocomplete="nickname" minlength="2" maxlength="32" placeholder="Ex. : GioFan42" required />
+              <input name="pseudo" type="text" autocomplete="nickname" minlength="3" maxlength="16" pattern="\S(?:.*\S)?" title="3 à 16 caractères, sans espace au début ni à la fin." placeholder="Ex. : GioFan42" required />
             </label>
             <label class="contact-field">
               <span>Mot de passe</span>
@@ -681,7 +788,7 @@
         <form class="profile-edit-form" data-profile-pseudo-form>
           <label class="contact-field">
             <span>Mon pseudo</span>
-            <input name="pseudo" type="text" autocomplete="nickname" minlength="2" maxlength="32" required data-profile-pseudo />
+            <input name="pseudo" type="text" autocomplete="nickname" minlength="3" maxlength="16" pattern="\S(?:.*\S)?" title="3 à 16 caractères, sans espace au début ni à la fin." required data-profile-pseudo />
           </label>
           <p class="profile-cooldown" data-profile-cooldown role="status" aria-live="polite"></p>
           <p class="contact-status" data-profile-pseudo-status role="status" aria-live="polite"></p>

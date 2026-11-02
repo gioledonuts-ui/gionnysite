@@ -85,15 +85,6 @@ function isRateLimited(key) {
     : 0;
 }
 
-function cleanPseudo(value) {
-  if (typeof value !== "string") return "";
-  return value
-    .normalize("NFKC")
-    .replace(/[\u0000-\u001f\u007f-\u009f]/gu, " ")
-    .replace(/\s+/gu, " ")
-    .trim();
-}
-
 function cleanMessage(value) {
   if (typeof value !== "string") return "";
   return value
@@ -129,7 +120,7 @@ async function handleAuthentication(request, response, body, action) {
   }
 
   const credentials = {
-    pseudo: cleanPseudo(body.pseudo),
+    pseudo: typeof body.pseudo === "string" ? body.pseudo : "",
     password: typeof body.password === "string" ? body.password : "",
     legacyCookieValue: readVisitorConversationCookie(request),
   };
@@ -139,7 +130,7 @@ async function handleAuthentication(request, response, body, action) {
 
   if (!result.ok) {
     if (result.reason === "pseudo") {
-      response.status(400).json({ error: "Le pseudo doit contenir entre 2 et 32 caractères." });
+      response.status(400).json({ error: "Le pseudo doit contenir entre 3 et 16 caractères, sans espace au début ni à la fin." });
       return;
     }
     if (result.reason === "password") {
@@ -192,7 +183,7 @@ async function handleProfile(request, response, body, sessionToken) {
       });
     }
     if (result.reason === "exists") return response.status(409).json({ error: "Ce pseudo est déjà utilisé." });
-    if (result.reason === "pseudo") return response.status(400).json({ error: "Le pseudo doit contenir entre 2 et 32 caractères." });
+    if (result.reason === "pseudo") return response.status(400).json({ error: "Le pseudo doit contenir entre 3 et 16 caractères, sans espace au début ni à la fin." });
     if (result.reason === "password") return response.status(400).json({ error: "Le nouveau mot de passe doit contenir entre 8 et 128 caractères." });
     if (result.reason === "current_password") return response.status(400).json({ error: "Le mot de passe actuel est incorrect." });
     if (result.reason === "no_changes") return response.status(400).json({ error: "Aucune modification à enregistrer." });
