@@ -123,6 +123,10 @@
 
       <main class="hub-layout" id="main">
         <section class="welcome-panel" aria-labelledby="welcome-title">
+          <div class="welcome-atmosphere" aria-hidden="true">
+            <span class="welcome-watermark">QG</span>
+            <span class="welcome-radar"></span>
+          </div>
           <div class="welcome-account-bar" data-member-access role="group" aria-label="Accès au compte">
             <div class="welcome-account-identity">
               <span class="member-visitor" data-member-visitor>👤 Non connecté</span>
@@ -671,10 +675,10 @@
             <button id="contact-login-tab" type="button" role="tab" aria-selected="false" aria-controls="contact-auth-form" data-auth-tab="login" tabindex="-1">Se connecter</button>
             <button id="contact-register-tab" type="button" role="tab" aria-selected="true" aria-controls="contact-auth-form" data-auth-tab="register">Créer un compte rapide</button>
           </div>
-          <form class="contact-auth-form" id="contact-auth-form" data-auth-form>
+          <form class="contact-auth-form" id="contact-auth-form" data-auth-form novalidate>
             <label class="contact-field">
               <span>Ton pseudo</span>
-              <input name="pseudo" type="text" autocomplete="nickname" minlength="3" maxlength="16" pattern="\S(?:.*\S)?" title="3 à 16 caractères, sans espace au début ni à la fin." placeholder="Ex. : GioFan42" required />
+              <input name="pseudo" type="text" autocomplete="nickname" minlength="3" maxlength="16" title="3 à 16 caractères, sans espace au début ni à la fin." placeholder="Ex. : GioFan42" required />
             </label>
             <label class="contact-field">
               <span>Mot de passe</span>

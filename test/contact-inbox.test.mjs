@@ -16,6 +16,10 @@ import {
   getConversationImage,
   getConversationForAdmin,
   listConversations,
+  loginVisitorAccount,
+  countUnreadConversations,
+  addAdminAudioReply,
+  startAdminConversationForAccount,
   markAccountConversationRead,
   markConversationReadByAdmin,
   getHostAccountIdentityFromSession,
@@ -80,6 +84,52 @@ async function assignHost(store, accountResult) {
   assert.equal(result.ok, true);
   return { ...accountResult, member: result.member };
 }
+
+test("trimmed case-insensitive login reconnects to the server-assigned Gionny Hôte account", async () => {
+  const store = new MemoryBlobStore();
+  const created = await registerVisitorAccount({
+    pseudo: "  Gionny  ",
+    password: "correct-horse-battery",
+  }, store);
+  assert.equal(created.ok, true);
+  assert.equal(created.account.pseudo, "Gionny");
+  const host = await assignHost(store, created);
+
+  const firstLogin = await loginVisitorAccount({
+    pseudo: "  gIoNnY  ",
+    password: "correct-horse-battery",
+  }, store);
+  assert.equal(firstLogin.ok, true);
+  assert.equal(firstLogin.account.pseudo, "Gionny");
+  assert.equal(firstLogin.account.role, "host");
+  assert.equal(await isAdminRequest(credentials(firstLogin.sessionToken), store), true);
+  assert.deepEqual(await getHostAccountIdentityFromSession(firstLogin.sessionToken, store), {
+    accountId: host.member.id,
+    pseudo: "Gionny",
+    isHost: true,
+  });
+
+  const reconnect = await loginVisitorAccount({
+    pseudo: "GIONNY",
+    password: "correct-horse-battery",
+  }, store);
+  assert.equal(reconnect.ok, true);
+  assert.notEqual(reconnect.sessionToken, firstLogin.sessionToken);
+  assert.equal((await getHostAccountIdentityFromSession(reconnect.sessionToken, store))?.pseudo, "Gionny");
+});
+
+test("registration still enforces pseudo and password rules after trimming outer spaces", async () => {
+  const store = new MemoryBlobStore();
+  const tooShort = await registerVisitorAccount({ pseudo: "  ab  ", password: "correct-horse-battery" }, store);
+  assert.deepEqual(tooShort, { ok: false, reason: "pseudo" });
+  const tooLong = await registerVisitorAccount({ pseudo: "abcdefghijklmnopq", password: "correct-horse-battery" }, store);
+  assert.deepEqual(tooLong, { ok: false, reason: "pseudo" });
+  const tooShortPassword = await registerVisitorAccount({ pseudo: "MembreValide", password: "short" }, store);
+  assert.deepEqual(tooShortPassword, { ok: false, reason: "password" });
+  const trimmed = await registerVisitorAccount({ pseudo: "  MembreValide  ", password: "correct-horse-battery" }, store);
+  assert.equal(trimmed.ok, true);
+  assert.equal(trimmed.account.pseudo, "MembreValide");
+});
 
 test("account messages persist and return the exact account pseudo", async () => {
   const store = new MemoryBlobStore();
@@ -169,6 +219,47 @@ test("historical messages inherit the linked pseudo and never expose the legacy 
   }));
   const legacyView = await getConversationForAdmin(legacyId, store);
   assert.equal(legacyView.conversation.pseudo, "Membre inconnu");
+});
+
+test("Admin can start an empty member thread and send a private vocal without a fake opening message", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "MembreVocal");
+  const memberId = (await listVisitorAccounts("", store)).members.find((item) => item.pseudo === "MembreVocal").id;
+  const adminIdentity = { pseudo: "Gionny", isHost: true };
+
+  const started = await startAdminConversationForAccount(memberId, adminIdentity, store);
+  assert.equal(started.ok, true);
+  assert.equal(started.created, true);
+  assert.equal(started.conversation.messageCount, 0);
+  assert.equal(started.messages.length, 0);
+  assert.equal(await countUnreadConversations(store), 0);
+  assert.equal([...store.objects.keys()].some((path) => path.startsWith(`gionny/conversation-messages/${started.conversation.id}/`)), false);
+
+  const memberView = await getAccountConversation(member.sessionToken, store);
+  assert.equal(memberView.conversation.id, started.conversation.id);
+  assert.equal(memberView.messages.length, 0);
+
+  const openedAgain = await startAdminConversationForAccount(memberId, adminIdentity, store);
+  assert.equal(openedAgain.created, false);
+  assert.equal(openedAgain.conversation.id, started.conversation.id);
+
+  const audioBytes = Buffer.from("private-admin-voice");
+  const audioReply = await addAdminAudioReply(started.conversation.id, audioBytes, "audio/webm;codecs=opus", adminIdentity, store);
+  assert.equal(audioReply.ok, true);
+  assert.equal(audioReply.message.sequence, 1);
+  assert.equal(audioReply.message.sender, "gionny");
+  assert.equal(audioReply.message.pseudo, "Gionny");
+  assert.equal(audioReply.message.kind, "audio");
+  assert.deepEqual((await getConversationAudio(started.conversation.id, audioReply.message.id, store)).bytes, audioBytes);
+
+  const memberReply = await addAccountReply(member.sessionToken, {
+    subject: "💬 Discussion",
+    message: "Merci pour le vocal.",
+  }, store);
+  assert.equal(memberReply.ok, true);
+  assert.equal(await countUnreadConversations(store), 1);
+  assert.equal(await markConversationReadByAdmin(started.conversation.id, store), true);
+  assert.equal(await countUnreadConversations(store), 0);
 });
 
 test("only the server-assigned Hôte session gets Admin access and replies as that Hôte", async () => {

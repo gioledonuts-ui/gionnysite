@@ -10654,3 +10654,234 @@ h6,
 .contact-widget .contact-thread-heading {
   display: none;
 }
+
+
+/* Soft 40px tactical grid, blue-violet halos, and layered Hero/social textures. */
+body::before {
+  background:
+    radial-gradient(440px circle at var(--pointer-x) var(--pointer-y), rgba(76, 141, 255, 0.16), transparent 74%),
+    radial-gradient(620px circle at 14% 78%, rgba(54, 133, 255, 0.13), transparent 72%),
+    radial-gradient(640px circle at 87% 22%, rgba(143, 88, 255, 0.14), transparent 72%);
+}
+
+body::after {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.13) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.13) 1px, transparent 1px),
+    linear-gradient(to right, transparent calc(50% - 0.5px), rgba(203, 222, 255, 0.2) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(203, 222, 255, 0.2) 50%, transparent calc(50% + 0.5px)),
+    radial-gradient(circle, rgba(208, 227, 255, 0.24) 0.8px, transparent 1.15px);
+  background-size: 40px 40px, 40px 40px, 40px 40px, 40px 40px, 40px 40px;
+  background-position: 0 0, 0 0, 20px 20px, 20px 20px, 0 0;
+  opacity: 0.48;
+  mask-image: radial-gradient(ellipse 112% 88% at 50% 23%, #000 25%, rgba(0, 0, 0, 0.76) 67%, transparent 100%);
+}
+
+.welcome-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-atmosphere {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 72% 31%, rgba(85, 150, 255, 0.11), transparent 40%),
+    radial-gradient(ellipse at 88% 83%, rgba(137, 87, 255, 0.11), transparent 38%);
+  mask-image: linear-gradient(120deg, #000 5%, rgba(0, 0, 0, 0.84) 53%, transparent 100%);
+}
+
+.welcome-atmosphere::before {
+  position: absolute;
+  top: -36%;
+  left: -17%;
+  width: 82%;
+  height: 165%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(ellipse at 59% 49%, transparent 0 15px, rgba(133, 177, 255, 0.09) 16px, transparent 17px 34px);
+  content: "";
+  opacity: 0.68;
+  transform: rotate(-8deg);
+}
+
+.welcome-radar {
+  position: absolute;
+  top: 51%;
+  right: clamp(12px, 5vw, 72px);
+  display: block;
+  width: min(31vw, 360px);
+  min-width: 190px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(171, 203, 255, 0.18);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(193, 216, 255, 0.35) 0 1.2px, transparent 1.8px),
+    repeating-radial-gradient(circle, transparent 0 25px, rgba(165, 194, 255, 0.16) 26px, transparent 27px 51px),
+    conic-gradient(from 0deg, rgba(79, 151, 255, 0.2), transparent 58deg, transparent 360deg);
+  box-shadow: 0 0 0 16px rgba(111, 155, 255, 0.025), 0 0 0 42px rgba(154, 117, 255, 0.022), inset 0 0 36px rgba(84, 139, 255, 0.08);
+  opacity: 0.62;
+  transform: translateY(-50%);
+}
+
+.welcome-radar::before,
+.welcome-radar::after {
+  position: absolute;
+  border: 1px solid rgba(183, 207, 255, 0.18);
+  border-radius: 50%;
+  content: "";
+}
+
+.welcome-radar::before { inset: 13%; }
+.welcome-radar::after {
+  inset: 0;
+  border-color: transparent;
+  background: conic-gradient(from 0deg, rgba(99, 170, 255, 0.24), transparent 54deg 360deg);
+  mask-image: radial-gradient(circle, transparent 0 9%, #000 10% 100%);
+  animation: welcome-radar-sweep 24s linear infinite;
+}
+
+.welcome-watermark {
+  position: absolute;
+  right: 4%;
+  bottom: -22%;
+  color: rgba(222, 235, 255, 0.035);
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(150px, 24vw, 340px);
+  font-weight: 900;
+  letter-spacing: -0.11em;
+  line-height: 0.9;
+  -webkit-text-stroke: 1px rgba(190, 211, 255, 0.055);
+  user-select: none;
+}
+
+.welcome-panel::after {
+  z-index: 0;
+  background-image:
+    radial-gradient(rgba(197, 226, 255, 0.23) 0.72px, transparent 0.92px),
+    radial-gradient(ellipse at 9% 10%, rgba(61, 151, 255, 0.16), transparent 40%),
+    radial-gradient(ellipse at 94% 93%, rgba(143, 87, 255, 0.13), transparent 42%);
+  background-size: 18px 18px, auto, auto;
+  mask-image: linear-gradient(125deg, rgba(0, 0, 0, 0.82), transparent 82%);
+  opacity: 0.36;
+}
+
+.welcome-account-bar,
+.welcome-identity,
+.welcome-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.networks-panel::after {
+  background-image:
+    radial-gradient(rgba(201, 231, 255, 0.16) 0.68px, transparent 0.9px),
+    repeating-linear-gradient(135deg, rgba(220, 233, 255, 0.055) 0 1px, transparent 1px 10px),
+    radial-gradient(ellipse at 100% 0%, rgba(93, 176, 255, 0.17), transparent 34%);
+  background-size: 19px 19px, auto, auto;
+  mask-image: linear-gradient(225deg, rgba(0, 0, 0, 0.88), transparent 76%);
+  opacity: 0.34;
+}
+
+.networks-panel .networks-heading,
+.networks-panel .network-grid {
+  position: relative;
+  z-index: 1;
+}
+
+.creator-carousel .discord-cta[data-carousel-slide] {
+  transition: opacity 280ms ease, transform 420ms cubic-bezier(0.2, 0.75, 0.25, 1), visibility 0s linear 420ms;
+}
+
+.welcome-actions .creator-carousel .discord-cta,
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+  background: linear-gradient(135deg, #5865f2 0%, #4a56d5 54%, #3943a5 100%);
+}
+
+.creator-slide--twitch,
+.welcome-actions .creator-carousel .creator-slide--twitch {
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  background: linear-gradient(135deg, #9146ff 0%, #792ef0 54%, #571eb7 100%) !important;
+}
+
+.creator-slide--youtube,
+.welcome-actions .creator-carousel .creator-slide--youtube {
+  border-color: rgba(255, 255, 255, 0.34) !important;
+  background: linear-gradient(135deg, #ff0000 0%, #dc0000 54%, #a90000 100%) !important;
+}
+
+.creator-state-pill--channel,
+.creator-state-pill--youtube {
+  border-color: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+  transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.creator-state-pill--channel .creator-pill-icon,
+.creator-state-pill--youtube .creator-pill-icon {
+  color: #fff;
+  fill: #fff;
+  transition: transform 220ms ease, filter 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .creator-slide--twitch:hover .creator-state-pill--channel,
+  .creator-slide--youtube:hover .creator-state-pill--youtube {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+
+  .creator-slide--twitch:hover .creator-pill-icon,
+  .creator-slide--youtube:hover .creator-pill-icon {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.48));
+    transform: scale(1.08);
+  }
+}
+
+@keyframes welcome-radar-sweep {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 760px) {
+  .welcome-radar {
+    top: 52%;
+    right: -14%;
+    width: 62vw;
+    min-width: 220px;
+    opacity: 0.4;
+  }
+
+  .welcome-watermark {
+    right: -5%;
+    bottom: -8%;
+    font-size: clamp(120px, 35vw, 220px);
+  }
+
+  .welcome-panel::after { opacity: 0.27; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-radar::after { animation: none; }
+  .creator-carousel .discord-cta[data-carousel-slide] { transition: none; }
+}
+
+
+.contact-chat-empty-note {
+  width: fit-content;
+  max-width: min(320px, 100%);
+  margin: auto;
+  padding: 10px 13px;
+  border: 1px solid rgba(154, 190, 232, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #a8b8cc;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}

@@ -122,7 +122,7 @@ async function handleAuthentication(request, response, body, action) {
   }
 
   const credentials = {
-    pseudo: typeof body.pseudo === "string" ? body.pseudo : "",
+    pseudo: typeof body.pseudo === "string" ? body.pseudo.trim() : "",
     password: typeof body.password === "string" ? body.password : "",
     legacyCookieValue: readVisitorConversationCookie(request),
   };

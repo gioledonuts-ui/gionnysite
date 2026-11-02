@@ -870,10 +870,10 @@
     });
     const pseudo = authForm?.elements.namedItem("pseudo");
     if (pseudo) {
-      pseudo.minLength = authMode === "login" ? 2 : 3;
-      pseudo.maxLength = authMode === "login" ? 32 : 16;
-      pseudo.pattern = authMode === "login" ? "" : "\\S(?:.*\\S)?";
-      pseudo.title = authMode === "login" ? "Ton pseudo de connexion." : "3 à 16 caractères, sans espace au début ni à la fin.";
+      pseudo.minLength = authMode === "login" ? 0 : 3;
+      pseudo.maxLength = authMode === "login" ? 128 : 16;
+      pseudo.removeAttribute("pattern");
+      pseudo.title = authMode === "login" ? "Saisis le pseudo utilisé lors de la création du compte." : "3 à 16 caractères après suppression des espaces de début et de fin.";
     }
     const password = authForm?.elements.namedItem("password");
     if (password) {
@@ -1112,7 +1112,14 @@
     ).join("|");
     if (contactThreadMessages.dataset.messageSignature !== messageSignature) {
       const wasNearBottom = contactThreadMessages.scrollHeight - contactThreadMessages.scrollTop - contactThreadMessages.clientHeight < 80;
-      contactThreadMessages.replaceChildren(...visitorConversationMessages.map(createVisitorChatMessage));
+      const renderedMessages = visitorConversationMessages.map(createVisitorChatMessage);
+      if (visitorConversationMessages.length === 0) {
+        const emptyNote = document.createElement("p");
+        emptyNote.className = "contact-chat-empty-note";
+        emptyNote.textContent = "Ta discussion est prête. Tu peux écrire ou enregistrer ton premier message.";
+        renderedMessages.push(emptyNote);
+      }
+      contactThreadMessages.replaceChildren(...renderedMessages);
       contactThreadMessages.dataset.messageSignature = messageSignature;
       if (wasNearBottom) contactThreadMessages.scrollTop = contactThreadMessages.scrollHeight;
     }
@@ -1695,8 +1702,28 @@
 
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!authForm.reportValidity() || !authSubmit || authSubmit.disabled) return;
-    const formData = new FormData(authForm);
+    if (!authSubmit || authSubmit.disabled) return;
+    const pseudoInput = authForm.elements.namedItem("pseudo");
+    const passwordInput = authForm.elements.namedItem("password");
+    const pseudo = String(pseudoInput?.value || "").trim();
+    const password = String(passwordInput?.value || "");
+    if (pseudoInput) pseudoInput.value = pseudo;
+    if (!pseudo || !password) {
+      setStatusNode(authStatus, "Saisis ton pseudo et ton mot de passe.", "error");
+      return;
+    }
+    if (authMode === "register" && (pseudo.length < 3 || pseudo.length > 16)) {
+      setStatusNode(authStatus, "Le pseudo doit contenir entre 3 et 16 caractères après suppression des espaces au début et à la fin.", "error");
+      return;
+    }
+    if (authMode === "register" && password.length < 8) {
+      setStatusNode(authStatus, "Le mot de passe doit contenir au moins 8 caractères.", "error");
+      return;
+    }
+    if (password.length > 128) {
+      setStatusNode(authStatus, "Le mot de passe ne peut pas dépasser 128 caractères.", "error");
+      return;
+    }
     authSubmit.disabled = true;
     setStatusNode(authStatus, authMode === "register" ? "Création de ton compte…" : "Connexion…");
     try {
@@ -1707,8 +1734,8 @@
         cache: "no-store",
         body: JSON.stringify({
           action: authMode,
-          pseudo: String(formData.get("pseudo") || ""),
-          password: String(formData.get("password") || ""),
+          pseudo,
+          password,
         }),
       });
       const data = await response.json().catch(() => ({}));

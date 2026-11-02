@@ -2,9 +2,12 @@ import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAccountReply,
+  addAdminAudioReply,
   CONVERSATION_SUBJECTS,
   getAccountConversation,
+  getAdminReplyIdentity,
   getConversationAudio,
+  isConversationId,
   readAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
 
@@ -108,6 +111,7 @@ function sendJson(response, status, data) {
 }
 
 function conversationError(reason) {
+  if (reason === "host_required") return { status: 409, error: "Aucun compte Hôte actif n’est associé à ce panneau." };
   if (reason === "blocked") return { status: 403, error: "Cette discussion a été bloquée." };
   if (reason === "closed") return { status: 409, error: "Cette discussion est fermée pour le moment." };
   if (reason === "limit") return { status: 409, error: "Cette discussion a atteint sa limite de messages." };
@@ -142,8 +146,13 @@ export default async function handler(request, response) {
   if (!isBlobStorageConfigured()) return sendJson(response, 503, { error: "Le stockage privé des vocaux n’est pas disponible." });
 
   if (request.method === "POST") {
+    const adminReply = firstHeader(request.headers?.["x-admin-reply"]) === "true";
     const sessionToken = readAccountSessionCookie(request);
-    if (!sessionToken) return sendJson(response, 401, { error: "Connecte-toi pour envoyer un vocal." });
+    if (adminReply) {
+      if (!(await isAdminRequest(request))) return sendJson(response, 401, { error: "Reconnecte-toi au panneau d’administration." });
+    } else if (!sessionToken) {
+      return sendJson(response, 401, { error: "Connecte-toi pour envoyer un vocal." });
+    }
     const retryAfter = isRateLimited(clientKey(request));
     if (retryAfter) {
       response.setHeader("Retry-After", String(retryAfter));
@@ -159,7 +168,7 @@ export default async function handler(request, response) {
     } catch {
       requestedSubject = "";
     }
-    if (!CONVERSATION_SUBJECTS.includes(requestedSubject)) {
+    if (!adminReply && !CONVERSATION_SUBJECTS.includes(requestedSubject)) {
       return sendJson(response, 400, { error: "Choisis un sujet pour ta discussion." });
     }
     const bytes = await readAudioBody(request);
@@ -167,6 +176,18 @@ export default async function handler(request, response) {
     const subject = requestedSubject;
 
     try {
+      if (adminReply) {
+        const conversationId = firstHeader(request.headers?.["x-conversation-id"]);
+        if (!isConversationId(conversationId)) return sendJson(response, 400, { error: "Choisis une discussion valide." });
+        const identity = await getAdminReplyIdentity(request);
+        const result = await addAdminAudioReply(conversationId, bytes, mimeType, identity);
+        if (!result.ok) {
+          const failure = conversationError(result.reason);
+          return sendJson(response, failure.status, { error: failure.error });
+        }
+        return sendJson(response, 201, { ok: true, conversation: result.conversation, message: result.message });
+      }
+
       const result = await addAccountReply(sessionToken, {
         message: "",
         subject,

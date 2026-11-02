@@ -43,7 +43,7 @@
           </div>
 
           <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist" aria-orientation="vertical" hidden>
-            <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations"><span aria-hidden="true">💬</span> Discussions</button>
+            <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations" aria-label="Discussions"><span aria-hidden="true">💬</span> Discussions<span class="admin-tab-unread-count" data-admin-unread-count hidden>0</span></button>
             <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><span aria-hidden="true">👥</span> Membres</button>
             <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><span aria-hidden="true">⚙️</span> Réglages</button>
           </nav>
@@ -373,9 +373,26 @@
                         </div>
                       </div>
                       <textarea data-reply-input rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse"></textarea>
+                      <button class="admin-chat-voice-record" type="button" data-admin-voice-record aria-label="Enregistrer un message vocal" title="Message vocal">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8"/></svg>
+                      </button>
                       <button class="primary-button reply-send" type="submit" data-reply-send aria-label="Envoyer la réponse" title="Envoyer la réponse">
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
                       </button>
+                    </div>
+                  </div>
+                  <div class="admin-voice-panel" data-admin-voice-panel data-state="idle" hidden>
+                    <div class="admin-voice-recording-controls" data-admin-voice-recording-controls>
+                      <span class="admin-voice-live-dot" aria-hidden="true"></span>
+                      <div class="admin-voice-wave" data-admin-voice-wave aria-hidden="true"></div>
+                      <span class="admin-voice-timer" data-admin-voice-timer>0:00 / 1:00</span>
+                      <button type="button" class="admin-voice-action admin-voice-cancel" data-admin-voice-cancel aria-label="Annuler et supprimer le vocal">🗑 Annuler</button>
+                      <button type="button" class="admin-voice-action admin-voice-stop" data-admin-voice-stop aria-label="Arrêter l’enregistrement">⏹ Arrêter</button>
+                    </div>
+                    <div class="admin-voice-preview" data-admin-voice-preview hidden></div>
+                    <div class="admin-voice-preview-actions" data-admin-voice-preview-actions hidden>
+                      <button type="button" class="admin-voice-action admin-voice-retry" data-admin-voice-retry>↻ Recommencer / supprimer</button>
+                      <button type="button" class="admin-voice-action admin-voice-send" data-admin-voice-send>Envoyer le vocal</button>
                     </div>
                   </div>
                   <div class="reply-submit-row"><p class="reply-status" data-reply-status role="status" aria-live="polite"></p></div>
