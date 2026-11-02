@@ -6,7 +6,7 @@ import {
   safePasswordMatch,
   setAdminSessionCookie,
 } from "../lib/admin-security.mjs";
-import { getHostAccountIdentityFromSession, readAccountSessionCookie } from "../lib/contact-inbox.mjs";
+import { getAdminReplyIdentity, getHostAccountIdentityFromSession, readAccountSessionCookie } from "../lib/contact-inbox.mjs";
 
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -88,7 +88,20 @@ export default async function handler(request, response) {
       hostAuthenticated = false;
     }
     const authenticated = hostAuthenticated || await isAdminRequest(request);
-    return response.status(200).json({ authenticated, hostAuthenticated });
+    let adminIdentity = null;
+    if (authenticated) {
+      try {
+        const identity = await getAdminReplyIdentity(request);
+        adminIdentity = identity ? {
+          pseudo: identity.pseudo,
+          isHost: identity.isHost === true,
+          ...(typeof identity.avatarData === "string" ? { avatarData: identity.avatarData } : {}),
+        } : null;
+      } catch {
+        adminIdentity = null;
+      }
+    }
+    return response.status(200).json({ authenticated, hostAuthenticated, ...(adminIdentity ? { adminIdentity } : {}) });
   }
 
   if (request.method === "DELETE") {

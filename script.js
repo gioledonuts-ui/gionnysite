@@ -756,6 +756,7 @@
   const contactLauncher = document.querySelector("[data-open-contact]");
   const contactScrim = document.querySelector("[data-contact-scrim]");
   const contactWidget = document.querySelector("[data-contact-widget]");
+  const contactHeaderSubject = document.querySelector("[data-contact-header-subject]");
   const minimizeContactButton = document.querySelector("[data-minimize-contact]");
   const contactAuth = document.querySelector("[data-contact-auth]");
   const authForm = document.querySelector("[data-auth-form]");
@@ -769,6 +770,9 @@
   const memberLoggedOut = document.querySelector("[data-member-logged-out]");
   const memberLoggedIn = document.querySelector("[data-member-logged-in]");
   const memberPseudo = document.querySelector("[data-member-pseudo]");
+  const memberAvatarImage = document.querySelector("[data-member-avatar]");
+  const sitePresence = document.querySelector("[data-site-presence]");
+  const sitePresenceCount = document.querySelector("[data-site-presence-count]");
   const welcomeTitle = document.querySelector("[data-intro-title]");
   const welcomeName = document.querySelector("[data-welcome-name]");
   const welcomeComma = document.querySelector("[data-welcome-comma]");
@@ -781,6 +785,14 @@
   const profilePseudoForm = document.querySelector("[data-profile-pseudo-form]");
   const profilePseudoInput = profilePseudoForm?.elements.namedItem("pseudo");
   const profilePseudoSubmit = document.querySelector("[data-profile-pseudo-submit]");
+  const profilePseudoEditButton = document.querySelector("[data-profile-pseudo-edit]");
+  const profilePseudoCancelButton = document.querySelector("[data-profile-pseudo-cancel]");
+  const profileDisplayName = document.querySelector("[data-profile-display-name]");
+  const profileAvatarTrigger = document.querySelector("[data-profile-avatar-trigger]");
+  const profileAvatarFile = document.querySelector("[data-profile-avatar-file]");
+  const profileAvatarImage = document.querySelector("[data-profile-avatar]");
+  const profileAvatarFallback = document.querySelector("[data-profile-avatar-fallback]");
+  const profileAvatarStatus = document.querySelector("[data-profile-avatar-status]");
   const profilePseudoStatus = document.querySelector("[data-profile-pseudo-status]");
   const profileCooldownStatus = document.querySelector("[data-profile-cooldown]");
   const profileCrown = document.querySelector("[data-profile-crown]");
@@ -813,6 +825,7 @@
   const MAX_VOICE_DURATION_SECONDS = 60;
   const MAX_VOICE_BYTES = 200_000;
   const USERNAME_CHANGE_COOLDOWN_MS = 15 * 24 * 60 * 60 * 1000;
+  const CHAT_SUBJECTS = ["🎤 Passer en live", "💡 Idée vidéo / React", "📖 Histoire / Anecdote", "❓ Question", "💬 Discussion"];
   let profileSaving = false;
 
   let visitorAccount = null;
@@ -821,8 +834,11 @@
   let newConversationMode = false;
   let visitorConversationLoading = false;
   let visitorPollTimer = 0;
+  let visitorReadMarkKey = "";
+  let visitorReadMarkInProgress = false;
   let authMode = "register";
   const voiceControlStates = [];
+  const chatComposerStates = new WeakMap();
   let lastContactTrigger = null;
 
   const setStatusNode = (node, message, kind = "") => {
@@ -877,15 +893,42 @@
   };
 
   const markVisitorThreadSeen = () => {
-    if (!visitorConversation) return;
-    const lastGionnyMessage = [...visitorConversationMessages].reverse().find((message) => message.sender === "gionny");
-    if (!lastGionnyMessage) return;
-    try {
-      localStorage.setItem(`${VISITOR_SEEN_PREFIX}${visitorConversation.id}`, lastGionnyMessage.id);
-    } catch {
-      // A full or disabled local store must not prevent opening the conversation.
+    if (!visitorConversation || !contactWidget || contactWidget.hidden || visitorAccount?.role === "host") return;
+    const incoming = visitorConversationMessages.filter((message) => message.sender === "gionny");
+    const lastGionnyMessage = incoming.at(-1);
+    if (lastGionnyMessage) {
+      try {
+        localStorage.setItem(`${VISITOR_SEEN_PREFIX}${visitorConversation.id}`, lastGionnyMessage.id);
+      } catch {
+        // A full or disabled local store must not prevent opening the conversation.
+      }
     }
     if (contactBadge) contactBadge.hidden = true;
+    const unreadIds = incoming.filter((message) => message.read !== true).map((message) => message.id);
+    const requestKey = `${visitorConversation.id}:${unreadIds.join(",")}`;
+    if (!unreadIds.length || visitorReadMarkInProgress || requestKey === visitorReadMarkKey) return;
+    visitorReadMarkKey = requestKey;
+    visitorReadMarkInProgress = true;
+    fetch("/api/contact", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify({ action: "mark-read" }),
+    }).then(async (response) => {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) throw new Error("read_receipt_failed");
+      const readIds = new Set(unreadIds);
+      visitorConversationMessages = visitorConversationMessages.map((message) =>
+        readIds.has(message.id) ? { ...message, read: true } : message
+      );
+      visitorReadMarkKey = "";
+      renderVisitorConversation();
+    }).catch(() => {
+      visitorReadMarkKey = "";
+    }).finally(() => {
+      visitorReadMarkInProgress = false;
+    });
   };
 
   const formatConversationTime = (value) => {
@@ -924,6 +967,9 @@
       setStatusNode(profileCooldownStatus, message, daysRemaining > 0 ? "warning" : "");
     }
     profilePseudoSubmit.disabled = profileSaving || !pseudoIsValid || !hasChanged || daysRemaining > 0;
+    if (profilePseudoEditButton) profilePseudoEditButton.disabled = profileSaving;
+    if (profilePseudoCancelButton) profilePseudoCancelButton.disabled = profileSaving;
+    if (profileAvatarTrigger) profileAvatarTrigger.disabled = profileSaving;
     if (profilePasswordSubmit) profilePasswordSubmit.disabled = profileSaving;
   };
 
@@ -945,22 +991,39 @@
     return badge;
   };
 
+  const createChatAvatar = (source, pseudo, className) => {
+    const avatar = document.createElement("span");
+    avatar.className = className;
+    avatar.setAttribute("aria-hidden", "true");
+    if (typeof source === "string" && source) {
+      const image = document.createElement("img");
+      image.src = source;
+      image.alt = "";
+      avatar.append(image);
+    } else {
+      avatar.textContent = (String(pseudo || "M").trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
+    return avatar;
+  };
+
   const createVisitorChatMessage = (message) => {
     const item = document.createElement("article");
     const sender = message.sender === "gionny" ? "gionny" : "visitor";
     item.className = `contact-chat-message contact-chat-message--${sender}`;
-
     const senderPseudo = typeof message.pseudo === "string" && message.pseudo.trim()
       ? message.pseudo
       : sender === "gionny" ? "Gionny" : visitorAccount?.pseudo || visitorConversation?.pseudo || "Membre";
     const isHostMessage = message.isHost === true || sender === "gionny";
+    const avatarSource = message.avatarData || (sender === "gionny" ? "/assets/gionny-profile.jpg" : visitorAccount?.avatarData || "");
+    const identity = document.createElement("div");
+    identity.className = "contact-chat-identity";
+    identity.append(createChatAvatar(avatarSource, senderPseudo, "contact-chat-avatar"));
     const name = document.createElement("span");
     name.className = "contact-chat-sender";
     name.textContent = senderPseudo;
-    if (isHostMessage) {
-      name.append(createHostCrownBadge("contact-chat-host-crown"));
-    }
-    item.append(name);
+    if (isHostMessage) name.append(createHostCrownBadge("contact-chat-host-crown"));
+    identity.append(name);
+    item.append(identity);
 
     if (message.kind === "audio" || message.hasAudio) {
       const audioUrl = `/api/contact-audio?conversationId=${encodeURIComponent(visitorConversation.id)}&messageId=${encodeURIComponent(message.id)}`;
@@ -970,6 +1033,27 @@
       if (player.tagName === "P") player.textContent = "Le lecteur vocal est indisponible.";
       player.classList.add("contact-chat-audio");
       item.append(player);
+    } else if (message.kind === "image" || message.hasImage) {
+      const imageUrl = message.pending && typeof message.previewUrl === "string" && message.previewUrl
+        ? message.previewUrl
+        : `/api/contact-image?conversationId=${encodeURIComponent(visitorConversation.id)}&messageId=${encodeURIComponent(message.id)}`;
+      const imageButton = document.createElement("button");
+      imageButton.type = "button";
+      imageButton.className = "chat-attachment-image";
+      imageButton.setAttribute("aria-label", `Agrandir l’image envoyée par ${senderPseudo}`);
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = "Image jointe à la discussion";
+      image.loading = "lazy";
+      imageButton.append(image);
+      imageButton.addEventListener("click", () => window.qgImageTools?.openImageViewer(imageUrl, image.alt));
+      item.append(imageButton);
+      if (typeof message.text === "string" && message.text) {
+        const caption = document.createElement("p");
+        caption.className = "contact-chat-text contact-chat-caption";
+        caption.textContent = message.text;
+        item.append(caption);
+      }
     } else {
       const text = document.createElement("p");
       text.className = "contact-chat-text";
@@ -977,11 +1061,24 @@
       item.append(text);
     }
 
+    const meta = document.createElement("div");
+    meta.className = "contact-chat-meta";
     const date = document.createElement("time");
     date.className = "contact-chat-date";
     date.dateTime = message.createdAt;
     date.textContent = formatConversationTime(message.createdAt);
-    item.append(date);
+    meta.append(date);
+    const isOwnMessage = visitorAccount?.role === "host" ? sender === "gionny" : sender === "visitor";
+    if (isOwnMessage) {
+      const receipt = document.createElement("span");
+      receipt.className = "chat-read-receipt";
+      receipt.dataset.state = message.pending ? "sending" : message.read === true ? "read" : "sent";
+      receipt.setAttribute("aria-label", message.read === true ? "Message lu" : "Message envoyé");
+      receipt.title = message.read === true ? "Lu" : "Envoyé";
+      receipt.textContent = message.pending ? "✓" : "✓✓";
+      meta.append(receipt);
+    }
+    item.append(meta);
     return item;
   };
 
@@ -992,6 +1089,7 @@
     contactThread.hidden = false;
     contactThreadPseudo.textContent = visitorConversation.pseudo || visitorAccount?.pseudo || "Ta discussion privée";
     if (contactThreadSubject) contactThreadSubject.textContent = visitorConversation.subject || "💬 Discussion";
+    if (contactHeaderSubject) contactHeaderSubject.textContent = visitorConversation.subject || "💬 Discussion";
     contactThreadState.textContent = visitorConversation.status === "blocked"
       ? "Bloquée"
       : visitorConversation.status === "closed"
@@ -1006,9 +1104,11 @@
       ? "Cette discussion a été bloquée. Tu ne peux plus y envoyer de message."
       : "Cette discussion est fermée. Tu peux démarrer un nouveau fil si tu as une autre question.";
     newConversationButton.hidden = visitorConversation.status !== "closed";
+    const subjectInput = contactReplyForm?.elements.namedItem("subject");
+    if (subjectInput) subjectInput.value = visitorConversation.subject || "💬 Discussion";
 
     const messageSignature = visitorConversationMessages.map((message) =>
-      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}`
+      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}:${message.read === true}:${message.avatarData || ""}`
     ).join("|");
     if (contactThreadMessages.dataset.messageSignature !== messageSignature) {
       const wasNearBottom = contactThreadMessages.scrollHeight - contactThreadMessages.scrollTop - contactThreadMessages.clientHeight < 80;
@@ -1017,12 +1117,17 @@
       if (wasNearBottom) contactThreadMessages.scrollTop = contactThreadMessages.scrollHeight;
     }
 
-    const latestGionnyMessage = [...visitorConversationMessages].reverse().find((message) => message.sender === "gionny");
-    const seenId = readVisitorSeenId(visitorConversation.id);
-    const hasUnseenReply = Boolean(latestGionnyMessage && latestGionnyMessage.id !== seenId);
-    if (contactBadge) contactBadge.hidden = !hasUnseenReply || !contactWidget.hidden;
-    if (announceNewReply && hasUnseenReply && contactWidget.hidden) {
-      contactLauncher?.setAttribute("aria-label", "Une réponse t’attend dans ta discussion privée avec Gionny");
+    const unreadCount = visitorAccount?.role === "host"
+      ? 0
+      : visitorConversationMessages.filter((message) => message.sender === "gionny" && message.read !== true).length;
+    if (contactBadge) {
+      contactBadge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+      contactBadge.hidden = unreadCount === 0 || !contactWidget.hidden;
+      contactBadge.setAttribute("aria-label", `${unreadCount} réponse${unreadCount === 1 ? "" : "s"} non lue${unreadCount === 1 ? "" : "s"}`);
+    }
+    contactLauncher?.setAttribute("data-has-messages", String(visitorConversation.messageCount > 0));
+    if (announceNewReply && unreadCount > 0 && contactWidget.hidden) {
+      contactLauncher?.setAttribute("aria-label", `${unreadCount} réponse${unreadCount === 1 ? "" : "s"} non lue${unreadCount === 1 ? "" : "s"} dans ta discussion avec Gionny`);
     } else {
       contactLauncher?.setAttribute("aria-label", "Ouvrir ta discussion privée avec Gionny");
     }
@@ -1038,6 +1143,19 @@
     if (memberLoggedOut) memberLoggedOut.hidden = isConnected;
     if (memberLoggedIn) memberLoggedIn.hidden = !isConnected;
     if (memberPseudo) memberPseudo.textContent = pseudo;
+    if (profileDisplayName) profileDisplayName.textContent = pseudo;
+    const avatarData = typeof visitorAccount?.avatarData === "string" ? visitorAccount.avatarData : "";
+    if (memberAvatarImage) {
+      memberAvatarImage.hidden = !isConnected || !avatarData;
+      if (avatarData && memberAvatarImage.src !== avatarData) memberAvatarImage.src = avatarData;
+      const fallback = memberAvatarImage.parentElement?.querySelector("svg");
+      if (fallback) fallback.hidden = !memberAvatarImage.hidden;
+    }
+    if (profileAvatarImage) {
+      profileAvatarImage.hidden = !avatarData;
+      if (avatarData && profileAvatarImage.src !== avatarData) profileAvatarImage.src = avatarData;
+    }
+    if (profileAvatarFallback) profileAvatarFallback.hidden = Boolean(avatarData);
     if (welcomeName) {
       welcomeName.textContent = pseudo;
       welcomeName.hidden = !isConnected;
@@ -1069,18 +1187,24 @@
       if (contactNewView) contactNewView.hidden = true;
       if (contactThread) contactThread.hidden = true;
       if (contactBadge) contactBadge.hidden = true;
+      if (contactLauncher) contactLauncher.setAttribute("data-has-messages", "false");
+      if (contactHeaderSubject) contactHeaderSubject.textContent = "💬 Discussion";
       return;
     }
 
     if (contactAuth) contactAuth.hidden = true;
     if (accountPseudo) accountPseudo.textContent = visitorAccount.pseudo || "";
-    if (visitorConversation) {
+    if (visitorConversation && !newConversationMode) {
       renderVisitorConversation();
       return;
     }
     if (contactThread) contactThread.hidden = true;
     if (contactNewView) contactNewView.hidden = false;
     if (contactBadge) contactBadge.hidden = true;
+    if (contactLauncher) contactLauncher.setAttribute("data-has-messages", "false");
+    if (contactHeaderSubject) contactHeaderSubject.textContent = newConversationMode
+      ? (contactForm?.elements.namedItem("subject")?.value || "💬 Discussion")
+      : "💬 Discussion";
   };
 
   const loadVisitorConversation = async ({ quiet = false } = {}) => {
@@ -1166,11 +1290,193 @@
   };
 
   const updateConversationFromResponse = (data) => {
+    const previousConversationId = visitorConversation?.id;
     if (data.account) visitorAccount = data.account;
     if (data.conversation) visitorConversation = data.conversation;
+    if (previousConversationId !== visitorConversation?.id) visitorReadMarkKey = "";
     if (Array.isArray(data.messages)) visitorConversationMessages = data.messages;
     else if (data.message) visitorConversationMessages.push(data.message);
   };
+
+  const clearChatAttachment = (form) => {
+    const state = form ? chatComposerStates.get(form) : null;
+    if (!state) return;
+    if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+    state.previewUrl = "";
+    state.imageBlob = null;
+    state.imageFile = null;
+    state.preview.hidden = true;
+    state.previewImage.removeAttribute("src");
+    state.fileInput.value = "";
+    updateChatComposerAction(form);
+  };
+
+  const updateChatComposerAction = (form) => {
+    const state = form ? chatComposerStates.get(form) : null;
+    if (!state) return;
+    const hasPayload = Boolean(String(state.messageInput.value || "").trim() || state.imageBlob);
+    state.recordButton.dataset.mode = hasPayload ? "send" : "voice";
+    state.micIcon.hidden = hasPayload;
+    state.sendIcon.hidden = !hasPayload;
+    state.recordButton.setAttribute("aria-label", hasPayload ? "Envoyer le message" : "Enregistrer un message vocal");
+    state.recordButton.title = hasPayload ? "Envoyer" : "Message vocal";
+  };
+
+  const closeChatMenu = (state) => {
+    state.menu.hidden = true;
+    state.menuToggle.setAttribute("aria-expanded", "false");
+    state.subjectOptions.hidden = true;
+    state.subjectToggle?.setAttribute("aria-expanded", "false");
+  };
+
+  const setupVisitorChatComposer = (form) => {
+    if (!form || chatComposerStates.has(form)) return;
+    const messageInput = form.querySelector("[data-chat-message]");
+    const fileInput = form.querySelector("[data-chat-image-input]");
+    const menu = form.querySelector("[data-chat-menu]");
+    const menuToggle = form.querySelector("[data-chat-menu-toggle]");
+    const subjectToggle = form.querySelector("[data-chat-subject-toggle]");
+    const subjectOptions = form.querySelector("[data-chat-subject-options]");
+    const imagePreview = form.querySelector("[data-chat-image-preview]");
+    const previewImage = form.querySelector("[data-chat-image-preview-img]");
+    const removeImage = form.querySelector("[data-chat-image-remove]");
+    const recordButton = form.querySelector("[data-compose-action]");
+    const micIcon = recordButton?.querySelector("[data-compose-mic]");
+    const sendIcon = recordButton?.querySelector("[data-compose-send-icon]");
+    if (!messageInput || !fileInput || !menu || !menuToggle || !subjectOptions || !imagePreview || !previewImage || !removeImage || !recordButton || !micIcon || !sendIcon) return;
+    const state = { form, messageInput, fileInput, menu, menuToggle, subjectToggle, subjectOptions, preview: imagePreview, previewImage, removeImage, recordButton, micIcon, sendIcon, imageBlob: null, imageFile: null, previewUrl: "" };
+    chatComposerStates.set(form, state);
+
+    menuToggle.addEventListener("click", () => {
+      menu.hidden = !menu.hidden;
+      menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
+    });
+    subjectToggle?.addEventListener("click", () => {
+      subjectOptions.hidden = !subjectOptions.hidden;
+      subjectToggle.setAttribute("aria-expanded", String(!subjectOptions.hidden));
+      if (!subjectOptions.hidden) {
+        const selectedSubject = form.elements.namedItem("subject")?.value || visitorConversation?.subject || "💬 Discussion";
+        subjectOptions.querySelectorAll("[data-chat-subject-value]").forEach((option) => {
+          option.setAttribute("aria-pressed", String(option.dataset.chatSubjectValue === selectedSubject));
+        });
+      }
+    });
+    form.querySelector("[data-chat-image-option]")?.addEventListener("click", () => {
+      closeChatMenu(state);
+      fileInput.click();
+    });
+    removeImage.addEventListener("click", () => {
+      clearChatAttachment(form);
+      messageInput.focus({ preventScroll: true });
+    });
+    form.querySelectorAll("[data-chat-subject-value]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const subject = button.dataset.chatSubjectValue;
+        if (!CHAT_SUBJECTS.includes(subject)) return;
+        closeChatMenu(state);
+        const subjectInput = form.elements.namedItem("subject");
+        if (form === contactReplyForm && visitorConversation) {
+          button.disabled = true;
+          setContactThreadStatus("Mise à jour du sujet…");
+          try {
+            const response = await fetch("/api/contact", {
+              method: "POST",
+              headers: { Accept: "application/json", "Content-Type": "application/json" },
+              credentials: "same-origin",
+              cache: "no-store",
+              body: JSON.stringify({ action: "subject", subject }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.ok !== true) {
+              setContactThreadStatus(data.error || "Le sujet n’a pas pu être modifié.", "error");
+              return;
+            }
+            updateConversationFromResponse(data);
+            if (subjectInput) subjectInput.value = subject;
+            renderContactState();
+            setContactThreadStatus("Sujet mis à jour.", "success");
+          } catch {
+            setContactThreadStatus("Impossible de modifier le sujet.", "error");
+          } finally {
+            button.disabled = false;
+          }
+          return;
+        }
+        if (subjectInput) subjectInput.value = subject;
+        if (contactHeaderSubject) contactHeaderSubject.textContent = subject;
+        state.subjectOptions.querySelectorAll("[data-chat-subject-value]").forEach((option) => {
+          option.setAttribute("aria-pressed", String(option.dataset.chatSubjectValue === subject));
+        });
+      });
+    });
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      if (!window.qgImageTools?.compressToWebp) {
+        setStatusNode(form === contactReplyForm ? contactReplyStatus : contactStatus, "La compression WebP n’est pas disponible dans ce navigateur.", "error");
+        fileInput.value = "";
+        return;
+      }
+      const statusNode = form === contactReplyForm ? contactReplyStatus : contactStatus;
+      setStatusNode(statusNode, "Compression de l’image en WebP…");
+      try {
+        const imageBlob = await window.qgImageTools.compressToWebp(file, {
+          maxWidth: 800,
+          maxHeight: 800,
+          maxBytes: 40_000,
+          initialQuality: 0.75,
+        });
+        if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+        state.imageBlob = imageBlob;
+        state.imageFile = file;
+        state.previewUrl = URL.createObjectURL(imageBlob);
+        previewImage.src = state.previewUrl;
+        imagePreview.hidden = false;
+        setStatusNode(statusNode, `Image prête · ${Math.round(imageBlob.size / 1024)} Ko.`, "success");
+        updateChatComposerAction(form);
+      } catch (error) {
+        setStatusNode(statusNode, error instanceof Error ? error.message : "L’image n’a pas pu être compressée.", "error");
+      } finally {
+        fileInput.value = "";
+      }
+    });
+
+    messageInput.addEventListener("input", () => {
+      messageInput.style.height = "auto";
+      messageInput.style.height = `${Math.min(messageInput.scrollHeight, 112)}px`;
+      updateChatComposerAction(form);
+    });
+    messageInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+      event.preventDefault();
+      if (!String(messageInput.value || "").trim() && !state.imageBlob) return;
+      const submitButton = form.querySelector("button[type=submit]");
+      if (submitButton && !submitButton.disabled) form.requestSubmit(submitButton);
+    });
+    form.addEventListener("click", (event) => {
+      const actionButton = event.target.closest("[data-compose-action]");
+      if (!actionButton || !form.contains(actionButton)) return;
+      if (!String(messageInput.value || "").trim() && !state.imageBlob) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      const submitButton = form.querySelector("button[type=submit]");
+      if (submitButton && !submitButton.disabled) form.requestSubmit(submitButton);
+    }, true);
+    document.addEventListener("click", (event) => {
+      if (!form.contains(event.target) && !menu.hidden) closeChatMenu(state);
+    });
+    form.addEventListener("reset", () => window.setTimeout(() => {
+      clearChatAttachment(form);
+      messageInput.style.height = "auto";
+      updateChatComposerAction(form);
+    }, 0));
+    updateChatComposerAction(form);
+  };
+
+  setupVisitorChatComposer(contactForm);
+  setupVisitorChatComposer(contactReplyForm);
 
   const logoutVisitor = async () => {
     if (voiceControlStates.some((state) => state.sending)) {
@@ -1226,7 +1532,12 @@
       profileDialog.style.setProperty("--profile-dialog-right", `${Math.max(12, Math.round(window.innerWidth - triggerRect.right))}px`);
     }
     if (profilePseudoInput) profilePseudoInput.value = visitorAccount.pseudo || "";
+    if (profileDisplayName) profileDisplayName.textContent = visitorAccount.pseudo || "";
+    if (profilePseudoForm) profilePseudoForm.hidden = true;
+    if (profilePseudoEditButton) profilePseudoEditButton.hidden = false;
     if (profilePseudoStatus) setStatusNode(profilePseudoStatus, "");
+    if (profileAvatarStatus) setStatusNode(profileAvatarStatus, "");
+    if (profileAvatarFile) profileAvatarFile.value = "";
     if (profilePasswordStatus) setStatusNode(profilePasswordStatus, "");
     profilePasswordForm?.reset();
     if (profilePasswordForm) profilePasswordForm.hidden = true;
@@ -1236,7 +1547,7 @@
     lockBackgroundScroll("profile-dialog");
     profileOpenButton?.setAttribute("aria-expanded", "true");
     updateProfilePseudoControls();
-    profilePseudoInput?.focus({ preventScroll: true });
+    profileAvatarTrigger?.focus({ preventScroll: true });
   };
 
   profileOpenButton?.addEventListener("click", openProfileDialog);
@@ -1253,6 +1564,28 @@
     if (profileOpenButton && !profileOpenButton.closest("[hidden]")) profileOpenButton.focus({ preventScroll: true });
   });
   profilePseudoInput?.addEventListener("input", updateProfilePseudoControls);
+  profilePseudoEditButton?.addEventListener("click", () => {
+    if (!visitorAccount || profileSaving || !profilePseudoForm) return;
+    profilePseudoInput.value = visitorAccount.pseudo || "";
+    profilePseudoForm.hidden = false;
+    profilePseudoEditButton.hidden = true;
+    if (profilePseudoStatus) setStatusNode(profilePseudoStatus, "");
+    updateProfilePseudoControls();
+    profilePseudoInput.focus({ preventScroll: true });
+    profilePseudoInput.select();
+  });
+  profilePseudoCancelButton?.addEventListener("click", () => {
+    if (!visitorAccount || profileSaving) return;
+    profilePseudoInput.value = visitorAccount.pseudo || "";
+    profilePseudoForm.hidden = true;
+    profilePseudoEditButton.hidden = false;
+    if (profilePseudoStatus) setStatusNode(profilePseudoStatus, "");
+    updateProfilePseudoControls();
+    profilePseudoEditButton.focus({ preventScroll: true });
+  });
+  profileAvatarTrigger?.addEventListener("click", () => {
+    if (!profileSaving && visitorAccount) profileAvatarFile?.click();
+  });
   profilePasswordToggle?.addEventListener("click", () => {
     if (!profilePasswordForm) return;
     profilePasswordForm.hidden = !profilePasswordForm.hidden;
@@ -1291,8 +1624,13 @@
       updateConversationFromResponse(data);
       renderContactState();
       if (profilePseudoInput && visitorAccount) profilePseudoInput.value = visitorAccount.pseudo || "";
+      if (Object.hasOwn(payload, "pseudo")) {
+        if (profilePseudoForm) profilePseudoForm.hidden = true;
+        if (profilePseudoEditButton) profilePseudoEditButton.hidden = false;
+        if (profileDisplayName && visitorAccount) profileDisplayName.textContent = visitorAccount.pseudo || "";
+      }
       if (profilePasswordForm) profilePasswordForm.reset();
-      setStatusNode(statusNode, "Profil mis à jour.", "success");
+      setStatusNode(statusNode, Object.hasOwn(payload, "avatarData") ? "Photo de profil mise à jour." : "Profil mis à jour.", "success");
       updateProfilePseudoControls();
     } catch {
       setStatusNode(statusNode, "Impossible de joindre le serveur. Réessaie dans un instant.", "error");
@@ -1301,6 +1639,39 @@
       updateProfilePseudoControls();
     }
   };
+
+  profileAvatarFile?.addEventListener("change", async () => {
+    const file = profileAvatarFile.files?.[0];
+    if (!file || !visitorAccount || profileSaving) return;
+    if (!window.qgImageTools?.compressToWebp || !window.qgImageTools?.blobToDataUrl) {
+      setStatusNode(profileAvatarStatus, "Le recadrage d’image n’est pas disponible dans ce navigateur.", "error");
+      profileAvatarFile.value = "";
+      return;
+    }
+    profileAvatarTrigger.disabled = true;
+    setStatusNode(profileAvatarStatus, "Recadrage carré et compression WebP…");
+    try {
+      const imageBlob = await window.qgImageTools.compressToWebp(file, {
+        maxWidth: 128,
+        maxHeight: 128,
+        cropSquare: true,
+        preserveDimensions: true,
+        maxBytes: 7_000,
+        initialQuality: 0.86,
+      });
+      const avatarData = await window.qgImageTools.blobToDataUrl(imageBlob);
+      if (!avatarData.startsWith("data:image/webp;base64,") || avatarData.length >= 10_000) {
+        throw new Error("La photo dépasse la limite WebP de 10 Ko. Choisis une autre image.");
+      }
+      profileAvatarTrigger.disabled = false;
+      await submitProfileUpdate({ avatarData }, profileAvatarStatus, profileAvatarTrigger);
+    } catch (error) {
+      setStatusNode(profileAvatarStatus, error instanceof Error ? error.message : "La photo n’a pas pu être préparée.", "error");
+    } finally {
+      if (profileAvatarFile) profileAvatarFile.value = "";
+      if (!profileSaving) updateProfilePseudoControls();
+    }
+  });
 
   profilePseudoForm?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1371,39 +1742,102 @@
     event.preventDefault();
     if (!contactForm.reportValidity() || !contactSubmit || contactSubmit.disabled) return;
     const formData = new FormData(contactForm);
+    const composer = chatComposerStates.get(contactForm);
+    const message = String(formData.get("message") || "").trim();
+    if (!message && !composer?.imageBlob) return;
+    const subject = String(formData.get("subject") || "💬 Discussion");
     const payload = {
       action: "send",
-      subject: String(formData.get("subject") || "💬 Discussion"),
-      message: String(formData.get("message") || ""),
+      subject,
+      message,
       website: String(formData.get("website") || ""),
       newConversation: newConversationMode,
     };
     contactSubmit.disabled = true;
-    setContactStatus(newConversationMode ? "Ouverture d’une nouvelle discussion…" : "Envoi de ton message…");
+    const originalConversation = visitorConversation;
+    const originalMessages = visitorConversationMessages;
+    const originalNewConversationMode = newConversationMode;
+    const showPendingThread = !visitorConversation || newConversationMode;
+    const pendingMessageId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    if (showPendingThread) {
+      visitorConversation = {
+        id: pendingMessageId,
+        pseudo: visitorAccount?.pseudo || "Membre",
+        subject,
+        status: "open",
+        messageCount: 1,
+        adminUnread: false,
+      };
+      visitorConversationMessages = [{
+        id: pendingMessageId,
+        sender: visitorAccount?.role === "host" ? "gionny" : "visitor",
+        pseudo: visitorAccount?.pseudo || "Membre",
+        isHost: visitorAccount?.role === "host",
+        avatarData: visitorAccount?.avatarData || "",
+        text: message,
+        createdAt: new Date().toISOString(),
+        kind: composer?.imageBlob ? "image" : "text",
+        hasImage: Boolean(composer?.imageBlob),
+        pending: true,
+        previewUrl: composer?.previewUrl || "",
+      }];
+      renderVisitorConversation();
+    }
+    setContactStatus(composer?.imageBlob ? "Envoi de l’image…" : newConversationMode ? "Ouverture d’une nouvelle discussion…" : "Envoi de ton message…");
+    if (showPendingThread) setContactThreadStatus(composer?.imageBlob ? "Envoi de l’image…" : "Envoi du message…");
+    const restorePendingThread = () => {
+      if (!showPendingThread) return;
+      visitorConversation = originalConversation;
+      visitorConversationMessages = originalMessages;
+      newConversationMode = originalNewConversationMode;
+      renderContactState();
+    };
+    const removePendingMessage = () => {
+      visitorConversationMessages = visitorConversationMessages.filter((item) => item.id !== pendingMessageId);
+    };
 
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        body: JSON.stringify(payload),
-      });
+      const response = composer?.imageBlob
+        ? await fetch("/api/contact-image", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "image/webp",
+            "X-Conversation-Subject": encodeURIComponent(subject),
+            "X-Message-Text": encodeURIComponent(message),
+            "X-Website": encodeURIComponent(payload.website),
+            ...(newConversationMode ? { "X-New-Conversation": "true" } : {}),
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: composer.imageBlob,
+        })
+        : await fetch("/api/contact", {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify(payload),
+        });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok !== true) {
+        restorePendingThread();
         setContactStatus(data.error || "Ton message n’a pas pu être envoyé. Réessaie.", "error");
         if (response.status === 409 || response.status === 403) await loadVisitorConversation({ quiet: true });
         return;
       }
 
+      removePendingMessage();
       updateConversationFromResponse(data);
       newConversationMode = false;
       contactForm.reset();
+      clearChatAttachment(contactForm);
       setContactStatus("");
       renderContactState();
       markVisitorThreadSeen();
       contactReplyForm?.querySelector("textarea")?.focus({ preventScroll: true });
     } catch {
+      restorePendingThread();
       setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
     } finally {
       contactSubmit.disabled = false;
@@ -1414,31 +1848,75 @@
     event.preventDefault();
     if (!contactReplyForm.reportValidity() || !contactReplySubmit || contactReplySubmit.disabled) return;
     const messageField = contactReplyForm.elements.namedItem("message");
+    const composer = chatComposerStates.get(contactReplyForm);
     const message = String(messageField?.value || "").trim();
-    if (!message) return;
+    if (!message && !composer?.imageBlob) return;
 
+    const subject = String(contactReplyForm.elements.namedItem("subject")?.value || visitorConversation?.subject || "💬 Discussion");
     contactReplySubmit.disabled = true;
-    setContactThreadStatus("Envoi de ton message…");
+    setContactThreadStatus(composer?.imageBlob ? "Envoi de l’image…" : "Envoi de ton message…");
+    const pendingMessageId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const showPending = Boolean(visitorConversation && !newConversationMode);
+    const pendingMessage = {
+      id: pendingMessageId,
+      sender: visitorAccount?.role === "host" ? "gionny" : "visitor",
+      pseudo: visitorAccount?.pseudo || "Membre",
+      isHost: visitorAccount?.role === "host",
+      avatarData: visitorAccount?.avatarData || "",
+      text: message,
+      createdAt: new Date().toISOString(),
+      kind: composer?.imageBlob ? "image" : "text",
+      hasImage: Boolean(composer?.imageBlob),
+      pending: true,
+      previewUrl: composer?.previewUrl || "",
+    };
+    if (showPending) {
+      visitorConversationMessages = [...visitorConversationMessages, pendingMessage];
+      renderVisitorConversation();
+    }
+    const removePendingMessage = () => {
+      if (!showPending) return;
+      visitorConversationMessages = visitorConversationMessages.filter((item) => item.id !== pendingMessageId);
+      renderVisitorConversation();
+    };
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        body: JSON.stringify({ action: "send", message, subject: visitorConversation?.subject || "💬 Discussion" }),
-      });
+      const response = composer?.imageBlob
+        ? await fetch("/api/contact-image", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "image/webp",
+            "X-Conversation-Subject": encodeURIComponent(subject),
+            "X-Message-Text": encodeURIComponent(message),
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: composer.imageBlob,
+        })
+        : await fetch("/api/contact", {
+          method: "POST",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({ action: "send", message, subject }),
+        });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok !== true) {
+        removePendingMessage();
         setContactThreadStatus(data.error || "Ton message n’a pas pu être envoyé.", "error");
         if (response.status === 409 || response.status === 403 || response.status === 404) await loadVisitorConversation({ quiet: true });
         return;
       }
+      removePendingMessage();
       updateConversationFromResponse(data);
       messageField.value = "";
+      messageField.style.height = "auto";
+      clearChatAttachment(contactReplyForm);
       setContactThreadStatus("");
       renderContactState();
       markVisitorThreadSeen();
     } catch {
+      removePendingMessage();
       setContactThreadStatus("Impossible de joindre le serveur. Réessaie.", "error");
     } finally {
       contactReplySubmit.disabled = false;
@@ -1807,9 +2285,10 @@
       contactAuth.hidden = true;
       contactNewView.hidden = false;
       setContactStatus("");
-      const messageInput = contactForm?.elements.namedItem("message");
-      if (messageInput) messageInput.value = "";
-      contactForm?.elements.namedItem("subject")?.focus({ preventScroll: true });
+      contactForm?.reset();
+      clearChatAttachment(contactForm);
+      if (contactHeaderSubject) contactHeaderSubject.textContent = "💬 Discussion";
+      contactForm?.querySelector("[data-chat-message]")?.focus({ preventScroll: true });
     });
 
     void loadVisitorConversation();
@@ -1974,7 +2453,7 @@
       activeSlideIndex = (requestedIndex + slides.length) % slides.length;
       slides.forEach((slide, index) => {
         const isActive = index === activeSlideIndex;
-        slide.hidden = !isActive;
+        slide.hidden = false;
         slide.dataset.active = String(isActive);
         slide.setAttribute("aria-hidden", String(!isActive));
       });
@@ -2018,6 +2497,32 @@
     }, true);
     showCarouselSlide(activeSlideIndex);
   }
+
+  let presenceInFlight = false;
+  const refreshSitePresence = async () => {
+    if (!sitePresence || presenceInFlight || document.hidden) return;
+    presenceInFlight = true;
+    try {
+      const response = await fetch("/api/presence", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return;
+      if (Number.isInteger(data.activeSessions)) {
+        sitePresenceCount.textContent = String(data.activeSessions);
+        sitePresence.hidden = false;
+      } else {
+        sitePresence.hidden = true;
+      }
+    } catch {
+      // The capsule stays hidden or keeps its last count if the heartbeat is offline.
+    } finally {
+      presenceInFlight = false;
+    }
+  };
 
   const refreshSiteConfig = async () => {
     try {
@@ -2110,13 +2615,16 @@
 
   window.addEventListener("resize", scheduleLiveOverflowCheck, { passive: true });
   void refreshSiteConfig();
+  void refreshSitePresence();
   void refreshTicker();
   void refreshDiscordStatus();
+  window.setInterval(refreshSitePresence, 60_000);
   window.setInterval(refreshTicker, 60_000);
   window.setInterval(refreshDiscordStatus, 30_000);
   window.setInterval(updateScheduleCountdown, 1_000);
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
+      void refreshSitePresence();
       void refreshTicker();
       void refreshDiscordStatus();
     }

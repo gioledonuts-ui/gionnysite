@@ -7,7 +7,11 @@
     <meta name="robots" content="noindex, nofollow, noarchive" />
     <title>Administration · QG2GIONNY</title>
     <link rel="icon" href="/assets/gionny-profile.jpg" type="image/jpeg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/gestion-qg/admin.css" />
+    <script src="/image-tools.js" defer></script>
     <script src="/audio-player.js" defer></script>
     <script src="/gestion-qg/admin.js" defer></script>
   </head>
@@ -15,22 +19,39 @@
     <div class="admin-glow admin-glow--blue" aria-hidden="true"></div>
     <div class="admin-glow admin-glow--red" aria-hidden="true"></div>
     <main class="admin-shell">
-      <a class="admin-back" href="/">
-        <span aria-hidden="true">←</span>
-        Retour au site
-      </a>
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Navigation Admin">
+          <a class="admin-back" href="/">
+            <span aria-hidden="true">←</span>
+            Retour au site
+          </a>
 
-      <header class="admin-header">
-        <div class="admin-avatar-frame">
-          <img src="/assets/gionny-profile.jpg" alt="" />
-        </div>
-        <div class="admin-header-copy">
-          <p class="admin-eyebrow">ZONE PRIVÉE · QG2GIONNY</p>
-          <h1>Administration <span>du QG</span></h1>
-          <p>Gère les liens sociaux, les horaires et tes discussions privées.</p>
-        </div>
-      </header>
+          <header class="admin-header">
+            <div class="admin-avatar-frame">
+              <img src="/assets/gionny-profile.jpg" alt="" data-admin-avatar />
+            </div>
+            <div class="admin-header-copy">
+              <p class="admin-eyebrow">QG2GIONNY</p>
+              <h1>Administration <span>du QG</span></h1>
+              <p class="admin-identity-label"><span data-admin-identity-pseudo>Gionny</span><span aria-hidden="true"> · Hôte 👑</span></p>
+            </div>
+          </header>
 
+          <div class="admin-presence" data-admin-presence hidden aria-live="polite">
+            <span class="admin-presence-dot" aria-hidden="true"></span>
+            <span><strong data-admin-presence-count>0</strong> sessions actives · 3 min</span>
+          </div>
+
+          <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist" aria-orientation="vertical" hidden>
+            <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations"><span aria-hidden="true">💬</span> Discussions</button>
+            <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><span aria-hidden="true">👥</span> Membres</button>
+            <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><span aria-hidden="true">⚙️</span> Réglages</button>
+          </nav>
+          <button class="quiet-button admin-sidebar-logout" type="button" data-logout hidden>Se déconnecter</button>
+          <p class="admin-sidebar-footnote">Panneau de gestion sécurisé</p>
+        </aside>
+
+        <div class="admin-workspace">
       <section class="login-card" data-login-panel aria-labelledby="login-title">
         <div class="card-symbol" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
@@ -67,17 +88,9 @@
       <section class="admin-panel" data-admin-panel aria-labelledby="settings-title" hidden>
         <div class="admin-toolbar">
           <div>
-            <p class="admin-eyebrow">ESPACE ADMIN</p>
             <h2 id="settings-title" data-admin-title>Tes réglages</h2>
           </div>
-          <button class="quiet-button" type="button" data-logout>Se déconnecter</button>
         </div>
-
-        <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist">
-          <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="true" aria-controls="settings-panel" data-admin-tab="settings">⚙️ Réglages</button>
-          <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1">👥 Membres</button>
-          <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="false" aria-controls="conversations-panel" data-admin-tab="conversations" tabindex="-1">💬 Discussions</button>
-        </nav>
 
         <div class="admin-tab-panel" id="settings-panel" role="tabpanel" aria-labelledby="admin-tab-settings" data-admin-tab-panel="settings">
           <div class="storage-notice" data-storage-notice role="status" aria-live="polite"></div>
@@ -265,12 +278,8 @@
         <div class="admin-tab-panel" id="conversations-panel" role="tabpanel" aria-labelledby="admin-tab-conversations" data-admin-tab-panel="conversations" hidden>
           <section class="settings-section inbox-section" aria-labelledby="inbox-title">
           <div class="section-heading inbox-heading">
-            <span class="section-number">03</span>
-            <div>
-              <h3 id="inbox-title">Discussions privées</h3>
-              <p>Ouvre un fil pour lire, répondre, fermer ou bloquer une discussion.</p>
-            </div>
-            <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh>Actualiser</button>
+            <h3 class="sr-only" id="inbox-title">Discussions privées</h3>
+            <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh aria-label="Actualiser les discussions">↻</button>
           </div>
           <p class="inbox-status" data-conversations-status role="status" aria-live="polite">Chargement des discussions…</p>
 
@@ -327,6 +336,8 @@
               <div class="conversation-content" data-conversation-content hidden>
                 <header class="conversation-toolbar">
                   <div class="conversation-identity">
+                    <img class="thread-member-avatar" data-thread-avatar alt="" hidden />
+                    <span class="thread-member-avatar-fallback" data-thread-avatar-fallback aria-hidden="true"></span>
                     <h4><span data-thread-pseudo>Membre</span><span class="conversation-host-crown" data-thread-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span></h4>
                     <span class="thread-status" data-thread-status></span>
                     <span class="thread-subject" data-thread-subject></span>
@@ -341,18 +352,33 @@
                 <div class="conversation-history" data-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
 
                 <p class="thread-closed-note" data-thread-closed-note hidden></p>
-                <form class="conversation-reply-form" data-reply-form>
-                  <label class="admin-reply-field">
-                    <span class="sr-only">Ta réponse</span>
-                    <textarea data-reply-input rows="2" maxlength="1500" placeholder="Écris ta réponse…" required></textarea>
-                  </label>
-                  <div class="reply-submit-row">
-                    <p class="reply-status" data-reply-status role="status" aria-live="polite"></p>
-                    <button class="primary-button reply-send" type="submit" data-reply-send>
-                      <span>Répondre</span>
-                      <span aria-hidden="true">↗</span>
-                    </button>
+                <form class="conversation-reply-form admin-chat-composer" data-reply-form data-admin-chat-composer>
+                  <input type="file" accept="image/*" data-admin-chat-image-input hidden />
+                  <div class="chat-image-preview admin-chat-image-preview" data-admin-image-preview hidden>
+                    <img data-admin-image-preview-img alt="Aperçu de l’image à joindre" />
+                    <button type="button" data-admin-image-remove aria-label="Retirer l’image">×</button>
                   </div>
+                  <div class="admin-chat-compose-row">
+                    <button class="admin-chat-plus" type="button" data-admin-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false">+</button>
+                    <div class="admin-chat-input-wrap">
+                      <div class="chat-attachment-menu admin-chat-menu" data-admin-chat-menu hidden>
+                        <button type="button" class="chat-menu-option" data-admin-chat-image-option><span aria-hidden="true">▧</span> Joindre une image</button>
+                        <button type="button" class="chat-menu-option" data-admin-chat-subject-toggle aria-expanded="false"><span aria-hidden="true">⌁</span> Changer le sujet</button>
+                        <div class="chat-subject-options" data-admin-chat-subject-options hidden>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="🎤 Passer en live">🎤 Passer en live</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="💡 Idée vidéo / React">💡 Idée vidéo / React</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="❓ Question">❓ Question</button>
+                          <button type="button" class="chat-subject-option" data-admin-chat-subject-value="💬 Discussion">💬 Discussion</button>
+                        </div>
+                      </div>
+                      <textarea data-reply-input rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse"></textarea>
+                      <button class="primary-button reply-send" type="submit" data-reply-send aria-label="Envoyer la réponse" title="Envoyer la réponse">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="reply-submit-row"><p class="reply-status" data-reply-status role="status" aria-live="polite"></p></div>
                 </form>
               </div>
             </section>
@@ -370,6 +396,8 @@
       </section>
 
       <footer class="admin-footer">Modifications du site · visibles par tous après enregistrement</footer>
+        </div>
+      </div>
     </main>
   </body>
 </html>

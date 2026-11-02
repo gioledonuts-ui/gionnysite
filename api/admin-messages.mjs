@@ -1,6 +1,7 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
+  addAdminImageReply,
   addAdminReply,
   CONVERSATION_SUBJECTS,
   deleteContactMessage,
@@ -11,8 +12,10 @@ import {
   isConversationId,
   listContactMessages,
   listConversations,
+  markConversationReadByAdmin,
   setConversationFavorite,
   setConversationStatus,
+  setConversationSubject,
   setConversationUnread,
 } from "../lib/contact-inbox.mjs";
 
@@ -120,6 +123,7 @@ export default async function handler(request, response) {
         if (!isConversationId(id)) {
           return response.status(400).json({ error: "Cette discussion est introuvable." });
         }
+        await markConversationReadByAdmin(id);
         const conversation = await getConversationForAdmin(id);
         if (!conversation) return response.status(404).json({ error: "Cette discussion n’existe plus." });
         return response.status(200).json(conversation);
@@ -160,16 +164,19 @@ export default async function handler(request, response) {
         typeof body.favorite === "boolean",
         typeof body.unread === "boolean",
         typeof body.status === "string",
+        typeof body.subject === "string",
       ].filter(Boolean).length;
       if (operations !== 1) return response.status(400).json({ error: "L’action de boîte mail est invalide." });
 
       const operationIsValid =
         (typeof body.favorite === "boolean") ||
         (typeof body.unread === "boolean") ||
-        ["open", "closed", "blocked"].includes(body.status);
+        ["open", "closed", "blocked"].includes(body.status) ||
+        CONVERSATION_SUBJECTS.includes(body.subject);
       if (!operationIsValid) return response.status(400).json({ error: "L’action de boîte mail est invalide." });
 
       const isBulk = Array.isArray(body.conversationIds);
+      if (isBulk && typeof body.subject === "string") return response.status(400).json({ error: "Le sujet se modifie sur une seule discussion." });
       const ids = isBulk ? [...new Set(body.conversationIds)] : [body.conversationId];
       if (ids.length < 1 || ids.length > 100 || !ids.every(isConversationId)) {
         return response.status(400).json({ error: "Choisis entre 1 et 100 discussions valides." });
@@ -183,7 +190,9 @@ export default async function handler(request, response) {
             ? await setConversationFavorite(id, body.favorite)
             : typeof body.unread === "boolean"
               ? await setConversationUnread(id, body.unread)
-              : await setConversationStatus(id, body.status);
+              : typeof body.subject === "string"
+                ? await setConversationSubject(id, body.subject)
+                : await setConversationStatus(id, body.status);
           return { id, conversation };
         }));
         for (const result of batch) {

@@ -10,11 +10,17 @@
   ];
   const SOCIALS = ["twitch", "tiktok", "youtube", "x", "instagram", "discord"];
   const SOCIAL_INFO = ["twitch", "tiktok", "youtube", "x", "instagram"];
+  const CHAT_SUBJECTS = ["🎤 Passer en live", "💡 Idée vidéo / React", "📖 Histoire / Anecdote", "❓ Question", "💬 Discussion"];
   const loginPanel = document.querySelector("[data-login-panel]");
   const adminPanel = document.querySelector("[data-admin-panel]");
   const adminTabs = [...document.querySelectorAll("[data-admin-tab]")];
+  const adminTabNavigation = document.querySelector(".admin-tabs");
+  const adminPresence = document.querySelector("[data-admin-presence]");
+  const adminPresenceCount = document.querySelector("[data-admin-presence-count]");
   const adminTabPanels = [...document.querySelectorAll("[data-admin-tab-panel]")];
   const adminTitle = document.querySelector("[data-admin-title]");
+  const adminIdentityPseudo = document.querySelector("[data-admin-identity-pseudo]");
+  const adminAvatarImage = document.querySelector("[data-admin-avatar]");
   const membersList = document.querySelector("[data-members-list]");
   const membersStatus = document.querySelector("[data-members-status]");
   const membersRefreshButton = document.querySelector("[data-members-refresh]");
@@ -52,6 +58,8 @@
   const threadHostCrown = document.querySelector("[data-thread-host-crown]");
   const threadStatus = document.querySelector("[data-thread-status]");
   const threadSubject = document.querySelector("[data-thread-subject]");
+  const threadAvatar = document.querySelector("[data-thread-avatar]");
+  const threadAvatarFallback = document.querySelector("[data-thread-avatar-fallback]");
   const threadMessages = document.querySelector("[data-thread-messages]");
   const threadCloseButton = document.querySelector("[data-thread-close]");
   const threadBlockButton = document.querySelector("[data-thread-block]");
@@ -61,6 +69,15 @@
   const replyInput = document.querySelector("[data-reply-input]");
   const replySendButton = document.querySelector("[data-reply-send]");
   const replyStatus = document.querySelector("[data-reply-status]");
+  const adminChatImageInput = document.querySelector("[data-admin-chat-image-input]");
+  const adminChatMenu = document.querySelector("[data-admin-chat-menu]");
+  const adminChatMenuToggle = document.querySelector("[data-admin-chat-menu-toggle]");
+  const adminChatSubjectToggle = document.querySelector("[data-admin-chat-subject-toggle]");
+  const adminChatSubjectOptions = document.querySelector("[data-admin-chat-subject-options]");
+  const adminImagePreview = document.querySelector("[data-admin-image-preview]");
+  const adminImagePreviewImg = document.querySelector("[data-admin-image-preview-img]");
+  const adminImageRemove = document.querySelector("[data-admin-image-remove]");
+  const adminImageOption = document.querySelector("[data-admin-chat-image-option]");
 
   let storageConfigured = false;
   let saving = false;
@@ -79,7 +96,8 @@
   let currentConversationStatus = "";
   let selectedConversationLoading = false;
   let adminPollTimer = 0;
-  let activeAdminTab = "settings";
+  let adminPresenceTimer = 0;
+  let activeAdminTab = "conversations";
   let hostSessionActive = false;
   let membersLoading = false;
   let membersLoaded = false;
@@ -102,13 +120,42 @@
     }
   };
 
+  const applyAdminIdentity = (identity) => {
+    if (typeof identity?.pseudo === "string" && identity.pseudo.trim()) {
+      if (adminIdentityPseudo) adminIdentityPseudo.textContent = identity.pseudo;
+    }
+    const avatarData = typeof identity?.avatarData === "string" && identity.avatarData.startsWith("data:image/webp;base64,") && identity.avatarData.length < 10_000
+      ? identity.avatarData
+      : "";
+    if (adminAvatarImage) adminAvatarImage.src = avatarData || "/assets/gionny-profile.jpg";
+  };
+
+  const loadAdminIdentity = async () => {
+    try {
+      const response = await fetch("/api/admin-auth", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.ok && data.authenticated === true && data.adminIdentity) applyAdminIdentity(data.adminIdentity);
+    } catch {
+      // Keep the server-rendered Hôte fallback when identity refresh is unavailable.
+    }
+  };
+
   const showLogin = (message = "") => {
     hostSessionActive = false;
     if (adminPollTimer) window.clearInterval(adminPollTimer);
+    if (adminPresenceTimer) window.clearInterval(adminPresenceTimer);
     adminPollTimer = 0;
+    adminPresenceTimer = 0;
     queuedConversationsLoad = null;
     loginPanel.hidden = false;
     adminPanel.hidden = true;
+    if (adminTabNavigation) adminTabNavigation.hidden = true;
+    if (logoutButton) logoutButton.hidden = true;
+    if (adminPresence) adminPresence.hidden = true;
     setStatus(loginStatus, message, message ? "error" : "");
     window.setTimeout(() => loginInput?.focus(), 0);
   };
@@ -654,7 +701,9 @@
   const setAdminTab = (tabName, { focus = false } = {}) => {
     const validTab = ["settings", "members", "conversations"].includes(tabName) ? tabName : "settings";
     activeAdminTab = validTab;
-    const tabTitles = { settings: "Tes réglages", members: "👥 Membres", conversations: "Discussions privées" };
+    if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
+    if (adminPanel) adminPanel.dataset.activeTab = validTab;
+    const tabTitles = { settings: "Tes réglages", members: "Membres", conversations: "Discussions" };
     adminTabs.forEach((tab) => {
       const selected = tab.dataset.adminTab === validTab;
       tab.setAttribute("aria-selected", String(selected));
@@ -676,16 +725,22 @@
   adminTabs.forEach((tab, index) => {
     tab.addEventListener("click", () => setAdminTab(tab.dataset.adminTab));
     tab.addEventListener("keydown", (event) => {
-      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      const vertical = adminTabNavigation?.getAttribute("aria-orientation") === "vertical";
+      const supportedArrows = vertical ? ["ArrowUp", "ArrowDown"] : ["ArrowLeft", "ArrowRight"];
+      if (![...supportedArrows, "Home", "End"].includes(event.key)) return;
       event.preventDefault();
+      const moveForward = event.key === "ArrowRight" || event.key === "ArrowDown";
       const nextIndex = event.key === "Home"
         ? 0
         : event.key === "End"
           ? adminTabs.length - 1
-          : (index + (event.key === "ArrowRight" ? 1 : adminTabs.length - 1)) % adminTabs.length;
+          : (index + (moveForward ? 1 : adminTabs.length - 1)) % adminTabs.length;
       setAdminTab(adminTabs[nextIndex]?.dataset.adminTab, { focus: true });
     });
   });
+  window.addEventListener("resize", () => {
+    if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
+  }, { passive: true });
   membersRefreshButton?.addEventListener("click", () => void loadMembers({ reset: true }));
   membersMoreButton?.addEventListener("click", () => void loadMembers());
 
@@ -749,7 +804,9 @@
     conversation.adminUnread,
     conversation.favorite,
     conversation.hasAudio,
+    conversation.hasImage,
     conversation.isHost,
+    conversation.avatarData,
   ]);
 
   const createConversationListItem = (conversation) => {
@@ -788,6 +845,18 @@
     openButton.type = "button";
     openButton.dataset.openConversation = "";
     openButton.setAttribute("aria-current", String(conversation.id === currentConversationId));
+
+    const avatar = document.createElement("span");
+    avatar.className = "conversation-list-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    if (typeof conversation.avatarData === "string" && conversation.avatarData) {
+      const avatarImage = document.createElement("img");
+      avatarImage.src = conversation.avatarData;
+      avatarImage.alt = "";
+      avatar.append(avatarImage);
+    } else {
+      avatar.textContent = (String(conversation.pseudo || "M").trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
 
     const head = document.createElement("span");
     head.className = "conversation-list-head";
@@ -830,7 +899,7 @@
     date.dateTime = conversation.updatedAt;
     date.textContent = formatInboxTime(conversation.updatedAt);
 
-    openButton.append(head, preview, date);
+    openButton.append(avatar, head, preview, date);
     openButton.addEventListener("click", () => selectConversation(conversation.id, { scroll: true }));
     item.append(checkbox, favorite, openButton);
     return item;
@@ -1007,33 +1076,80 @@
       ? message.pseudo
       : sender === "gionny" ? "Gionny" : ownerConversation?.pseudo || "Membre";
     const isHostMessage = message.isHost === true || sender === "gionny";
+    const avatarSource = message.avatarData || (sender === "gionny" ? "/assets/gionny-profile.jpg" : ownerConversation?.avatarData || "");
+    const identity = document.createElement("div");
+    identity.className = "thread-message-identity";
+    const avatar = document.createElement("span");
+    avatar.className = "thread-message-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    if (avatarSource) {
+      const image = document.createElement("img");
+      image.src = avatarSource;
+      image.alt = "";
+      avatar.append(image);
+    } else {
+      avatar.textContent = (String(senderPseudo).trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
     const name = document.createElement("span");
     name.className = "thread-message-sender";
     name.textContent = senderPseudo;
-    if (isHostMessage) {
-      name.append(createHostCrownBadge("thread-message-host-crown"));
-    }
+    if (isHostMessage) name.append(createHostCrownBadge("thread-message-host-crown"));
+    identity.append(avatar, name);
+    item.append(identity);
 
-    let content;
     if (message.kind === "audio" || message.hasAudio) {
       const audioUrl = `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
-      content = typeof window.createQGVoicePlayer === "function"
+      const player = typeof window.createQGVoicePlayer === "function"
         ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`)
         : document.createElement("p");
-      if (content.tagName === "P") content.textContent = "Le lecteur vocal est indisponible.";
-      content.classList.add("thread-message-audio");
+      if (player.tagName === "P") player.textContent = "Le lecteur vocal est indisponible.";
+      player.classList.add("thread-message-audio");
+      item.append(player);
+    } else if (message.kind === "image" || message.hasImage) {
+      const imageUrl = message.pending && typeof message.previewUrl === "string" && message.previewUrl
+        ? message.previewUrl
+        : `/api/contact-image?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
+      const imageButton = document.createElement("button");
+      imageButton.type = "button";
+      imageButton.className = "thread-attachment-image";
+      imageButton.setAttribute("aria-label", `Agrandir l’image envoyée par ${senderPseudo}`);
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = "Image jointe à la discussion";
+      image.loading = "lazy";
+      imageButton.append(image);
+      imageButton.addEventListener("click", () => window.qgImageTools?.openImageViewer(imageUrl, image.alt));
+      item.append(imageButton);
+      if (typeof message.text === "string" && message.text) {
+        const caption = document.createElement("p");
+        caption.className = "thread-message-text thread-message-caption";
+        caption.textContent = message.text;
+        item.append(caption);
+      }
     } else {
-      content = document.createElement("p");
+      const content = document.createElement("p");
       content.className = "thread-message-text";
       content.textContent = typeof message.text === "string" ? message.text : "";
+      item.append(content);
     }
 
+    const meta = document.createElement("div");
+    meta.className = "thread-message-meta";
     const date = document.createElement("time");
     date.className = "thread-message-date";
     date.dateTime = message.createdAt;
     date.textContent = formatInboxTime(message.createdAt);
-
-    item.append(name, content, date);
+    meta.append(date);
+    if (sender === "gionny") {
+      const receipt = document.createElement("span");
+      receipt.className = "chat-read-receipt";
+      receipt.dataset.state = message.pending ? "sending" : message.read === true ? "read" : "sent";
+      receipt.setAttribute("aria-label", message.pending ? "Envoi en cours" : message.read === true ? "Message lu" : "Message envoyé");
+      receipt.title = message.pending ? "Envoi en cours" : message.read === true ? "Lu" : "Envoyé";
+      receipt.textContent = message.pending ? "✓" : "✓✓";
+      meta.append(receipt);
+    }
+    item.append(meta);
     return item;
   };
 
@@ -1044,6 +1160,16 @@
     conversationEmpty.hidden = true;
     conversationContent.hidden = false;
     threadPseudo.textContent = conversation.pseudo || "Membre";
+    const avatarSource = typeof conversation.avatarData === "string" ? conversation.avatarData : "";
+    if (threadAvatar) {
+      threadAvatar.hidden = !avatarSource;
+      if (avatarSource && threadAvatar.src !== avatarSource) threadAvatar.src = avatarSource;
+      if (!avatarSource) threadAvatar.removeAttribute("src");
+    }
+    if (threadAvatarFallback) {
+      threadAvatarFallback.hidden = Boolean(avatarSource);
+      threadAvatarFallback.textContent = (String(conversation.pseudo || "M").trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
     if (threadHostCrown) threadHostCrown.hidden = conversation.isHost !== true;
     if (threadSubject) threadSubject.textContent = conversation.subject || "💬 Discussion";
     threadStatus.textContent = statusLabel(conversation.status);
@@ -1062,7 +1188,7 @@
 
     const messages = Array.isArray(data.messages) ? data.messages : [];
     const messageSignature = messages.map((message) =>
-      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}`
+      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}:${message.read === true}:${message.avatarData || ""}`
     ).join("|");
     if (threadMessages.dataset.messageSignature !== messageSignature) {
       const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
@@ -1227,7 +1353,7 @@
   const deleteSelectedConversations = async () => {
     const ids = [...selectedConversationIds];
     if (!ids.length) return;
-    if (!window.confirm(`Supprimer définitivement ${ids.length} discussion${ids.length > 1 ? "s" : ""} ? Tous les messages et vocaux associés seront supprimés.`)) return;
+    if (!window.confirm(`Supprimer définitivement ${ids.length} discussion${ids.length > 1 ? "s" : ""} ? Tous les messages, images et vocaux associés seront purgés.`)) return;
 
     setStatus(bulkStatus, "Suppression des discussions, messages et vocaux…");
     [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
@@ -1331,7 +1457,7 @@
   };
 
   const removeConversation = async () => {
-    if (!currentConversationId || !window.confirm("Supprimer définitivement toute cette discussion ?")) return;
+    if (!currentConversationId || !window.confirm("Supprimer définitivement toute cette discussion ? Tous les messages, images et vocaux associés seront purgés.")) return;
     const conversationId = currentConversationId;
     threadDeleteButton.disabled = true;
     try {
@@ -1366,6 +1492,117 @@
       threadDeleteButton.disabled = false;
     }
   };
+
+  let adminImageBlob = null;
+  let adminImagePreviewUrl = "";
+
+  const closeAdminChatMenu = () => {
+    if (adminChatMenu) adminChatMenu.hidden = true;
+    adminChatMenuToggle?.setAttribute("aria-expanded", "false");
+    if (adminChatSubjectOptions) adminChatSubjectOptions.hidden = true;
+    adminChatSubjectToggle?.setAttribute("aria-expanded", "false");
+  };
+
+  const clearAdminImage = () => {
+    if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
+    adminImagePreviewUrl = "";
+    adminImageBlob = null;
+    if (adminImagePreview) adminImagePreview.hidden = true;
+    adminImagePreviewImg?.removeAttribute("src");
+    if (adminChatImageInput) adminChatImageInput.value = "";
+  };
+
+  adminChatMenuToggle?.addEventListener("click", () => {
+    if (!adminChatMenu) return;
+    adminChatMenu.hidden = !adminChatMenu.hidden;
+    adminChatMenuToggle.setAttribute("aria-expanded", String(!adminChatMenu.hidden));
+  });
+  adminChatSubjectToggle?.addEventListener("click", () => {
+    if (!adminChatSubjectOptions) return;
+    adminChatSubjectOptions.hidden = !adminChatSubjectOptions.hidden;
+    adminChatSubjectToggle.setAttribute("aria-expanded", String(!adminChatSubjectOptions.hidden));
+    if (!adminChatSubjectOptions.hidden) {
+      const selectedSubject = conversationRecords.get(currentConversationId)?.subject || "💬 Discussion";
+      adminChatSubjectOptions.querySelectorAll("[data-admin-chat-subject-value]").forEach((option) => {
+        option.setAttribute("aria-pressed", String(option.dataset.adminChatSubjectValue === selectedSubject));
+      });
+    }
+  });
+  adminImageOption?.addEventListener("click", () => {
+    closeAdminChatMenu();
+    adminChatImageInput?.click();
+  });
+  adminImageRemove?.addEventListener("click", () => {
+    clearAdminImage();
+    replyInput?.focus({ preventScroll: true });
+  });
+  adminChatSubjectOptions?.querySelectorAll("[data-admin-chat-subject-value]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const subject = button.dataset.adminChatSubjectValue;
+      const conversationId = currentConversationId;
+      if (!conversationId || !CHAT_SUBJECTS.includes(subject)) return;
+      closeAdminChatMenu();
+      const currentSubject = conversationRecords.get(conversationId)?.subject;
+      if (currentSubject === subject) return;
+      button.disabled = true;
+      setStatus(replyStatus, "Mise à jour du sujet…");
+      try {
+        const result = await patchConversationMetadata({ conversationId, subject });
+        if (!result?.conversation) return;
+        adminChatSubjectOptions.querySelectorAll("[data-admin-chat-subject-value]").forEach((option) => {
+          option.setAttribute("aria-pressed", String(option.dataset.adminChatSubjectValue === subject));
+        });
+        setStatus(replyStatus, "Sujet mis à jour.");
+        await Promise.all([
+          loadSelectedConversation({ quiet: true }),
+          loadConversations({ reset: true, quiet: true, skipSelected: true }),
+        ]);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+  adminChatImageInput?.addEventListener("change", async () => {
+    const file = adminChatImageInput.files?.[0];
+    if (!file) return;
+    if (!window.qgImageTools?.compressToWebp) {
+      setStatus(replyStatus, "La compression WebP n’est pas disponible dans ce navigateur.", "error");
+      adminChatImageInput.value = "";
+      return;
+    }
+    setStatus(replyStatus, "Compression de l’image en WebP…");
+    try {
+      const blob = await window.qgImageTools.compressToWebp(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        maxBytes: 40_000,
+        initialQuality: 0.75,
+      });
+      if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
+      adminImageBlob = blob;
+      adminImagePreviewUrl = URL.createObjectURL(blob);
+      if (adminImagePreviewImg) adminImagePreviewImg.src = adminImagePreviewUrl;
+      if (adminImagePreview) adminImagePreview.hidden = false;
+      setStatus(replyStatus, `Image prête · ${Math.round(blob.size / 1024)} Ko.`, "success");
+    } catch (error) {
+      setStatus(replyStatus, error instanceof Error ? error.message : "L’image n’a pas pu être compressée.", "error");
+    } finally {
+      adminChatImageInput.value = "";
+    }
+  });
+  replyInput?.addEventListener("input", () => {
+    replyInput.style.height = "auto";
+    replyInput.style.height = `${Math.min(replyInput.scrollHeight, 112)}px`;
+  });
+  replyInput?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    if (!replyInput.value.trim() && !adminImageBlob) return;
+    if (replySendButton && !replySendButton.disabled) replyForm.requestSubmit(replySendButton);
+  });
+  document.addEventListener("click", (event) => {
+    if (replyForm && !replyForm.contains(event.target) && adminChatMenu && !adminChatMenu.hidden) closeAdminChatMenu();
+  });
 
   mailFilterButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -1410,37 +1647,72 @@
 
   replyForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const message = replyInput.value.trim();
+    const message = String(replyInput?.value || "").trim();
     const conversationId = currentConversationId;
-    if (!conversationId || !message || !replyForm.reportValidity() || replySendButton.disabled) return;
+    const sendingImage = Boolean(adminImageBlob);
+    if (!conversationId || (!message && !sendingImage) || !replyForm.reportValidity() || replySendButton.disabled) return;
 
     replySendButton.disabled = true;
-    setStatus(replyStatus, "Envoi de ta réponse…");
+    setStatus(replyStatus, sendingImage ? "Envoi de l’image…" : "Envoi de ta réponse…");
+    const pendingNode = createThreadMessage({
+      id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      sender: "gionny",
+      pseudo: adminIdentityPseudo?.textContent || "Gionny",
+      isHost: true,
+      text: message,
+      createdAt: new Date().toISOString(),
+      kind: sendingImage ? "image" : "text",
+      hasImage: sendingImage,
+      pending: true,
+      previewUrl: sendingImage ? adminImagePreviewUrl : "",
+    });
+    threadMessages?.append(pendingNode);
+    if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
     try {
-      const response = await fetch("/api/admin-messages", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        credentials: "same-origin",
-        cache: "no-store",
-        body: JSON.stringify({ conversationId, message }),
-      });
+      const response = sendingImage
+        ? await fetch("/api/contact-image", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "image/webp",
+            "X-Admin-Reply": "true",
+            "X-Conversation-Id": conversationId,
+            "X-Message-Text": encodeURIComponent(message),
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: adminImageBlob,
+        })
+        : await fetch("/api/admin-messages", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({ conversationId, message }),
+        });
       const data = await readJson(response);
       if (response.status === 401) {
+        pendingNode.remove();
         showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
         return;
       }
       if (!response.ok || data.ok !== true) {
+        pendingNode.remove();
         setStatus(replyStatus, data.error || "Ta réponse n’a pas pu être envoyée.", "error");
         if (response.status === 409) await loadSelectedConversation({ quiet: true });
         return;
       }
+      pendingNode.remove();
       replyInput.value = "";
-      setStatus(replyStatus, "Réponse envoyée.");
+      replyInput.style.height = "auto";
+      clearAdminImage();
+      setStatus(replyStatus, sendingImage ? "Image envoyée." : "Réponse envoyée.", "success");
       await Promise.all([loadSelectedConversation({ quiet: true }), loadConversations({ reset: true, quiet: true })]);
     } catch {
+      pendingNode.remove();
       setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
     } finally {
       replySendButton.disabled = false;
@@ -1467,6 +1739,29 @@
     }, 20_000);
   };
 
+  const startAdminPresence = () => {
+    if (adminPresenceTimer) window.clearInterval(adminPresenceTimer);
+    const heartbeat = async () => {
+      if (adminPanel.hidden || document.hidden) return;
+      try {
+        const response = await fetch("/api/presence", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        const data = await readJson(response);
+        if (response.ok && Number.isInteger(data.activeSessions) && adminPresenceCount) {
+          adminPresenceCount.textContent = String(data.activeSessions);
+        }
+      } catch {
+        // Keep the last count when the presence endpoint is temporarily unavailable.
+      }
+    };
+    void heartbeat();
+    adminPresenceTimer = window.setInterval(heartbeat, 60_000);
+  };
+
   inboxRefreshButton?.addEventListener("click", () => {
     void loadInbox({ reset: true });
     void loadConversations({ reset: true });
@@ -1478,10 +1773,15 @@
   const showAdmin = async () => {
     loginPanel.hidden = true;
     adminPanel.hidden = false;
+    if (adminTabNavigation) adminTabNavigation.hidden = false;
+    if (logoutButton) logoutButton.hidden = false;
+    if (adminPresence) adminPresence.hidden = false;
     setAdminTab(activeAdminTab);
+    startAdminPresence();
     setStatus(loginStatus, "");
     setStatus(saveStatus, "");
     await Promise.all([
+      loadAdminIdentity(),
       loadSettings(),
       loadInbox({ reset: true }),
       loadConversations({ reset: true }),

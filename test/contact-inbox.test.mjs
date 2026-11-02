@@ -7,16 +7,22 @@ import {
   addAccountReply,
   addAdminReply,
   createConversation,
+  deleteConversation,
   deleteVisitorAccount,
   getAccountConversation,
   getActiveHostAccountIdentity,
   getAdminReplyIdentity,
   getConversationAudio,
+  getConversationImage,
   getConversationForAdmin,
+  listConversations,
+  markAccountConversationRead,
+  markConversationReadByAdmin,
   getHostAccountIdentityFromSession,
   listVisitorAccounts,
   registerVisitorAccount,
   setVisitorAccountRole,
+  updateVisitorAccountProfile,
 } from "../lib/contact-inbox.mjs";
 
 class MemoryBlobStore {
@@ -250,8 +256,11 @@ test("Hôte messages sent from the member account are identified as Hôte", asyn
   assert.equal(sent.message.sender, "gionny");
   assert.equal(sent.message.pseudo, "GionnyHost");
   assert.equal(sent.message.isHost, true);
+  const markedAsRead = await markAccountConversationRead(host.sessionToken, store);
+  assert.equal(markedAsRead.changed, 0);
   const refreshed = await getAccountConversation(host.sessionToken, store);
   assert.equal(refreshed.messages[0].sender, "gionny");
+  assert.equal(refreshed.messages[0].read, false);
   assert.equal(refreshed.messages[0].pseudo, "GionnyHost");
 });
 
@@ -280,4 +289,78 @@ test("removing a member account preserves its private conversation and Blob audi
   const retainedAudio = await getConversationAudio(sent.conversation.id, sent.message.id, store);
   assert.deepEqual(retainedAudio.bytes, audioBytes);
   assert.equal(await getActiveHostAccountIdentity(store), null);
+});
+
+test("WebP attachments stay private, are returned to both clients, and are purged with explicit conversation deletion", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "MembreImage");
+  const imageBytes = Buffer.from("RIFF0000WEBP", "ascii");
+  const sent = await addAccountReply(member.sessionToken, {
+    subject: "❓ Question",
+    message: "Capture jointe.",
+    imageBytes,
+  }, store);
+
+  assert.equal(sent.ok, true);
+  assert.equal(sent.message.kind, "image");
+  assert.equal(sent.message.hasImage, true);
+  assert.equal(sent.message.text, "Capture jointe.");
+  const image = await getConversationImage(sent.conversation.id, sent.message.id, store);
+  assert.deepEqual(image.bytes, imageBytes);
+  assert.equal(image.mimeType, "image/webp");
+
+  const adminView = await getConversationForAdmin(sent.conversation.id, store);
+  assert.equal(adminView.messages[0].kind, "image");
+  assert.equal(adminView.messages[0].pseudo, "MembreImage");
+  assert.equal(adminView.messages[0].hasImage, true);
+
+  assert.equal(await deleteConversation(sent.conversation.id, store), true);
+  assert.equal(await getConversationImage(sent.conversation.id, sent.message.id, store), null);
+  assert.equal([...store.objects.keys()].some((path) => path.startsWith(`gionny/conversation-images/${sent.conversation.id}/`)), false);
+});
+
+test("profile WebP avatars are reflected in private threads, all historical messages, and Admin conversation rows", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "AvatarMembre");
+  const sent = await addAccountReply(member.sessionToken, {
+    subject: "💬 Discussion",
+    message: "Mon avatar doit être visible.",
+  }, store);
+  const avatarBytes = Buffer.from("RIFF0000WEBP", "ascii");
+  const avatarData = `data:image/webp;base64,${avatarBytes.toString("base64")}`;
+
+  const updated = await updateVisitorAccountProfile(member.sessionToken, { avatarData }, store);
+  assert.equal(updated.ok, true);
+  assert.equal(updated.account.avatarData, avatarData);
+
+  const thread = await getAccountConversation(member.sessionToken, store);
+  assert.equal(thread.conversation.avatarData, avatarData);
+  assert.equal(thread.messages[0].avatarData, avatarData);
+  const listed = await listConversations("", store);
+  assert.equal(listed.conversations.find((item) => item.id === sent.conversation.id).avatarData, avatarData);
+  const adminThread = await getConversationForAdmin(sent.conversation.id, store);
+  assert.equal(adminThread.conversation.avatarData, avatarData);
+  assert.equal(adminThread.messages[0].avatarData, avatarData);
+});
+
+test("read receipts persist in both directions for member and Hôte messages", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "MembreRecu");
+  const sent = await addAccountReply(member.sessionToken, {
+    subject: "💬 Discussion",
+    message: "Message membre.",
+  }, store);
+  const hostReply = await addAdminReply(sent.conversation.id, "Réponse Hôte.", { pseudo: "HoteExact", isHost: true }, store);
+
+  assert.equal(hostReply.message.read, false);
+  const memberRead = await markAccountConversationRead(member.sessionToken, store);
+  assert.equal(memberRead.ok, true);
+  let memberThread = await getAccountConversation(member.sessionToken, store);
+  assert.equal(memberThread.messages.at(-1).read, true);
+
+  assert.equal(await markConversationReadByAdmin(sent.conversation.id, store), true);
+  const adminThread = await getConversationForAdmin(sent.conversation.id, store);
+  assert.equal(adminThread.messages[0].read, true);
+  memberThread = await getAccountConversation(member.sessionToken, store);
+  assert.equal(memberThread.messages[0].read, true);
 });

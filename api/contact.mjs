@@ -9,16 +9,18 @@ import {
   getAccountConversation,
   isConversationSubject,
   loginVisitorAccount,
+  markAccountConversationRead,
   readAccountSessionCookie,
   readVisitorConversationCookie,
   registerVisitorAccount,
   saveAccountSessionCookie,
+  setAccountConversationSubject,
   updateVisitorAccountProfile,
 } from "../lib/contact-inbox.mjs";
 
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 12;
-const MAX_BODY_BYTES = 12_000;
+const MAX_BODY_BYTES = 14_000;
 const rateLimits = new Map();
 
 function setNoStore(response) {
@@ -172,6 +174,7 @@ async function handleProfile(request, response, body, sessionToken) {
     pseudo: Object.hasOwn(body, "pseudo") ? body.pseudo : undefined,
     currentPassword: typeof body.currentPassword === "string" ? body.currentPassword : "",
     newPassword: Object.hasOwn(body, "newPassword") ? body.newPassword : "",
+    avatarData: Object.hasOwn(body, "avatarData") ? body.avatarData : undefined,
   });
   if (!result.ok) {
     if (result.reason === "unauthorized") return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });
@@ -187,6 +190,7 @@ async function handleProfile(request, response, body, sessionToken) {
     if (result.reason === "password") return response.status(400).json({ error: "Le nouveau mot de passe doit contenir entre 8 et 128 caractères." });
     if (result.reason === "current_password") return response.status(400).json({ error: "Le mot de passe actuel est incorrect." });
     if (result.reason === "no_changes") return response.status(400).json({ error: "Aucune modification à enregistrer." });
+    if (result.reason === "avatar") return response.status(400).json({ error: "L’image doit être un WebP carré de moins de 10 Ko." });
     return response.status(400).json({ error: "Le profil n’a pas pu être modifié." });
   }
 
@@ -266,6 +270,46 @@ export default async function handler(request, response) {
     }
     clearAccountSessionCookie(request, response);
     return response.status(200).json({ ok: true });
+  }
+
+  if (action === "mark-read") {
+    if (!sessionToken) return response.status(401).json({ error: "Connecte-toi pour ouvrir ta discussion." });
+    if (!isBlobStorageConfigured()) {
+      return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+    }
+    try {
+      const result = await markAccountConversationRead(sessionToken);
+      if (!result.ok) return response.status(401).json({ error: "Reconnecte-toi pour ouvrir ta discussion." });
+      return response.status(200).json({ ok: true, changed: result.changed });
+    } catch (error) {
+      console.error("[contact] read receipt update failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+        code: typeof error?.code === "string" ? error.code : undefined,
+      });
+      return response.status(502).json({ error: "La lecture n’a pas pu être enregistrée." });
+    }
+  }
+
+  if (action === "subject") {
+    if (!sessionToken) return response.status(401).json({ error: "Connecte-toi pour modifier le sujet." });
+    if (!isBlobStorageConfigured()) {
+      return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+    }
+    try {
+      const result = await setAccountConversationSubject(sessionToken, body.subject);
+      if (!result.ok) {
+        if (result.reason === "subject") return response.status(400).json({ error: "Choisis un sujet valide." });
+        if (result.reason === "unauthorized") return response.status(401).json({ error: "Reconnecte-toi pour modifier le sujet." });
+        return response.status(404).json({ error: "Cette discussion est introuvable." });
+      }
+      return response.status(200).json({ ok: true, account: result.account, conversation: result.conversation, messages: result.messages, subjects: CONVERSATION_SUBJECTS });
+    } catch (error) {
+      console.error("[contact] subject update failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+        code: typeof error?.code === "string" ? error.code : undefined,
+      });
+      return response.status(502).json({ error: "Le sujet n’a pas pu être modifié." });
+    }
   }
 
   if (action === "profile") {
