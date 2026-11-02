@@ -297,10 +297,23 @@
   const renderDiscordOnlineStatus = (status) => {
     const badge = document.querySelector("[data-discord-online]");
     const count = document.querySelector("[data-discord-online-count]");
-    if (!badge || !count) return;
+    const memberCount = document.querySelector("[data-discord-member-count]");
+    const inviteLabel = document.querySelector("[data-discord-invite]");
     const isAvailable = status?.available === true && Number.isSafeInteger(status.onlineCount) && status.onlineCount >= 0;
-    badge.hidden = !isAvailable;
-    if (isAvailable) count.textContent = status.onlineCount.toLocaleString("fr-FR");
+    if (badge) badge.hidden = !isAvailable;
+    if (isAvailable && count) count.textContent = status.onlineCount.toLocaleString("fr-FR");
+
+    const hasMemberCount = Number.isSafeInteger(status?.memberCount) && status.memberCount >= 0;
+    if (memberCount) {
+      memberCount.hidden = !hasMemberCount;
+      if (hasMemberCount) {
+        const formattedCount = status.memberCount.toLocaleString("fr-FR");
+        memberCount.textContent = `${formattedCount} membre${status.memberCount === 1 ? "" : "s"}`;
+      }
+    }
+    if (inviteLabel && activeDiscordInviteCode) {
+      inviteLabel.textContent = `discord.gg/${activeDiscordInviteCode}`;
+    }
   };
 
   const refreshDiscordStatus = async () => {
@@ -679,6 +692,12 @@
   const authSubmitLabel = document.querySelector("[data-auth-submit-label]");
   const authStatus = document.querySelector("[data-auth-status]");
   const authTabs = [...document.querySelectorAll("[data-auth-tab]")];
+  const memberLoggedOut = document.querySelector("[data-member-logged-out]");
+  const memberLoggedIn = document.querySelector("[data-member-logged-in]");
+  const memberPseudo = document.querySelector("[data-member-pseudo]");
+  const memberLoginButton = document.querySelector("[data-member-login]");
+  const memberRegisterButton = document.querySelector("[data-member-register]");
+  const memberMessagesButton = document.querySelector("[data-member-messages]");
   const contactNewView = document.querySelector("[data-contact-new]");
   const contactForm = document.querySelector("[data-contact-form]");
   const contactSubmit = document.querySelector("[data-contact-submit]");
@@ -851,7 +870,15 @@
     if (!contactWidget.hidden) markVisitorThreadSeen();
   };
 
+  const renderMemberBar = () => {
+    const isConnected = Boolean(visitorAccount);
+    if (memberLoggedOut) memberLoggedOut.hidden = isConnected;
+    if (memberLoggedIn) memberLoggedIn.hidden = !isConnected;
+    if (memberPseudo) memberPseudo.textContent = isConnected ? visitorAccount.pseudo || "" : "";
+  };
+
   const renderContactState = () => {
+    renderMemberBar();
     if (!visitorAccount) {
       if (contactAuth) contactAuth.hidden = false;
       if (contactNewView) contactNewView.hidden = true;
@@ -967,6 +994,16 @@
   };
 
   authTabs.forEach((tab) => tab.addEventListener("click", () => setAuthMode(tab.dataset.authTab)));
+  memberLoginButton?.addEventListener("click", () => {
+    setAuthMode("login");
+    openContactWidget();
+  });
+  memberRegisterButton?.addEventListener("click", () => {
+    setAuthMode("register");
+    openContactWidget();
+  });
+  memberMessagesButton?.addEventListener("click", () => openContactWidget());
+
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!authForm.reportValidity() || !authSubmit || authSubmit.disabled) return;

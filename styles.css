@@ -1773,23 +1773,25 @@ a:focus-visible {
   }
 }
 
-/* Compact one-screen layout with a horizontal social-link rail. */
+/* Keep the compact shell when it fits, but allow natural scrolling when content grows. */
 html {
-  height: 100%;
-  overflow: hidden;
+  height: auto;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
-  height: 100vh;
-  height: 100svh;
+  height: auto;
   min-height: 100svh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .site-shell {
   width: min(var(--shell-width), calc(100% - clamp(28px, 6vw, 84px)));
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  min-height: 100svh;
 }
 
 .site-header {
@@ -2227,7 +2229,7 @@ body {
 
   .welcome-actions .discord-cta,
   .welcome-actions .schedule-card {
-    height: 100%;
+    height: auto;
   }
 
   .networks-panel {
@@ -6236,4 +6238,988 @@ html[data-live-overflow="true"] .hub-layout {
 
 body.contact-page-open {
   overflow: hidden;
+}
+
+
+/* Let the main grid grow beyond the viewport when content requires it. */
+.hub-layout {
+  flex: 1 0 auto;
+  min-height: 0;
+}
+
+.welcome-actions {
+  gap: 16px;
+}
+
+.welcome-actions .discord-cta,
+.welcome-actions .schedule-card {
+  height: auto;
+  min-height: 0;
+}
+
+.welcome-actions .schedule-card {
+  padding-bottom: 20px;
+}
+
+/* Member access lives directly in the hero and follows the actual account state. */
+.member-bar {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 11px;
+  border: 1px solid rgba(114, 214, 255, 0.2);
+  border-left: 2px solid rgba(255, 38, 56, 0.78);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(18, 43, 73, 0.84), rgba(8, 21, 39, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.member-bar[hidden],
+.member-bar-state[hidden] {
+  display: none !important;
+}
+
+.member-bar-title {
+  color: #a9ceff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  line-height: 1.25;
+}
+
+.member-bar-state {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.member-bar-message {
+  color: #bfd0e6;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.member-bar-actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.member-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border: 1px solid rgba(173, 204, 245, 0.2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #e8f2ff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.member-button:hover,
+.member-button:focus-visible {
+  border-color: rgba(114, 214, 255, 0.52);
+  background: rgba(79, 131, 244, 0.2);
+  transform: translateY(-1px);
+}
+
+.member-button--primary {
+  border-color: rgba(114, 214, 255, 0.42);
+  background: linear-gradient(120deg, rgba(56, 119, 220, 0.92), rgba(39, 83, 164, 0.96));
+  color: #fff;
+}
+
+.member-button--primary:hover,
+.member-button--primary:focus-visible {
+  border-color: rgba(182, 226, 255, 0.78);
+  background: linear-gradient(120deg, #4388ef, #3066c4);
+}
+
+.member-button--logout {
+  border-color: rgba(255, 94, 111, 0.26);
+  color: #ffc4ca;
+}
+
+.member-button--logout:hover,
+.member-button--logout:focus-visible {
+  border-color: rgba(255, 94, 111, 0.55);
+  background: rgba(255, 38, 56, 0.12);
+}
+
+.member-status {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: #dceaff;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.member-status strong {
+  color: #fff;
+  font-weight: 850;
+}
+
+.member-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #50dd91;
+  box-shadow: 0 0 0 3px rgba(80, 221, 145, 0.12), 0 0 12px rgba(80, 221, 145, 0.58);
+}
+
+/* Premium Discord community card: public counts, invite and a tilted brand watermark. */
+.welcome-actions .discord-cta {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 17px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(184, 218, 255, 0.32);
+  border-radius: 19px;
+  background: linear-gradient(132deg, #3478e8 0%, #2459bb 48%, #153568 100%);
+  box-shadow: 0 17px 42px rgba(27, 79, 167, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.17);
+  color: #fff;
+  text-decoration: none;
+}
+
+.welcome-actions .discord-cta::after {
+  z-index: 0;
+  top: -80%;
+  bottom: -80%;
+  left: -50%;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+}
+
+.discord-watermark {
+  position: absolute;
+  z-index: 0;
+  right: -22px;
+  bottom: -42px;
+  width: clamp(126px, 16vw, 190px);
+  aspect-ratio: 1;
+  color: #fff;
+  opacity: 0.13;
+  pointer-events: none;
+  transform: rotate(-15deg);
+}
+
+.discord-watermark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.discord-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  gap: 13px;
+}
+
+.discord-topline {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+}
+
+.discord-community-pill,
+.discord-online-badge {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(4, 20, 50, 0.22);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.discord-community-pill {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.discord-community-pill > span {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.discord-online-badge {
+  gap: 6px;
+  letter-spacing: 0.025em;
+}
+
+.discord-online-badge[hidden],
+.discord-member-count[hidden] {
+  display: none !important;
+}
+
+.discord-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  color: #fff;
+}
+
+.discord-overline {
+  color: rgba(242, 248, 255, 0.84);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+  line-height: 1.35;
+}
+
+.discord-copy strong {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(23px, 2.4vw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.015em;
+  line-height: 1.15;
+}
+
+.discord-title-mark {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.discord-detail {
+  max-width: 58ch;
+  color: rgba(246, 249, 255, 0.91);
+  font-size: 11px;
+  font-weight: 550;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.discord-footer {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.discord-action {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.discord-action-default {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 5px 14px rgba(5, 20, 49, 0.16);
+  color: #16376e;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.discord-action-default > span {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.discord-cta:hover .discord-action-default,
+.discord-cta:focus-visible .discord-action-default {
+  border-color: #fff;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(5, 20, 49, 0.22);
+  color: #16376e;
+  transform: translateY(-1px);
+}
+
+.discord-community-meta {
+  display: grid;
+  min-width: 0;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+
+.discord-member-count {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.discord-invite {
+  color: rgba(237, 245, 255, 0.84);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  line-height: 1.25;
+}
+
+/* Brand-correct color halos and watermark treatments for the five social cards. */
+.network-card--twitch {
+  --network-glow-primary: rgba(145, 70, 255, 0.23);
+  --network-glow-secondary: rgba(93, 66, 195, 0.14);
+}
+
+.network-card--tiktok {
+  --network-glow-primary: rgba(37, 244, 238, 0.18);
+  --network-glow-secondary: rgba(254, 44, 85, 0.2);
+}
+
+.network-card--youtube {
+  --network-glow-primary: rgba(255, 38, 56, 0.23);
+  --network-glow-secondary: rgba(188, 25, 45, 0.12);
+}
+
+.network-card--x {
+  --network-glow-primary: rgba(229, 238, 250, 0.15);
+  --network-glow-secondary: rgba(96, 131, 174, 0.12);
+}
+
+.network-card--instagram {
+  --network-glow-primary: rgba(255, 153, 74, 0.2);
+  --network-glow-secondary: rgba(165, 70, 255, 0.2);
+}
+
+.network-card::before {
+  background:
+    radial-gradient(ellipse at 100% 100%, var(--network-glow-secondary, transparent), transparent 48%),
+    radial-gradient(ellipse at 100% 0%, var(--network-glow-primary, var(--accent-soft)), transparent 68%);
+  opacity: 0.95;
+}
+
+.network-watermark {
+  position: absolute;
+  z-index: 0;
+  right: -12px;
+  bottom: -18px;
+  display: block;
+  width: clamp(76px, 9vw, 128px);
+  aspect-ratio: 1;
+  color: #fff;
+  opacity: 0.12;
+  pointer-events: none;
+  transform: rotate(-12deg);
+}
+
+.network-watermark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: currentColor;
+}
+
+.network-card .network-icon,
+.network-card .network-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.network-card .network-head {
+  position: static;
+  z-index: 1;
+}
+
+.network-card--twitch .network-side {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  bottom: auto;
+}
+
+.network-card--twitch .network-watermark {
+  color: #b994ff;
+  opacity: 0.15;
+  filter: drop-shadow(0 0 16px rgba(145, 70, 255, 0.54));
+}
+
+.network-card--tiktok .network-watermark {
+  color: #25f4ee;
+  opacity: 0.15;
+  filter: drop-shadow(7px 0 0 rgba(254, 44, 85, 0.4)) drop-shadow(0 0 13px rgba(37, 244, 238, 0.38));
+}
+
+.network-card--youtube .network-watermark {
+  color: #ff3448;
+  opacity: 0.16;
+  filter: drop-shadow(0 0 15px rgba(255, 38, 56, 0.48));
+}
+
+.network-card--x .network-watermark {
+  color: #f4f7fc;
+  opacity: 0.13;
+  filter: drop-shadow(0 0 15px rgba(222, 235, 255, 0.28));
+}
+
+.network-card--instagram .network-watermark {
+  color: #ffad6d;
+  opacity: 0.16;
+  filter: drop-shadow(-6px -4px 0 rgba(160, 72, 255, 0.32)) drop-shadow(0 0 14px rgba(255, 119, 87, 0.38));
+}
+
+.network-card--instagram .network-watermark svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.15;
+}
+
+.network-card--instagram .network-watermark .camera-dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* A single white speech-bubble icon and matching white launcher text. */
+.contact-launcher {
+  color: #fff;
+}
+
+.contact-launcher svg {
+  color: #fff;
+  stroke: currentColor;
+}
+
+.contact-launcher-label {
+  color: #fff;
+  font-weight: 850;
+}
+
+@media (max-width: 940px) {
+  .hub-layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 16px;
+    padding-block: 16px;
+  }
+
+  .welcome-panel {
+    min-height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+  }
+
+  .welcome-actions .discord-cta,
+  .welcome-actions .schedule-card {
+    height: auto;
+    align-self: start;
+  }
+}
+
+@media (max-width: 680px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .site-shell {
+    width: calc(100% - 32px);
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  .site-header {
+    min-height: 54px;
+    padding-block: 7px;
+  }
+
+  .hub-layout {
+    flex: 1 0 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 16px;
+    padding: 16px 0 24px;
+  }
+
+  .welcome-panel {
+    width: 100%;
+    min-height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 14px;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(74px, 24vw, 100px) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .profile-frame {
+    width: clamp(74px, 24vw, 100px);
+  }
+
+  .welcome-intro {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.45rem, 6.5vw, 2.1rem);
+    letter-spacing: -0.07em;
+    line-height: 1.08;
+    overflow-wrap: normal;
+  }
+
+  .welcome-copy {
+    display: block;
+    max-width: none;
+    margin-top: 7px;
+    overflow: visible;
+    font-size: 11px;
+    line-height: 1.45;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+  }
+
+  .member-bar {
+    gap: 7px;
+    margin-top: 11px;
+    padding: 9px 10px;
+    border-radius: 12px;
+  }
+
+  .member-bar-message {
+    font-size: 11px;
+  }
+
+  .member-bar-actions {
+    gap: 6px;
+  }
+
+  .member-button {
+    min-height: 36px;
+    padding-inline: 10px;
+    font-size: 10px;
+  }
+
+  .welcome-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .welcome-actions .discord-cta {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    padding: 15px;
+    border-radius: 17px;
+  }
+
+  .discord-content {
+    gap: 11px;
+  }
+
+  .discord-community-pill,
+  .discord-online-badge {
+    min-height: 23px;
+    font-size: 9px;
+  }
+
+  .discord-copy strong {
+    font-size: clamp(22px, 6vw, 27px);
+  }
+
+  .discord-title-mark {
+    width: 21px;
+    height: 21px;
+  }
+
+  .discord-detail {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .discord-footer {
+    gap: 10px 14px;
+  }
+
+  .discord-community-meta {
+    justify-items: end;
+  }
+
+  .welcome-actions .schedule-card {
+    width: 100%;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 13px 14px 22px;
+    border-radius: 15px;
+  }
+
+  .welcome-actions .schedule-topline {
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+
+  .welcome-actions .schedule-mark {
+    width: 31px;
+    height: 31px;
+  }
+
+  .welcome-actions .schedule-copy h2 {
+    font-size: 13px;
+  }
+
+  .welcome-actions .schedule-copy p {
+    font-size: 9px;
+  }
+
+  .welcome-actions .schedule-time {
+    font-size: 21px;
+  }
+
+  .welcome-actions .schedule-days {
+    gap: 5px;
+  }
+
+  .welcome-actions .schedule-days li {
+    min-height: 28px;
+    font-size: 9px;
+  }
+
+  .schedule-countdown,
+  .schedule-countdown-live {
+    margin-top: 11px;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .schedule-countdown {
+    flex-wrap: wrap;
+    gap: 4px 6px;
+  }
+
+  .schedule-countdown strong {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .networks-panel {
+    width: 100%;
+    min-width: 0;
+    padding: 15px;
+    border-radius: 19px;
+  }
+
+  .networks-heading h2 {
+    font-size: clamp(1.15rem, 5vw, 1.45rem);
+  }
+
+  .network-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .network-item:first-child {
+    grid-column: auto;
+  }
+
+  .network-item:last-child {
+    width: auto;
+    grid-column: 1 / -1;
+  }
+
+  .network-card,
+  .network-card--wide {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    min-height: 82px;
+    grid-template-columns: 35px minmax(0, 1fr);
+    grid-template-rows: 22px minmax(40px, 1fr);
+    align-items: center;
+    justify-content: initial;
+    gap: 0 8px;
+    padding: 8px 10px;
+    border-radius: 15px;
+  }
+
+  .network-card:not(.network-card--twitch) .network-head {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    width: 35px;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+  }
+
+  .network-card .network-copy,
+  .network-card--wide .network-copy {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    align-self: center;
+    transform: none;
+  }
+
+  .network-card--twitch > .network-icon {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: center;
+  }
+
+  .network-card--twitch > .network-copy {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+    transform: none;
+  }
+
+  .network-icon,
+  .network-card--wide .network-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 11px;
+  }
+
+  .network-icon svg,
+  .network-card--wide .network-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .network-copy strong,
+  .network-card--wide .network-copy strong {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .network-copy > span,
+  .network-card--wide .network-copy > span {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .network-card .network-head .visited-badge,
+  .network-card--twitch .network-side .visited-badge {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+    min-width: 0;
+    min-height: 20px;
+    justify-content: center;
+    gap: 4px;
+    padding: 3px 7px;
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  .network-card .network-head .visited-badge svg,
+  .network-card--twitch .network-side .visited-badge svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .network-card--youtube .youtube-count-badge {
+    position: absolute;
+    z-index: 3;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+  }
+
+  .network-card--twitch .network-side {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+  }
+
+  .network-card--twitch .network-watermark {
+    right: -8px;
+    bottom: -12px;
+    width: 78px;
+  }
+
+  .network-watermark {
+    right: -8px;
+    bottom: -12px;
+    width: 78px;
+  }
+
+  .network-card--instagram .network-watermark {
+    width: 112px;
+  }
+
+  .discord-watermark {
+    right: -19px;
+    bottom: -32px;
+    width: 132px;
+  }
+}
+
+@media (max-width: 420px) {
+  .welcome-panel {
+    padding: 12px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(72px, 23vw, 88px) minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .profile-frame {
+    width: clamp(72px, 23vw, 88px);
+  }
+
+  .member-bar-actions {
+    gap: 5px;
+  }
+
+  .member-button {
+    padding-inline: 8px;
+  }
+
+  .discord-footer {
+    align-items: flex-start;
+  }
+
+  .discord-community-meta {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 82px;
+    padding-inline: 8px;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 560px) {
+  .hub-layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 16px;
+    padding-block: 16px 22px;
+  }
+
+  .network-card:not(.network-card--instagram) .network-copy {
+    transform: none;
+  }
+
+  .network-card:not(.network-card--instagram) .network-head .visited-badge {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+  }
+
+  .network-card--twitch .network-side {
+    top: 8px;
+    right: 8px;
+    bottom: auto;
+  }
+}
+
+
+/* Preserve readable type at the specificity of the former compact CTA rules. */
+.welcome-actions .discord-overline {
+  font-size: 8px;
+}
+
+.welcome-actions .discord-copy strong {
+  font-size: clamp(23px, 2.4vw, 30px);
+}
+
+.welcome-actions .discord-detail {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.welcome-actions .discord-action-default,
+.welcome-actions .discord-action .visited-badge {
+  min-height: 36px;
+  padding-inline: 15px;
+  font-size: 10px;
+}
+
+@media (max-width: 680px) {
+  .welcome-actions .discord-overline {
+    font-size: 8px;
+  }
+
+  .welcome-actions .discord-copy strong {
+    font-size: clamp(22px, 6vw, 27px);
+  }
+
+  .welcome-actions .discord-detail {
+    font-size: 11px;
+  }
+
+  .welcome-actions .discord-action-default,
+  .welcome-actions .discord-action .visited-badge {
+    min-height: 36px;
+    padding-inline: 13px;
+    font-size: 10px;
+  }
 }

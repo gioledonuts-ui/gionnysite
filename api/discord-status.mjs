@@ -42,11 +42,18 @@ export default async function handler(request, response) {
 
     const invite = await upstream.json();
     const onlineCount = invite?.approximate_presence_count;
-    if (!Number.isSafeInteger(onlineCount) || onlineCount < 0) {
+    const memberCount = invite?.approximate_member_count;
+    const hasOnlineCount = Number.isSafeInteger(onlineCount) && onlineCount >= 0;
+    const hasMemberCount = Number.isSafeInteger(memberCount) && memberCount >= 0;
+    if (!hasOnlineCount && !hasMemberCount) {
       return response.status(200).json({ available: false });
     }
 
-    return response.status(200).json({ available: true, onlineCount });
+    return response.status(200).json({
+      available: hasOnlineCount,
+      ...(hasOnlineCount ? { onlineCount } : {}),
+      ...(hasMemberCount ? { memberCount } : {}),
+    });
   } catch {
     return response.status(200).json({ available: false });
   }
