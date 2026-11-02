@@ -950,22 +950,26 @@
     const sender = message.sender === "gionny" ? "gionny" : "visitor";
     item.className = `contact-chat-message contact-chat-message--${sender}`;
 
+    const senderPseudo = typeof message.pseudo === "string" && message.pseudo.trim()
+      ? message.pseudo
+      : sender === "gionny" ? "Gionny" : visitorAccount?.pseudo || visitorConversation?.pseudo || "Membre";
+    const isHostMessage = message.isHost === true || sender === "gionny";
     const name = document.createElement("span");
     name.className = "contact-chat-sender";
-    name.textContent = sender === "gionny" ? "Gionny" : visitorConversation?.pseudo || "Toi";
-    if (sender === "visitor" && visitorConversation?.isHost) {
+    name.textContent = senderPseudo;
+    if (isHostMessage) {
       name.append(createHostCrownBadge("contact-chat-host-crown"));
     }
     item.append(name);
 
     if (message.kind === "audio" || message.hasAudio) {
-      const audio = document.createElement("audio");
-      audio.className = "contact-chat-audio";
-      audio.controls = true;
-      audio.preload = "none";
-      audio.setAttribute("aria-label", `Message vocal de ${sender === "gionny" ? "Gionny" : visitorConversation?.pseudo || "toi"}`);
-      audio.src = `/api/contact-audio?conversationId=${encodeURIComponent(visitorConversation.id)}&messageId=${encodeURIComponent(message.id)}`;
-      item.append(audio);
+      const audioUrl = `/api/contact-audio?conversationId=${encodeURIComponent(visitorConversation.id)}&messageId=${encodeURIComponent(message.id)}`;
+      const player = typeof window.createQGVoicePlayer === "function"
+        ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`)
+        : document.createElement("p");
+      if (player.tagName === "P") player.textContent = "Le lecteur vocal est indisponible.";
+      player.classList.add("contact-chat-audio");
+      item.append(player);
     } else {
       const text = document.createElement("p");
       text.className = "contact-chat-text";
@@ -1003,7 +1007,9 @@
       : "Cette discussion est fermée. Tu peux démarrer un nouveau fil si tu as une autre question.";
     newConversationButton.hidden = visitorConversation.status !== "closed";
 
-    const messageSignature = visitorConversationMessages.map((message) => `${message.id}:${message.kind || "text"}`).join("|");
+    const messageSignature = visitorConversationMessages.map((message) =>
+      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}`
+    ).join("|");
     if (contactThreadMessages.dataset.messageSignature !== messageSignature) {
       const wasNearBottom = contactThreadMessages.scrollHeight - contactThreadMessages.scrollTop - contactThreadMessages.clientHeight < 80;
       contactThreadMessages.replaceChildren(...visitorConversationMessages.map(createVisitorChatMessage));
@@ -1515,13 +1521,19 @@
   document.querySelectorAll("[data-voice-controls]").forEach((controls) => {
     const recordButton = controls.querySelector("[data-voice-record]");
     const recorderPanel = controls.querySelector("[data-voice-recorder]");
+    const recordingControls = controls.querySelector("[data-voice-recording-controls]");
     const waveform = controls.querySelector("[data-voice-wave]");
     const timer = controls.querySelector("[data-voice-timer]");
     const cancelButton = controls.querySelector("[data-voice-cancel]");
+    const stopButton = controls.querySelector("[data-voice-stop]");
+    const preview = controls.querySelector("[data-voice-preview]");
+    const previewActions = controls.querySelector("[data-voice-preview-actions]");
+    const retryButton = controls.querySelector("[data-voice-retry]");
     const sendButton = controls.querySelector("[data-voice-send]");
     const status = controls.querySelector("[data-voice-status]");
     const form = controls.closest("form");
-    if (!recordButton || !recorderPanel || !timer || !cancelButton || !sendButton || !status || !form) return;
+    if (!recordButton || !recorderPanel || !recordingControls || !timer || !cancelButton ||
+        !stopButton || !preview || !previewActions || !retryButton || !sendButton || !status || !form) return;
 
     for (let index = 0; index < 28; index += 1) {
       const bar = document.createElement("span");
@@ -1533,19 +1545,27 @@
     const state = {
       recordButton,
       recorderPanel,
+      recordingControls,
       cancelButton,
+      stopButton,
+      preview,
+      previewActions,
+      retryButton,
       sendButton,
       form,
       recorder: null,
       stream: null,
       chunks: [],
       recordedBlob: null,
+      previewUrl: "",
+      previewPlayer: null,
       timerId: 0,
       startedAt: 0,
       byteCount: 0,
+      captureRequest: 0,
       cancelled: false,
       overflow: false,
-      sendAfterStop: false,
+      durationReached: false,
       sending: false,
       setStatus: (message, kind = "") => setStatusNode(status, message, kind),
       stopStream() {
@@ -1553,27 +1573,46 @@
         this.stream = null;
       },
       reset() {
+        this.captureRequest += 1;
         window.clearInterval(this.timerId);
         this.timerId = 0;
         this.stopStream();
+        if (this.previewPlayer) this.previewPlayer.querySelector("audio")?.pause();
+        if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+        this.previewUrl = "";
+        this.previewPlayer = null;
         this.recorder = null;
         this.chunks = [];
         this.recordedBlob = null;
         this.byteCount = 0;
         this.cancelled = false;
         this.overflow = false;
-        this.sendAfterStop = false;
+        this.durationReached = false;
+        this.preview.replaceChildren();
+        this.preview.hidden = true;
+        this.previewActions.hidden = true;
+        this.recordingControls.hidden = false;
         this.recorderPanel.hidden = true;
         this.recorderPanel.dataset.recording = "false";
+        this.recorderPanel.dataset.state = "idle";
         this.recordButton.hidden = false;
         this.recordButton.disabled = false;
+        this.cancelButton.disabled = false;
+        this.stopButton.disabled = false;
         this.sendButton.disabled = false;
+        this.retryButton.disabled = false;
+        this.stopButton.hidden = false;
         this.setStatus("");
         timer.textContent = "0:00 / 1:00";
       },
+      stopRecording() {
+        if (!this.recorder || this.recorder.state === "inactive") return;
+        this.stopButton.disabled = true;
+        this.recorder.stop();
+      },
       cancel() {
+        this.captureRequest += 1;
         this.cancelled = true;
-        this.sendAfterStop = false;
         if (this.recorder && this.recorder.state !== "inactive") this.recorder.stop();
         else this.reset();
       },
@@ -1590,17 +1629,24 @@
       const elapsed = Math.min(MAX_VOICE_DURATION_SECONDS, (performance.now() - state.startedAt) / 1000);
       timer.textContent = `${formatVoiceDuration(elapsed)} / 1:00`;
       if (elapsed >= MAX_VOICE_DURATION_SECONDS && state.recorder?.state === "recording") {
-        state.setStatus("Une minute maximum. Tu peux envoyer ou supprimer le vocal.");
-        state.recorder.stop();
+        state.durationReached = true;
+        state.setStatus("Durée maximale atteinte. Préparation de l’aperçu…");
+        state.stopRecording();
       }
     };
 
     recordButton.addEventListener("click", async () => {
       if (state.sending || state.recorder?.state === "recording") return;
+      const requestId = ++state.captureRequest;
       recordButton.disabled = true;
       state.setStatus("Autorise l’accès au micro…");
       try {
-        state.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (requestId !== state.captureRequest) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        state.stream = stream;
         const preferredType = voiceMimeTypes.find((type) => window.MediaRecorder.isTypeSupported?.(type));
         let recorder;
         try {
@@ -1617,79 +1663,111 @@
         state.startedAt = performance.now();
         state.cancelled = false;
         state.overflow = false;
-        state.sendAfterStop = false;
+        state.durationReached = false;
         state.recordButton.hidden = true;
         state.recorderPanel.hidden = false;
         state.recorderPanel.dataset.recording = "true";
+        state.recorderPanel.dataset.state = "recording";
+        state.recordingControls.hidden = false;
+        state.preview.hidden = true;
+        state.previewActions.hidden = true;
+        state.stopButton.hidden = false;
+        state.stopButton.disabled = false;
+        timer.textContent = "0:00 / 1:00";
         state.setStatus("Enregistrement en cours…");
 
         recorder.addEventListener("dataavailable", (event) => {
+          if (state.cancelled || !event.data?.size) return;
           if (performance.now() - state.startedAt >= MAX_VOICE_DURATION_SECONDS * 1000 && recorder.state === "recording") {
-            state.setStatus("Une minute maximum. Tu peux envoyer ou supprimer le vocal.");
-            recorder.stop();
+            state.durationReached = true;
+            state.setStatus("Durée maximale atteinte. Préparation de l’aperçu…");
+            state.stopRecording();
           }
-          if (!event.data?.size) return;
           state.byteCount += event.data.size;
           if (state.byteCount > MAX_VOICE_BYTES) {
             state.overflow = true;
-            state.sendAfterStop = false;
-            state.setStatus("Ce navigateur a dépassé 200 Ko. Annule ou recommence plus court.", "error");
+            state.setStatus("Vocal trop volumineux (maximum 200 Ko). Supprime-le puis recommence plus court.", "error");
             if (recorder.state !== "inactive") recorder.stop();
             return;
           }
           state.chunks.push(event.data);
         });
+
         recorder.addEventListener("stop", () => {
           window.clearInterval(state.timerId);
           state.timerId = 0;
           state.stopStream();
+          state.recorder = null;
           state.recorderPanel.dataset.recording = "false";
           if (state.cancelled) {
             state.reset();
             return;
           }
           if (state.overflow) {
-            state.sendButton.disabled = true;
-            state.setStatus("Vocal trop volumineux (maximum 200 Ko). Essaie plus court.", "error");
+            state.recorderPanel.dataset.state = "error";
+            state.stopButton.hidden = true;
+            state.setStatus("Ce vocal dépasse la limite de 200 Ko. Supprime-le puis recommence plus court.", "error");
             return;
           }
           state.recordedBlob = new Blob(state.chunks, { type: recorder.mimeType || preferredType || "audio/webm" });
-          if (state.sendAfterStop) {
-            void uploadVoice(state, state.recordedBlob);
-          } else {
-            state.setStatus("Enregistrement terminé. Envoie-le ou supprime-le.");
+          if (!state.recordedBlob.size) {
+            state.reset();
+            state.setStatus("Aucun son n’a été enregistré. Réessaie.", "error");
+            return;
           }
+          if (typeof window.createQGVoicePlayer !== "function") {
+            state.recorderPanel.dataset.state = "error";
+            state.stopButton.hidden = true;
+            state.setStatus("L’aperçu vocal n’est pas disponible dans ce navigateur. Le vocal n’a pas été envoyé.", "error");
+            return;
+          }
+          state.previewUrl = URL.createObjectURL(state.recordedBlob);
+          state.previewPlayer = window.createQGVoicePlayer(state.previewUrl, "l’aperçu du message vocal");
+          state.previewPlayer.classList.add("qg-voice-player--preview");
+          state.preview.replaceChildren(state.previewPlayer);
+          state.recordingControls.hidden = true;
+          state.stopButton.hidden = true;
+          state.preview.hidden = false;
+          state.previewActions.hidden = false;
+          state.recorderPanel.dataset.state = "preview";
+          state.setStatus(state.durationReached
+            ? "Une minute maximum atteinte. Écoute l’aperçu avant de l’envoyer."
+            : "Aperçu prêt. Écoute-le, recommence ou supprime-le, puis clique sur Envoyer.");
         }, { once: true });
+
         recorder.start(500);
         state.timerId = window.setInterval(updateTimer, 200);
         updateTimer();
       } catch (error) {
+        if (requestId !== state.captureRequest) return;
         state.reset();
-        recordButton.disabled = false;
         state.setStatus(error?.name === "NotAllowedError"
           ? "Le micro est bloqué. Autorise-le dans les réglages du navigateur."
           : "Impossible de démarrer le micro sur cet appareil.", "error");
       }
     });
 
+    stopButton.addEventListener("click", () => {
+      if (state.recorder?.state !== "recording") return;
+      state.durationReached = false;
+      state.setStatus("Préparation de l’aperçu…");
+      state.stopRecording();
+    });
+
     sendButton.addEventListener("click", () => {
+      if (state.sending || !state.recordedBlob || state.recorder?.state === "recording") return;
+      void uploadVoice(state, state.recordedBlob);
+    });
+
+    retryButton.addEventListener("click", () => {
       if (state.sending) return;
-      if (state.recorder?.state === "recording") {
-        state.sendAfterStop = true;
-        sendButton.disabled = true;
-        state.setStatus("Préparation du vocal…");
-        state.recorder.stop();
-      } else if (state.recordedBlob) {
-        void uploadVoice(state, state.recordedBlob);
-      }
+      state.reset();
+      state.setStatus("Vocal supprimé. Tu peux en enregistrer un autre.", "success");
+      recordButton.focus({ preventScroll: true });
     });
 
     cancelButton.addEventListener("click", () => {
-      state.cancelled = true;
-      state.sendAfterStop = false;
-      state.setStatus("");
-      if (state.recorder && state.recorder.state !== "inactive") state.recorder.stop();
-      else state.reset();
+      state.cancel();
     });
   });
 

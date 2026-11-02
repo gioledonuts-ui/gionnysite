@@ -203,7 +203,7 @@ export default async function handler(request, response) {
   if (!conversationId || !messageId) return sendJson(response, 400, { error: "Ce vocal est introuvable." });
 
   const sessionToken = readAccountSessionCookie(request);
-  let authorized = isAdminRequest(request);
+  let authorized = await isAdminRequest(request);
   if (!authorized && sessionToken) {
     try {
       const state = await getAccountConversation(sessionToken);

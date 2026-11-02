@@ -48,7 +48,7 @@ export default async function handler(request, response) {
   if (!isSameOriginRequest(request)) {
     return response.status(403).json({ error: "Requête refusée." });
   }
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
   }
   if (!isBlobStorageConfigured()) {

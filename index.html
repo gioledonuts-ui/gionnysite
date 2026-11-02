@@ -28,6 +28,7 @@
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
+    <script src="/audio-player.js" defer></script>
     <script src="/script.js" defer></script>
   </head>
   <body>
@@ -123,7 +124,7 @@
         <section class="welcome-panel" aria-labelledby="welcome-title">
           <div class="welcome-account-bar" data-member-access role="group" aria-label="Accès au compte">
             <div class="welcome-account-identity">
-              <span class="member-visitor" data-member-visitor>👤 Visiteur</span>
+              <span class="member-visitor" data-member-visitor>👤 Non connecté</span>
               <span class="member-identity" data-member-identity hidden>
                 <span class="member-profile-avatar" aria-hidden="true">
                   <svg viewBox="0 0 40 40" fill="none">
@@ -702,12 +703,19 @@
             </label>
             <div class="contact-voice" data-voice-controls>
               <button class="contact-voice-record" type="button" data-voice-record aria-label="Enregistrer un message vocal"><span aria-hidden="true">🎙</span><span>Message vocal</span></button>
-              <div class="contact-voice-recorder" data-voice-recorder hidden>
-                <span class="contact-voice-live-dot" aria-hidden="true"></span>
-                <div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
-                <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
-                <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑</button>
-                <button type="button" class="contact-voice-send" data-voice-send>Envoyer</button>
+              <div class="contact-voice-recorder" data-voice-recorder data-state="recording" hidden>
+                <div class="contact-voice-recording-controls" data-voice-recording-controls>
+                  <span class="contact-voice-live-dot" aria-hidden="true"></span>
+                  <div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
+                  <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
+                  <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑 Annuler</button>
+                  <button type="button" class="contact-voice-stop" data-voice-stop aria-label="Arrêter l’enregistrement">⏹ Arrêter</button>
+                </div>
+                <div class="contact-voice-preview" data-voice-preview hidden></div>
+                <div class="contact-voice-preview-actions" data-voice-preview-actions hidden>
+                  <button type="button" class="contact-voice-trash" data-voice-retry>↻ Recommencer / supprimer</button>
+                  <button type="button" class="contact-voice-send" data-voice-send>Envoyer le vocal</button>
+                </div>
               </div>
               <p class="contact-voice-status" data-voice-status role="status" aria-live="polite"></p>
             </div>
@@ -738,11 +746,19 @@
             <label class="contact-field"><span>Ta réponse</span><textarea name="message" rows="2" maxlength="1500" placeholder="Écris ta réponse…" required></textarea></label>
             <div class="contact-voice" data-voice-controls>
               <button class="contact-voice-record" type="button" data-voice-record aria-label="Enregistrer un message vocal"><span aria-hidden="true">🎙</span><span>Message vocal</span></button>
-              <div class="contact-voice-recorder" data-voice-recorder hidden>
-                <span class="contact-voice-live-dot" aria-hidden="true"></span><div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
-                <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
-                <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑</button>
-                <button type="button" class="contact-voice-send" data-voice-send>Envoyer</button>
+              <div class="contact-voice-recorder" data-voice-recorder data-state="recording" hidden>
+                <div class="contact-voice-recording-controls" data-voice-recording-controls>
+                  <span class="contact-voice-live-dot" aria-hidden="true"></span>
+                  <div class="contact-voice-wave" data-voice-wave aria-hidden="true"></div>
+                  <span class="contact-voice-timer" data-voice-timer>0:00 / 1:00</span>
+                  <button type="button" class="contact-voice-trash" data-voice-cancel aria-label="Annuler et supprimer le vocal" title="Annuler">🗑 Annuler</button>
+                  <button type="button" class="contact-voice-stop" data-voice-stop aria-label="Arrêter l’enregistrement">⏹ Arrêter</button>
+                </div>
+                <div class="contact-voice-preview" data-voice-preview hidden></div>
+                <div class="contact-voice-preview-actions" data-voice-preview-actions hidden>
+                  <button type="button" class="contact-voice-trash" data-voice-retry>↻ Recommencer / supprimer</button>
+                  <button type="button" class="contact-voice-send" data-voice-send>Envoyer le vocal</button>
+                </div>
               </div>
               <p class="contact-voice-status" data-voice-status role="status" aria-live="polite"></p>
             </div>

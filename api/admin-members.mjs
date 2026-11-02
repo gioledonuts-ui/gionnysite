@@ -67,7 +67,7 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: "Méthode non autorisée." });
   }
   if (!isSameOriginRequest(request)) return response.status(403).json({ error: "Requête refusée." });
-  if (!isAdminRequest(request)) return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
+  if (!(await isAdminRequest(request))) return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
   if (!isBlobStorageConfigured()) return response.status(503).json({ error: "Le stockage privé des comptes n’est pas disponible." });
 
   try {

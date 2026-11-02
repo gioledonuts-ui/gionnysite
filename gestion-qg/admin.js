@@ -80,7 +80,9 @@
   let selectedConversationLoading = false;
   let adminPollTimer = 0;
   let activeAdminTab = "settings";
+  let hostSessionActive = false;
   let membersLoading = false;
+  let membersLoaded = false;
   let membersCursor = "";
   let membersHasMore = false;
   const memberRecords = new Map();
@@ -101,6 +103,7 @@
   };
 
   const showLogin = (message = "") => {
+    hostSessionActive = false;
     if (adminPollTimer) window.clearInterval(adminPollTimer);
     adminPollTimer = 0;
     queuedConversationsLoad = null;
@@ -217,7 +220,7 @@
 
     const sender = document.createElement("strong");
     sender.className = "inbox-message-sender";
-    sender.textContent = typeof message.pseudo === "string" ? message.pseudo : "Visiteur";
+    sender.textContent = typeof message.pseudo === "string" && message.pseudo.trim() ? message.pseudo : "Membre inconnu";
 
     const date = document.createElement("time");
     date.className = "inbox-message-date";
@@ -372,11 +375,16 @@
     return avatar;
   };
 
+  const memberSignature = (member) => JSON.stringify([
+    member.pseudo, member.role, member.status, member.createdAt, member.conversationId,
+  ]);
+
   const createMemberItem = (member) => {
     memberRecords.set(member.id, member);
     const row = document.createElement("article");
     row.className = "member-row";
     row.dataset.memberId = member.id;
+    row.dataset.memberSignature = memberSignature(member);
 
     const identity = document.createElement("div");
     identity.className = "member-row-identity";
@@ -448,22 +456,48 @@
     return row;
   };
 
+  const sortMemberRows = () => {
+    if (!membersList) return;
+    const rows = [...membersList.querySelectorAll(".member-row")];
+    rows.sort((left, right) => {
+      const leftMember = memberRecords.get(left.dataset.memberId);
+      const rightMember = memberRecords.get(right.dataset.memberId);
+      const leftDate = leftMember?.createdAt ? Date.parse(leftMember.createdAt) : 0;
+      const rightDate = rightMember?.createdAt ? Date.parse(rightMember.createdAt) : 0;
+      return rightDate - leftDate || (leftMember?.pseudo || "").localeCompare(rightMember?.pseudo || "");
+    });
+    rows.forEach((row) => membersList.append(row));
+  };
+
+  const upsertMemberItem = (member, { deferSort = false } = {}) => {
+    if (!member || typeof member.id !== "string" || !membersList) return false;
+    memberRecords.set(member.id, member);
+    const existing = [...membersList.querySelectorAll(".member-row")]
+      .find((row) => row.dataset.memberId === member.id);
+    let changed = false;
+    if (existing) {
+      if (existing.dataset.memberSignature !== memberSignature(member)) {
+        existing.replaceWith(createMemberItem(member));
+        changed = true;
+      }
+    } else {
+      membersList.append(createMemberItem(member));
+      changed = true;
+    }
+    if (changed && !deferSort) sortMemberRows();
+    return changed;
+  };
+
   const loadMembers = async ({ reset = false, quiet = false } = {}) => {
     if (!membersList || membersLoading) return;
-    if (reset) {
-      membersList.replaceChildren();
-      memberRecords.clear();
-      membersCursor = "";
-      membersHasMore = false;
-      if (membersMoreButton) membersMoreButton.hidden = true;
-    }
+    const requestedCursor = reset || quiet ? "" : membersCursor;
     membersLoading = true;
     if (membersRefreshButton) membersRefreshButton.disabled = true;
     if (membersMoreButton) membersMoreButton.disabled = true;
     if (!quiet) setStatus(membersStatus, "Chargement des membres…");
     try {
       const url = new URL("/api/admin-members", window.location.origin);
-      if (membersCursor) url.searchParams.set("cursor", membersCursor);
+      if (requestedCursor) url.searchParams.set("cursor", requestedCursor);
       const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -478,13 +512,49 @@
         if (!quiet) setStatus(membersStatus, data.error || "Les membres n’ont pas pu être chargés.", "error");
         return;
       }
-      const members = Array.isArray(data.members) ? data.members : [];
-      members.forEach((member) => membersList.append(createMemberItem(member)));
-      membersCursor = typeof data.cursor === "string" ? data.cursor : "";
-      membersHasMore = data.hasMore === true && Boolean(membersCursor);
+      const validMember = (member) => member && typeof member === "object" &&
+        typeof member.id === "string" && /^[0-9a-f-]{36}$/iu.test(member.id) &&
+        typeof member.pseudo === "string" && member.pseudo.trim().length > 0 &&
+        ["member", "host"].includes(member.role) && ["active", "banned"].includes(member.status);
+      if (!Array.isArray(data.members) || !data.members.every(validMember) ||
+          (data.cursor !== null && data.cursor !== undefined && typeof data.cursor !== "string") ||
+          typeof data.hasMore !== "boolean") {
+        if (!quiet) setStatus(membersStatus, "La réponse des membres est invalide. Les données affichées ont été conservées.", "error");
+        return;
+      }
+      const members = data.members;
+      if (quiet && members.length === 0) return;
+
+      const nextCursor = typeof data.cursor === "string" ? data.cursor : "";
+      const nextHasMore = data.hasMore === true && Boolean(nextCursor);
+      if (reset && !quiet && members.length === 0) {
+        membersList.replaceChildren();
+        memberRecords.clear();
+      } else {
+        if (reset && !quiet && !nextHasMore) {
+          const currentIds = new Set(members.map((member) => member.id));
+          for (const id of memberRecords.keys()) {
+            if (currentIds.has(id)) continue;
+            memberRecords.delete(id);
+            [...membersList.querySelectorAll(".member-row")]
+              .find((row) => row.dataset.memberId === id)
+              ?.remove();
+          }
+        }
+        let listChanged = false;
+        members.forEach((member) => {
+          if (upsertMemberItem(member, { deferSort: true })) listChanged = true;
+        });
+        if (listChanged) sortMemberRows();
+      }
+      membersLoaded = true;
+      membersCursor = nextCursor;
+      membersHasMore = nextHasMore;
       if (membersMoreButton) membersMoreButton.hidden = !membersHasMore;
       const count = membersList.querySelectorAll(".member-row").length;
-      setStatus(membersStatus, count ? `${count} membre${count > 1 ? "s" : ""} affiché${count > 1 ? "s" : ""}.` : "Aucun compte membre pour le moment.");
+      if (!quiet) {
+        setStatus(membersStatus, count ? `${count} membre${count > 1 ? "s" : ""} affiché${count > 1 ? "s" : ""}.` : "Aucun compte membre pour le moment.");
+      }
     } catch {
       if (!quiet) setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
     } finally {
@@ -514,6 +584,7 @@
         setStatus(membersStatus, data.error || "L’action sur ce membre a échoué.", "error");
         return false;
       }
+      if (data.member) upsertMemberItem(data.member);
       await loadMembers({ reset: true, quiet: true });
       if (member.conversationId && member.conversationId === currentConversationId) {
         await loadSelectedConversation({ quiet: true });
@@ -568,6 +639,9 @@
         return;
       }
       memberRecords.delete(member.id);
+      [...(membersList?.querySelectorAll(".member-row") || [])]
+        .find((row) => row.dataset.memberId === member.id)
+        ?.remove();
       await loadMembers({ reset: true, quiet: true });
       setStatus(membersStatus, "Compte supprimé. La conversation et les vocaux ont été conservés.");
     } catch {
@@ -591,7 +665,9 @@
       panel.hidden = panel.dataset.adminTabPanel !== validTab;
     });
     if (adminTitle) adminTitle.textContent = tabTitles[validTab];
-    if (validTab === "members" && !adminPanel.hidden) void loadMembers({ reset: true, quiet: true });
+    if (validTab === "members" && !adminPanel.hidden && !membersLoaded) {
+      void loadMembers({ reset: true, quiet: false });
+    }
     if (validTab === "conversations" && !adminPanel.hidden && !conversationsList?.childElementCount) {
       void loadConversations({ reset: true, quiet: true });
     }
@@ -662,18 +738,33 @@
     updateBulkToolbar();
   };
 
+  const conversationRowSignature = (conversation) => JSON.stringify([
+    conversation.pseudo,
+    conversation.subject,
+    conversation.status,
+    conversation.updatedAt,
+    conversation.lastMessagePreview,
+    conversation.lastMessageSender,
+    conversation.lastMessagePseudo,
+    conversation.adminUnread,
+    conversation.favorite,
+    conversation.hasAudio,
+    conversation.isHost,
+  ]);
+
   const createConversationListItem = (conversation) => {
     conversationRecords.set(conversation.id, conversation);
     const item = document.createElement("article");
     item.className = "conversation-list-item";
     item.dataset.conversationId = conversation.id;
+    item.dataset.recordSignature = conversationRowSignature(conversation);
 
     const checkbox = document.createElement("input");
     checkbox.className = "conversation-list-checkbox";
     checkbox.type = "checkbox";
     checkbox.dataset.selectConversation = "";
     checkbox.checked = selectedConversationIds.has(conversation.id);
-    checkbox.setAttribute("aria-label", `Sélectionner la discussion de ${conversation.pseudo || "Visiteur"}`);
+    checkbox.setAttribute("aria-label", `Sélectionner la discussion de ${conversation.pseudo || "Membre"}`);
     checkbox.addEventListener("change", () => {
       if (checkbox.checked) selectedConversationIds.add(conversation.id);
       else selectedConversationIds.delete(conversation.id);
@@ -685,7 +776,9 @@
     favorite.type = "button";
     favorite.dataset.favorite = String(conversation.favorite === true);
     favorite.setAttribute("aria-pressed", String(conversation.favorite === true));
-    favorite.setAttribute("aria-label", conversation.favorite ? `Retirer ${conversation.pseudo || "Visiteur"} des favoris` : `Ajouter ${conversation.pseudo || "Visiteur"} aux favoris`);
+    favorite.setAttribute("aria-label", conversation.favorite
+      ? `Retirer ${conversation.pseudo || "Membre"} des favoris`
+      : `Ajouter ${conversation.pseudo || "Membre"} aux favoris`);
     favorite.title = conversation.favorite ? "Retirer des favoris" : "Ajouter aux favoris";
     favorite.textContent = conversation.favorite ? "★" : "☆";
     favorite.addEventListener("click", () => void toggleConversationFavorite(conversation.id));
@@ -701,7 +794,9 @@
 
     const pseudo = document.createElement("strong");
     pseudo.className = "conversation-list-pseudo";
-    pseudo.textContent = typeof conversation.pseudo === "string" ? conversation.pseudo : "Visiteur";
+    pseudo.textContent = typeof conversation.pseudo === "string" && conversation.pseudo.trim()
+      ? conversation.pseudo
+      : "Membre";
 
     const subject = document.createElement("span");
     subject.className = "conversation-list-subject";
@@ -725,7 +820,10 @@
     const preview = document.createElement("span");
     preview.className = "conversation-list-preview";
     const previewText = typeof conversation.lastMessagePreview === "string" ? conversation.lastMessagePreview : "";
-    preview.textContent = conversation.lastMessageSender === "gionny" ? `Toi : ${previewText}` : `Visiteur : ${previewText}`;
+    const senderPseudo = typeof conversation.lastMessagePseudo === "string" && conversation.lastMessagePseudo.trim()
+      ? conversation.lastMessagePseudo
+      : conversation.lastMessageSender === "gionny" ? "Gionny" : conversation.pseudo || "Membre";
+    preview.textContent = `${senderPseudo} : ${previewText}`;
 
     const date = document.createElement("time");
     date.className = "conversation-list-date";
@@ -746,35 +844,58 @@
     return true;
   };
 
-  const updateConversationRow = (conversation) => {
-    const existing = [...(conversationsList?.querySelectorAll(".conversation-list-item") || [])]
+  const sortConversationListRows = () => {
+    if (!conversationsList) return;
+    const rows = [...conversationsList.querySelectorAll(".conversation-list-item")];
+    rows.sort((left, right) => {
+      const leftConversation = conversationRecords.get(left.dataset.conversationId);
+      const rightConversation = conversationRecords.get(right.dataset.conversationId);
+      return Date.parse(rightConversation?.updatedAt || "") - Date.parse(leftConversation?.updatedAt || "");
+    });
+    rows.forEach((row) => conversationsList.append(row));
+  };
+
+  const upsertConversationListItem = (conversation, { deferRender = false } = {}) => {
+    if (!conversation || typeof conversation.id !== "string" || !conversationsList) return false;
+    conversationRecords.set(conversation.id, conversation);
+    const existing = [...conversationsList.querySelectorAll(".conversation-list-item")]
       .find((item) => item.dataset.conversationId === conversation.id);
-    if (!existing) return;
+    let changed = false;
     if (!conversationMatchesCurrentFilters(conversation)) {
       selectedConversationIds.delete(conversation.id);
-      existing.remove();
-    } else {
+      if (existing) {
+        existing.remove();
+        changed = true;
+      }
+    } else if (!existing) {
+      conversationsList.append(createConversationListItem(conversation));
+      changed = true;
+    } else if (existing.dataset.recordSignature !== conversationRowSignature(conversation)) {
       existing.replaceWith(createConversationListItem(conversation));
+      changed = true;
     }
-    updateConversationSelection();
+    if (changed && !deferRender) {
+      sortConversationListRows();
+      updateConversationSelection();
+    }
+    return changed;
   };
+
+  const updateConversationRow = (conversation) => upsertConversationListItem(conversation);
 
   const loadConversations = async ({ reset = false, quiet = false, skipSelected = false } = {}) => {
     if (!conversationsList) return;
     if (conversationsLoading) {
+      if (quiet && !reset) return;
       queuedConversationsLoad = queuedConversationsLoad
-        ? { reset: true, quiet: queuedConversationsLoad.quiet && quiet, skipSelected: queuedConversationsLoad.skipSelected && skipSelected }
-        : { reset: true, quiet, skipSelected };
+        ? { reset: queuedConversationsLoad.reset || reset, quiet: queuedConversationsLoad.quiet && quiet, skipSelected: queuedConversationsLoad.skipSelected && skipSelected }
+        : { reset, quiet, skipSelected };
       return;
     }
-    if (reset) {
-      conversationsList.replaceChildren();
-      conversationsCursor = "";
-      conversationsHasMore = false;
-      if (conversationsMoreButton) conversationsMoreButton.hidden = true;
-      updateConversationSelection();
-    }
 
+    const requestedFilter = activeMailFilter;
+    const requestedSubject = activeSubjectFilter;
+    const requestedCursor = reset || quiet ? "" : conversationsCursor;
     conversationsLoading = true;
     if (inboxRefreshButton) inboxRefreshButton.disabled = true;
     if (conversationsMoreButton) conversationsMoreButton.disabled = true;
@@ -783,9 +904,9 @@
     try {
       const url = new URL("/api/admin-messages", window.location.origin);
       url.searchParams.set("view", "conversations");
-      if (conversationsCursor) url.searchParams.set("cursor", conversationsCursor);
-      url.searchParams.set("filter", activeMailFilter);
-      if (activeSubjectFilter) url.searchParams.set("subject", activeSubjectFilter);
+      if (requestedCursor) url.searchParams.set("cursor", requestedCursor);
+      url.searchParams.set("filter", requestedFilter);
+      if (requestedSubject) url.searchParams.set("subject", requestedSubject);
       const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -801,22 +922,60 @@
         if (!quiet) setStatus(conversationsStatus, data.error || "Les discussions n’ont pas pu être chargées.", "error");
         return;
       }
+      if (requestedFilter !== activeMailFilter || requestedSubject !== activeSubjectFilter) return;
 
-      const items = Array.isArray(data.conversations) ? data.conversations : [];
-      items.forEach((conversation) => conversationsList.append(createConversationListItem(conversation)));
-      conversationsCursor = typeof data.cursor === "string" ? data.cursor : "";
-      conversationsHasMore = data.hasMore === true && Boolean(conversationsCursor);
+      const validConversation = (conversation) => conversation && typeof conversation === "object" &&
+        typeof conversation.id === "string" && /^[0-9a-f-]{36}$/iu.test(conversation.id) &&
+        typeof conversation.pseudo === "string" && conversation.pseudo.trim().length > 0 &&
+        typeof conversation.updatedAt === "string" && Number.isFinite(Date.parse(conversation.updatedAt)) &&
+        ["open", "closed", "blocked"].includes(conversation.status) &&
+        typeof conversation.lastMessagePreview === "string" &&
+        ["visitor", "gionny"].includes(conversation.lastMessageSender) &&
+        typeof conversation.adminUnread === "boolean" && typeof conversation.favorite === "boolean" &&
+        typeof conversation.hasAudio === "boolean" && typeof conversation.isHost === "boolean";
+      if (!Array.isArray(data.conversations) || !data.conversations.every(validConversation) ||
+          (data.cursor !== null && data.cursor !== undefined && typeof data.cursor !== "string") ||
+          typeof data.hasMore !== "boolean") {
+        if (!quiet) setStatus(conversationsStatus, "La réponse des discussions est invalide. Les données affichées ont été conservées.", "error");
+        return;
+      }
+
+      const items = data.conversations;
+      if (quiet && items.length === 0) return;
+      const nextCursor = typeof data.cursor === "string" ? data.cursor : "";
+      const nextHasMore = data.hasMore === true && Boolean(nextCursor);
+
+      // A completed explicit refresh can reconcile the visible page, but only
+      // after a valid response arrives. Quiet polling only upserts non-empty data.
+      if (reset && !quiet) {
+        const responseIds = new Set(items.map((conversation) => conversation.id));
+        [...(conversationsList.querySelectorAll(".conversation-list-item") || [])].forEach((row) => {
+          if (!responseIds.has(row.dataset.conversationId)) row.remove();
+        });
+      }
+      let listChanged = false;
+      items.forEach((conversation) => {
+        if (upsertConversationListItem(conversation, { deferRender: true })) listChanged = true;
+      });
+      if (listChanged) {
+        sortConversationListRows();
+        updateConversationSelection();
+      }
+      conversationsCursor = nextCursor;
+      conversationsHasMore = nextHasMore;
       if (conversationsMoreButton) conversationsMoreButton.hidden = !conversationsHasMore;
 
       const count = conversationsList.querySelectorAll(".conversation-list-item").length;
       if (conversationPageCount) conversationPageCount.textContent = count ? `${count} affichée${count > 1 ? "s" : ""}` : "";
-      const emptyMessage = activeMailFilter !== "all" || activeSubjectFilter
+      const emptyMessage = requestedFilter !== "all" || requestedSubject
         ? "Aucune discussion ne correspond à ces filtres."
         : "Aucune discussion pour le moment.";
-      setStatus(
-        conversationsStatus,
-        count ? `${count} discussion${count > 1 ? "s" : ""} affichée${count > 1 ? "s" : ""}.` : emptyMessage
-      );
+      if (!quiet) {
+        setStatus(
+          conversationsStatus,
+          count ? `${count} discussion${count > 1 ? "s" : ""} affichée${count > 1 ? "s" : ""}.` : emptyMessage
+        );
+      }
       updateConversationSelection();
 
       if (!currentConversationId && items[0]) {
@@ -843,21 +1002,26 @@
     const sender = message.sender === "gionny" ? "gionny" : "visitor";
     item.className = `thread-message thread-message--${sender}`;
 
+    const ownerConversation = conversationRecords.get(currentConversationId);
+    const senderPseudo = typeof message.pseudo === "string" && message.pseudo.trim()
+      ? message.pseudo
+      : sender === "gionny" ? "Gionny" : ownerConversation?.pseudo || "Membre";
+    const isHostMessage = message.isHost === true || sender === "gionny";
     const name = document.createElement("span");
     name.className = "thread-message-sender";
-    name.textContent = sender === "gionny" ? "Gionny" : "Visiteur";
-    if (sender === "visitor" && conversationRecords.get(currentConversationId)?.isHost) {
+    name.textContent = senderPseudo;
+    if (isHostMessage) {
       name.append(createHostCrownBadge("thread-message-host-crown"));
     }
 
     let content;
     if (message.kind === "audio" || message.hasAudio) {
-      content = document.createElement("audio");
-      content.className = "thread-message-audio";
-      content.controls = true;
-      content.preload = "none";
-      content.setAttribute("aria-label", `Message vocal de ${sender === "gionny" ? "Gionny" : "Visiteur"}`);
-      content.src = `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
+      const audioUrl = `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
+      content = typeof window.createQGVoicePlayer === "function"
+        ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`)
+        : document.createElement("p");
+      if (content.tagName === "P") content.textContent = "Le lecteur vocal est indisponible.";
+      content.classList.add("thread-message-audio");
     } else {
       content = document.createElement("p");
       content.className = "thread-message-text";
@@ -879,7 +1043,7 @@
     currentConversationStatus = conversation.status;
     conversationEmpty.hidden = true;
     conversationContent.hidden = false;
-    threadPseudo.textContent = conversation.pseudo || "Visiteur";
+    threadPseudo.textContent = conversation.pseudo || "Membre";
     if (threadHostCrown) threadHostCrown.hidden = conversation.isHost !== true;
     if (threadSubject) threadSubject.textContent = conversation.subject || "💬 Discussion";
     threadStatus.textContent = statusLabel(conversation.status);
@@ -897,7 +1061,9 @@
       : "Cette discussion est fermée. Tu peux la rouvrir quand tu veux.";
 
     const messages = Array.isArray(data.messages) ? data.messages : [];
-    const messageSignature = messages.map((message) => `${message.id}:${message.kind || "text"}`).join("|");
+    const messageSignature = messages.map((message) =>
+      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}`
+    ).join("|");
     if (threadMessages.dataset.messageSignature !== messageSignature) {
       const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
       threadMessages.replaceChildren(...messages.map(createThreadMessage));
@@ -1295,8 +1461,8 @@
     if (adminPollTimer) window.clearInterval(adminPollTimer);
     adminPollTimer = window.setInterval(() => {
       if (adminPanel.hidden) return;
-      void loadConversations({ reset: true, quiet: true });
-      if (activeAdminTab === "members") void loadMembers({ reset: true, quiet: true });
+      void loadConversations({ quiet: true });
+      if (activeAdminTab === "members") void loadMembers({ quiet: true });
       if (currentConversationId) void loadSelectedConversation({ quiet: true });
     }, 20_000);
   };
@@ -1348,6 +1514,7 @@
       }
 
       loginInput.value = "";
+      hostSessionActive = data.hostAuthenticated === true;
       await showAdmin();
     } catch {
       setStatus(loginStatus, "Impossible de joindre le serveur. Réessaie.", "error");
@@ -1438,16 +1605,19 @@
   logoutButton?.addEventListener("click", async () => {
     logoutButton.disabled = true;
     try {
-      await fetch("/api/admin-auth", {
+      const response = await fetch("/api/admin-auth", {
         method: "DELETE",
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       });
+      const data = await readJson(response);
+      hostSessionActive = data.hostAuthenticated === true;
     } catch {
       // Hiding the admin screen is still useful if the network is unavailable.
     } finally {
       logoutButton.disabled = false;
-      showLogin();
+      if (hostSessionActive) window.location.assign("/");
+      else showLogin();
     }
   });
 
@@ -1459,6 +1629,7 @@
         cache: "no-store",
       });
       const data = await readJson(response);
+      hostSessionActive = data.hostAuthenticated === true;
       if (response.ok && data.authenticated === true) {
         await showAdmin();
         return;

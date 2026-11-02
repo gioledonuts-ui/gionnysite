@@ -2,6 +2,9 @@
   "name": "gionnysite",
   "private": true,
   "description": "Le QG en ligne de Gionny",
+  "scripts": {
+    "test": "node --test"
+  },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "2.8.2"

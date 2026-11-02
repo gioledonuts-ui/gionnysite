@@ -5,6 +5,7 @@ import {
   CONVERSATION_SUBJECTS,
   deleteContactMessage,
   deleteConversation,
+  getAdminReplyIdentity,
   getConversationForAdmin,
   isContactMessagePath,
   isConversationId,
@@ -74,6 +75,7 @@ function cleanAdminMessage(value) {
 }
 
 function conversationError(reason) {
+  if (reason === "host_required") return { status: 409, error: "Aucun compte Hôte actif n’est associé à ce panneau. Définis le compte Hôte avant de répondre." };
   if (reason === "blocked") return { status: 409, error: "Cette discussion est bloquée. Débloque-la pour répondre." };
   if (reason === "closed") return { status: 409, error: "Cette discussion est fermée. Rouvre-la pour répondre." };
   if (reason === "limit") return { status: 409, error: "Cette discussion a atteint sa limite de messages." };
@@ -90,7 +92,7 @@ export default async function handler(request, response) {
   if (!isSameOriginRequest(request)) {
     return response.status(403).json({ error: "Requête refusée." });
   }
-  if (!isAdminRequest(request)) {
+  if (!(await isAdminRequest(request))) {
     return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
   }
   if (!isBlobStorageConfigured()) {
@@ -140,7 +142,12 @@ export default async function handler(request, response) {
         return response.status(400).json({ error: "Écris une réponse de 1 à 1 500 caractères." });
       }
 
-      const result = await addAdminReply(body.conversationId, message);
+      const identity = await getAdminReplyIdentity(request);
+      if (!identity) {
+        const failure = conversationError("host_required");
+        return response.status(failure.status).json({ error: failure.error });
+      }
+      const result = await addAdminReply(body.conversationId, message, identity);
       if (!result.ok) {
         const failure = conversationError(result.reason);
         return response.status(failure.status).json({ error: failure.error });

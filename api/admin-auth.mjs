@@ -6,6 +6,7 @@ import {
   safePasswordMatch,
   setAdminSessionCookie,
 } from "../lib/admin-security.mjs";
+import { getHostAccountIdentityFromSession, readAccountSessionCookie } from "../lib/contact-inbox.mjs";
 
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -80,15 +81,28 @@ export default async function handler(request, response) {
   setNoStore(response);
 
   if (request.method === "GET") {
-    return response.status(200).json({ authenticated: isAdminRequest(request) });
+    let hostAuthenticated = false;
+    try {
+      hostAuthenticated = Boolean(await getHostAccountIdentityFromSession(readAccountSessionCookie(request)));
+    } catch {
+      hostAuthenticated = false;
+    }
+    const authenticated = hostAuthenticated || await isAdminRequest(request);
+    return response.status(200).json({ authenticated, hostAuthenticated });
   }
 
   if (request.method === "DELETE") {
     if (!isSameOriginRequest(request)) {
       return response.status(403).json({ error: "Requête refusée." });
     }
+    let hostAuthenticated = false;
+    try {
+      hostAuthenticated = Boolean(await getHostAccountIdentityFromSession(readAccountSessionCookie(request)));
+    } catch {
+      hostAuthenticated = false;
+    }
     clearAdminSessionCookie(request, response);
-    return response.status(200).json({ authenticated: false });
+    return response.status(200).json({ authenticated: hostAuthenticated, hostAuthenticated });
   }
 
   if (request.method !== "POST") return methodNotAllowed(response);
