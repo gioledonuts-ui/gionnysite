@@ -2,6 +2,7 @@ import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAdminReply,
+  CONVERSATION_SUBJECTS,
   deleteContactMessage,
   deleteConversation,
   getConversationForAdmin,
@@ -9,7 +10,9 @@ import {
   isConversationId,
   listContactMessages,
   listConversations,
+  setConversationFavorite,
   setConversationStatus,
+  setConversationUnread,
 } from "../lib/contact-inbox.mjs";
 
 const MAX_BODY_BYTES = 6000;
@@ -103,7 +106,12 @@ export default async function handler(request, response) {
       }
 
       if (view === "conversations") {
-        return response.status(200).json(await listConversations(cursor));
+        const filter = queryValue(request, "filter") || "all";
+        const subject = queryValue(request, "subject");
+        if (!["all", "unread", "favorites", "audio"].includes(filter) || (subject && !CONVERSATION_SUBJECTS.includes(subject))) {
+          return response.status(400).json({ error: "Les filtres de conversations sont invalides." });
+        }
+        return response.status(200).json(await listConversations(cursor, undefined, { filter, subject }));
       }
       if (view === "conversation") {
         const id = queryValue(request, "id");
@@ -141,12 +149,67 @@ export default async function handler(request, response) {
     }
 
     if (request.method === "PATCH") {
-      if (!isConversationId(body.conversationId) || !["open", "closed", "blocked"].includes(body.status)) {
-        return response.status(400).json({ error: "Le changement de statut est invalide." });
+      const operations = [
+        typeof body.favorite === "boolean",
+        typeof body.unread === "boolean",
+        typeof body.status === "string",
+      ].filter(Boolean).length;
+      if (operations !== 1) return response.status(400).json({ error: "L’action de boîte mail est invalide." });
+
+      const operationIsValid =
+        (typeof body.favorite === "boolean") ||
+        (typeof body.unread === "boolean") ||
+        ["open", "closed", "blocked"].includes(body.status);
+      if (!operationIsValid) return response.status(400).json({ error: "L’action de boîte mail est invalide." });
+
+      const isBulk = Array.isArray(body.conversationIds);
+      const ids = isBulk ? [...new Set(body.conversationIds)] : [body.conversationId];
+      if (ids.length < 1 || ids.length > 100 || !ids.every(isConversationId)) {
+        return response.status(400).json({ error: "Choisis entre 1 et 100 discussions valides." });
       }
-      const conversation = await setConversationStatus(body.conversationId, body.status);
-      if (!conversation) return response.status(404).json({ error: "Cette discussion n’existe plus." });
-      return response.status(200).json({ conversation });
+
+      const updated = [];
+      const skipped = [];
+      for (let index = 0; index < ids.length; index += 10) {
+        const batch = await Promise.all(ids.slice(index, index + 10).map(async (id) => {
+          const conversation = typeof body.favorite === "boolean"
+            ? await setConversationFavorite(id, body.favorite)
+            : typeof body.unread === "boolean"
+              ? await setConversationUnread(id, body.unread)
+              : await setConversationStatus(id, body.status);
+          return { id, conversation };
+        }));
+        for (const result of batch) {
+          if (result.conversation) updated.push(result.conversation);
+          else skipped.push(result.id);
+        }
+      }
+      return response.status(200).json(isBulk ? { updated, skipped } : { conversation: updated[0] || null });
+    }
+
+    if (Array.isArray(body.conversationIds)) {
+      const ids = [...new Set(body.conversationIds)];
+      if (ids.length < 1 || ids.length > 100 || !ids.every(isConversationId)) {
+        return response.status(400).json({ error: "Choisis entre 1 et 100 discussions valides." });
+      }
+      const deletedIds = [];
+      const skippedIds = [];
+      const failedIds = [];
+      for (let index = 0; index < ids.length; index += 10) {
+        const batch = await Promise.all(ids.slice(index, index + 10).map(async (id) => {
+          try {
+            return { id, deleted: await deleteConversation(id), failed: false };
+          } catch {
+            return { id, deleted: false, failed: true };
+          }
+        }));
+        for (const result of batch) {
+          if (result.deleted) deletedIds.push(result.id);
+          else if (result.failed) failedIds.push(result.id);
+          else skippedIds.push(result.id);
+        }
+      }
+      return response.status(200).json({ deletedIds, skippedIds, failedIds });
     }
 
     if (typeof body.conversationId === "string") {

@@ -250,8 +250,46 @@
           </div>
           <p class="inbox-status" data-conversations-status role="status" aria-live="polite">Chargement des discussions…</p>
 
+          <div class="mail-toolbar" aria-label="Filtres de la boîte de réception">
+            <div class="mail-filter-tabs" role="group" aria-label="Filtrer les discussions">
+              <button class="mail-filter-tab" type="button" aria-pressed="true" data-mail-filter="all">Tous</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="unread">Non lus</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="favorites">⭐ Favoris</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="audio">🎤 Contient un vocal</button>
+            </div>
+            <label class="mail-subject-filter">
+              <span>Sujet</span>
+              <select data-conversation-subject-filter>
+                <option value="">Tous les sujets</option>
+                <option value="🎤 Passer en live">🎤 Passer en live</option>
+                <option value="💡 Idée vidéo / React">💡 Idée vidéo / React</option>
+                <option value="📖 Histoire / Anecdote">📖 Histoire / Anecdote</option>
+                <option value="❓ Question">❓ Question</option>
+                <option value="💬 Discussion">💬 Discussion</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="mail-bulk-toolbar" data-bulk-toolbar hidden>
+            <span class="mail-selection-count" data-selection-count></span>
+            <div class="mail-bulk-actions">
+              <button type="button" class="quiet-button" data-bulk-favorite>⭐ Mettre en favoris</button>
+              <button type="button" class="quiet-button" data-bulk-read>Marquer comme lu</button>
+              <button type="button" class="quiet-button" data-bulk-close>Fermer</button>
+              <button type="button" class="mail-bulk-delete" data-bulk-delete>Supprimer la sélection</button>
+            </div>
+            <p class="mail-bulk-status" data-bulk-status role="status" aria-live="polite"></p>
+          </div>
+
           <div class="conversation-layout">
             <section class="conversation-sidebar" aria-label="Liste des discussions">
+              <div class="conversation-list-toolbar">
+                <label class="mail-select-all">
+                  <input type="checkbox" data-select-all-conversations />
+                  <span>Tout sélectionner</span>
+                </label>
+                <span class="conversation-page-count" data-page-count></span>
+              </div>
               <div class="conversation-list" data-conversation-list aria-live="polite"></div>
               <button class="quiet-button conversation-more" type="button" data-conversations-more hidden>Afficher les discussions plus anciennes</button>
             </section>

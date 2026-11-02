@@ -28,6 +28,17 @@
   const conversationsList = document.querySelector("[data-conversation-list]");
   const conversationsStatus = document.querySelector("[data-conversations-status]");
   const conversationsMoreButton = document.querySelector("[data-conversations-more]");
+  const mailFilterButtons = [...document.querySelectorAll("[data-mail-filter]")];
+  const conversationSubjectFilter = document.querySelector("[data-conversation-subject-filter]");
+  const selectAllConversations = document.querySelector("[data-select-all-conversations]");
+  const conversationPageCount = document.querySelector("[data-page-count]");
+  const bulkToolbar = document.querySelector("[data-bulk-toolbar]");
+  const selectionCount = document.querySelector("[data-selection-count]");
+  const bulkFavoriteButton = document.querySelector("[data-bulk-favorite]");
+  const bulkReadButton = document.querySelector("[data-bulk-read]");
+  const bulkCloseButton = document.querySelector("[data-bulk-close]");
+  const bulkDeleteButton = document.querySelector("[data-bulk-delete]");
+  const bulkStatus = document.querySelector("[data-bulk-status]");
   const conversationEmpty = document.querySelector("[data-conversation-empty]");
   const conversationContent = document.querySelector("[data-conversation-content]");
   const threadPseudo = document.querySelector("[data-thread-pseudo]");
@@ -49,8 +60,13 @@
   let inboxCursor = "";
   let inboxHasMore = false;
   let conversationsLoading = false;
+  let queuedConversationsLoad = null;
   let conversationsCursor = "";
   let conversationsHasMore = false;
+  let activeMailFilter = "all";
+  let activeSubjectFilter = "";
+  const selectedConversationIds = new Set();
+  const conversationRecords = new Map();
   let currentConversationId = "";
   let currentConversationStatus = "";
   let selectedConversationLoading = false;
@@ -74,6 +90,7 @@
   const showLogin = (message = "") => {
     if (adminPollTimer) window.clearInterval(adminPollTimer);
     adminPollTimer = 0;
+    queuedConversationsLoad = null;
     loginPanel.hidden = false;
     adminPanel.hidden = true;
     setStatus(loginStatus, message, message ? "error" : "");
@@ -313,12 +330,82 @@
     return "Ouverte";
   };
 
+  const visibleConversationIds = () => [...(conversationsList?.querySelectorAll(".conversation-list-item") || [])]
+    .map((item) => item.dataset.conversationId)
+    .filter(Boolean);
+
+  const updateBulkToolbar = () => {
+    const ids = [...selectedConversationIds];
+    const selected = ids.map((id) => conversationRecords.get(id)).filter(Boolean);
+    if (bulkToolbar) bulkToolbar.hidden = ids.length === 0;
+    if (selectionCount) selectionCount.textContent = `${ids.length} sélectionnée${ids.length > 1 ? "s" : ""}`;
+
+    const allFavorite = selected.length > 0 && selected.every((conversation) => conversation.favorite === true);
+    const allRead = selected.length > 0 && selected.every((conversation) => conversation.adminUnread !== true);
+    if (bulkFavoriteButton) bulkFavoriteButton.textContent = allFavorite ? "☆ Retirer des favoris" : "⭐ Mettre en favoris";
+    if (bulkReadButton) bulkReadButton.textContent = allRead ? "Marquer comme non lu" : "Marquer comme lu";
+    if (bulkCloseButton) bulkCloseButton.disabled = !selected.some((conversation) => conversation.status === "open");
+
+    const visibleIds = visibleConversationIds();
+    const visibleSelected = visibleIds.filter((id) => selectedConversationIds.has(id)).length;
+    if (selectAllConversations) {
+      selectAllConversations.disabled = visibleIds.length === 0;
+      selectAllConversations.checked = visibleIds.length > 0 && visibleSelected === visibleIds.length;
+      selectAllConversations.indeterminate = visibleSelected > 0 && visibleSelected < visibleIds.length;
+    }
+  };
+
+  const updateConversationSelection = () => {
+    conversationsList?.querySelectorAll(".conversation-list-item").forEach((item) => {
+      const id = item.dataset.conversationId;
+      const selected = selectedConversationIds.has(id);
+      const checkbox = item.querySelector("[data-select-conversation]");
+      const openButton = item.querySelector("[data-open-conversation]");
+      if (checkbox) checkbox.checked = selected;
+      if (openButton) openButton.setAttribute("aria-current", String(id === currentConversationId));
+      item.classList.toggle("is-selected", selected);
+      item.classList.toggle("is-current", id === currentConversationId);
+    });
+    if (conversationPageCount) {
+      const visibleCount = conversationsList?.querySelectorAll(".conversation-list-item").length || 0;
+      conversationPageCount.textContent = visibleCount ? `${visibleCount} affichée${visibleCount > 1 ? "s" : ""}` : "";
+    }
+    updateBulkToolbar();
+  };
+
   const createConversationListItem = (conversation) => {
-    const button = document.createElement("button");
-    button.className = "conversation-list-item";
-    button.type = "button";
-    button.dataset.conversationId = conversation.id;
-    button.setAttribute("aria-current", String(conversation.id === currentConversationId));
+    conversationRecords.set(conversation.id, conversation);
+    const item = document.createElement("article");
+    item.className = "conversation-list-item";
+    item.dataset.conversationId = conversation.id;
+
+    const checkbox = document.createElement("input");
+    checkbox.className = "conversation-list-checkbox";
+    checkbox.type = "checkbox";
+    checkbox.dataset.selectConversation = "";
+    checkbox.checked = selectedConversationIds.has(conversation.id);
+    checkbox.setAttribute("aria-label", `Sélectionner la discussion de ${conversation.pseudo || "Visiteur"}`);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedConversationIds.add(conversation.id);
+      else selectedConversationIds.delete(conversation.id);
+      updateConversationSelection();
+    });
+
+    const favorite = document.createElement("button");
+    favorite.className = "conversation-list-star";
+    favorite.type = "button";
+    favorite.dataset.favorite = String(conversation.favorite === true);
+    favorite.setAttribute("aria-pressed", String(conversation.favorite === true));
+    favorite.setAttribute("aria-label", conversation.favorite ? `Retirer ${conversation.pseudo || "Visiteur"} des favoris` : `Ajouter ${conversation.pseudo || "Visiteur"} aux favoris`);
+    favorite.title = conversation.favorite ? "Retirer des favoris" : "Ajouter aux favoris";
+    favorite.textContent = conversation.favorite ? "★" : "☆";
+    favorite.addEventListener("click", () => void toggleConversationFavorite(conversation.id));
+
+    const openButton = document.createElement("button");
+    openButton.className = "conversation-list-open";
+    openButton.type = "button";
+    openButton.dataset.openConversation = "";
+    openButton.setAttribute("aria-current", String(conversation.id === currentConversationId));
 
     const head = document.createElement("span");
     head.className = "conversation-list-head";
@@ -327,15 +414,20 @@
     pseudo.className = "conversation-list-pseudo";
     pseudo.textContent = typeof conversation.pseudo === "string" ? conversation.pseudo : "Visiteur";
 
+    const subject = document.createElement("span");
+    subject.className = "conversation-list-subject";
+    subject.textContent = typeof conversation.subject === "string" ? conversation.subject : "💬 Discussion";
+
+    const unread = document.createElement("span");
+    unread.className = "conversation-list-unread";
+    unread.textContent = "Non lu";
+    unread.hidden = conversation.adminUnread !== true;
+
     const status = document.createElement("span");
     status.className = "conversation-list-status";
     status.dataset.state = conversation.status;
     status.textContent = statusLabel(conversation.status);
-    head.append(pseudo, status);
-
-    const subject = document.createElement("span");
-    subject.className = "conversation-list-subject";
-    subject.textContent = typeof conversation.subject === "string" ? conversation.subject : "💬 Discussion";
+    head.append(pseudo, subject, unread, status);
 
     const preview = document.createElement("span");
     preview.className = "conversation-list-preview";
@@ -347,23 +439,47 @@
     date.dateTime = conversation.updatedAt;
     date.textContent = formatInboxTime(conversation.updatedAt);
 
-    button.append(head, subject, preview, date);
-    button.addEventListener("click", () => selectConversation(conversation.id, { scroll: true }));
-    return button;
+    openButton.append(head, preview, date);
+    openButton.addEventListener("click", () => selectConversation(conversation.id, { scroll: true }));
+    item.append(checkbox, favorite, openButton);
+    return item;
   };
 
-  const updateConversationSelection = () => {
-    conversationsList?.querySelectorAll("[data-conversation-id]").forEach((button) => {
-      button.setAttribute("aria-current", String(button.dataset.conversationId === currentConversationId));
-    });
+  const conversationMatchesCurrentFilters = (conversation) => {
+    if (activeSubjectFilter && conversation.subject !== activeSubjectFilter) return false;
+    if (activeMailFilter === "unread" && conversation.adminUnread !== true) return false;
+    if (activeMailFilter === "favorites" && conversation.favorite !== true) return false;
+    if (activeMailFilter === "audio" && conversation.hasAudio !== true) return false;
+    return true;
   };
 
-  const loadConversations = async ({ reset = false, quiet = false } = {}) => {
-    if (!conversationsList || conversationsLoading) return;
+  const updateConversationRow = (conversation) => {
+    const existing = [...(conversationsList?.querySelectorAll(".conversation-list-item") || [])]
+      .find((item) => item.dataset.conversationId === conversation.id);
+    if (!existing) return;
+    if (!conversationMatchesCurrentFilters(conversation)) {
+      selectedConversationIds.delete(conversation.id);
+      existing.remove();
+    } else {
+      existing.replaceWith(createConversationListItem(conversation));
+    }
+    updateConversationSelection();
+  };
+
+  const loadConversations = async ({ reset = false, quiet = false, skipSelected = false } = {}) => {
+    if (!conversationsList) return;
+    if (conversationsLoading) {
+      queuedConversationsLoad = queuedConversationsLoad
+        ? { reset: true, quiet: queuedConversationsLoad.quiet && quiet, skipSelected: queuedConversationsLoad.skipSelected && skipSelected }
+        : { reset: true, quiet, skipSelected };
+      return;
+    }
     if (reset) {
       conversationsList.replaceChildren();
       conversationsCursor = "";
       conversationsHasMore = false;
+      if (conversationsMoreButton) conversationsMoreButton.hidden = true;
+      updateConversationSelection();
     }
 
     conversationsLoading = true;
@@ -375,6 +491,8 @@
       const url = new URL("/api/admin-messages", window.location.origin);
       url.searchParams.set("view", "conversations");
       if (conversationsCursor) url.searchParams.set("cursor", conversationsCursor);
+      url.searchParams.set("filter", activeMailFilter);
+      if (activeSubjectFilter) url.searchParams.set("subject", activeSubjectFilter);
       const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -397,18 +515,20 @@
       conversationsHasMore = data.hasMore === true && Boolean(conversationsCursor);
       if (conversationsMoreButton) conversationsMoreButton.hidden = !conversationsHasMore;
 
-      const count = conversationsList.querySelectorAll("[data-conversation-id]").length;
-      if (!quiet) {
-        setStatus(
-          conversationsStatus,
-          count ? `${count} discussion${count > 1 ? "s" : ""}.` : "Aucune discussion pour le moment."
-        );
-      }
+      const count = conversationsList.querySelectorAll(".conversation-list-item").length;
+      if (conversationPageCount) conversationPageCount.textContent = count ? `${count} affichée${count > 1 ? "s" : ""}` : "";
+      const emptyMessage = activeMailFilter !== "all" || activeSubjectFilter
+        ? "Aucune discussion ne correspond à ces filtres."
+        : "Aucune discussion pour le moment.";
+      setStatus(
+        conversationsStatus,
+        count ? `${count} discussion${count > 1 ? "s" : ""} affichée${count > 1 ? "s" : ""}.` : emptyMessage
+      );
       updateConversationSelection();
 
       if (!currentConversationId && items[0]) {
-        await selectConversation(items[0].id);
-      } else if (currentConversationId) {
+        await selectConversation(items[0].id, { markRead: false });
+      } else if (currentConversationId && !skipSelected) {
         void loadSelectedConversation({ quiet: true });
       }
     } catch {
@@ -417,6 +537,11 @@
       conversationsLoading = false;
       if (inboxRefreshButton) inboxRefreshButton.disabled = false;
       if (conversationsMoreButton) conversationsMoreButton.disabled = false;
+      if (queuedConversationsLoad) {
+        const nextLoad = queuedConversationsLoad;
+        queuedConversationsLoad = null;
+        void loadConversations(nextLoad);
+      }
     }
   };
 
@@ -454,6 +579,7 @@
 
   const renderSelectedConversation = (data) => {
     const conversation = data.conversation;
+    conversationRecords.set(conversation.id, conversation);
     currentConversationStatus = conversation.status;
     conversationEmpty.hidden = true;
     conversationContent.hidden = false;
@@ -481,11 +607,12 @@
       threadMessages.dataset.messageSignature = messageSignature;
       if (wasNearBottom) threadMessages.scrollTop = threadMessages.scrollHeight;
     }
+    updateConversationRow(conversation);
     updateConversationSelection();
   };
 
   const loadSelectedConversation = async ({ quiet = false } = {}) => {
-    if (!currentConversationId || selectedConversationLoading) return;
+    if (!currentConversationId || selectedConversationLoading) return null;
     const requestedId = currentConversationId;
     selectedConversationLoading = true;
 
@@ -515,7 +642,10 @@
         }
         return;
       }
-      if (requestedId === currentConversationId) renderSelectedConversation(data);
+      if (requestedId === currentConversationId) {
+        renderSelectedConversation(data);
+        return data;
+      }
     } catch {
       if (!quiet) setStatus(replyStatus, "Impossible de charger cette discussion.", "error");
     } finally {
@@ -524,9 +654,40 @@
         void loadSelectedConversation({ quiet: true });
       }
     }
+    return null;
   };
 
-  const selectConversation = async (id, { scroll = false } = {}) => {
+  const patchConversationMetadata = async (payload, { quiet = false } = {}) => {
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "PATCH",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return null;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(conversationsStatus, data.error || "La mise à jour n’a pas abouti.", "error");
+        return null;
+      }
+      const updated = data.conversation ? [data.conversation] : Array.isArray(data.updated) ? data.updated : [];
+      updated.forEach((conversation) => {
+        conversationRecords.set(conversation.id, conversation);
+        updateConversationRow(conversation);
+      });
+      return data;
+    } catch {
+      if (!quiet) setStatus(conversationsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+      return null;
+    }
+  };
+
+  const selectConversation = async (id, { scroll = false, markRead = true } = {}) => {
     if (!id) return;
     currentConversationId = id;
     setStatus(replyStatus, "");
@@ -535,10 +696,135 @@
     threadPseudo.textContent = "Chargement…";
     threadMessages.replaceChildren();
     updateConversationSelection();
-    await loadSelectedConversation();
+    const shouldMarkRead = conversationRecords.get(id)?.adminUnread === true;
+    const loaded = await loadSelectedConversation();
+    if (markRead && (shouldMarkRead || loaded?.conversation?.adminUnread === true)) {
+      const updated = await patchConversationMetadata({ conversationId: id, unread: false }, { quiet: true });
+      if (updated) await loadConversations({ reset: true, quiet: true, skipSelected: true });
+    }
     if (scroll && window.matchMedia("(max-width: 640px)").matches) {
       const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
       document.querySelector("[data-conversation-detail]")?.scrollIntoView({ behavior, block: "start" });
+    }
+  };
+
+  const toggleConversationFavorite = async (conversationId) => {
+    const conversation = conversationRecords.get(conversationId);
+    if (!conversation) return;
+    const result = await patchConversationMetadata({ conversationId, favorite: conversation.favorite !== true });
+    if (!result?.conversation) return;
+    setStatus(conversationsStatus, result.conversation.favorite ? "Ajoutée aux favoris." : "Retirée des favoris.");
+  };
+
+  const runBulkPatch = async (changes) => {
+    const ids = [...selectedConversationIds];
+    if (!ids.length) return;
+    const actionLabel = typeof changes.favorite === "boolean"
+      ? "Mise à jour des favoris…"
+      : typeof changes.unread === "boolean"
+        ? "Mise à jour du statut de lecture…"
+        : "Fermeture des discussions…";
+    setStatus(bulkStatus, actionLabel);
+    [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+      if (button) button.disabled = true;
+    });
+
+    const updated = [];
+    const skipped = [];
+    let failed = false;
+    for (let index = 0; index < ids.length; index += 100) {
+      const result = await patchConversationMetadata({ conversationIds: ids.slice(index, index + 100), ...changes }, { quiet: true });
+      if (!result) {
+        failed = true;
+        break;
+      }
+      if (Array.isArray(result.updated)) updated.push(...result.updated);
+      if (Array.isArray(result.skipped)) skipped.push(...result.skipped);
+    }
+
+    if (!failed) {
+      selectedConversationIds.clear();
+      updateConversationSelection();
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      if (changes.status && currentConversationId && updated.some((item) => item.id === currentConversationId)) {
+        await loadSelectedConversation({ quiet: true });
+      }
+      const message = `${updated.length} discussion${updated.length > 1 ? "s" : ""} mise${updated.length > 1 ? "s" : ""} à jour${skipped.length ? ` · ${skipped.length} ignorée${skipped.length > 1 ? "s" : ""}` : ""}.`;
+      setStatus(conversationsStatus, message, skipped.length ? "error" : "");
+    } else {
+      setStatus(conversationsStatus, "L’action groupée n’a pas abouti. Ta sélection est conservée pour réessayer.", "error");
+    }
+
+    [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+      if (button) button.disabled = false;
+    });
+    updateBulkToolbar();
+  };
+
+  const deleteSelectedConversations = async () => {
+    const ids = [...selectedConversationIds];
+    if (!ids.length) return;
+    if (!window.confirm(`Supprimer définitivement ${ids.length} discussion${ids.length > 1 ? "s" : ""} ? Tous les messages et vocaux associés seront supprimés.`)) return;
+
+    setStatus(bulkStatus, "Suppression des discussions, messages et vocaux…");
+    [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+      if (button) button.disabled = true;
+    });
+    const deletedIds = [];
+    const skippedIds = [];
+    const failedIds = [];
+
+    try {
+      for (let index = 0; index < ids.length; index += 100) {
+        const response = await fetch("/api/admin-messages", {
+          method: "DELETE",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({ conversationIds: ids.slice(index, index + 100) }),
+        });
+        const data = await readJson(response);
+        if (response.status === 401) {
+          showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || "La suppression groupée a échoué.");
+        deletedIds.push(...(Array.isArray(data.deletedIds) ? data.deletedIds : []));
+        skippedIds.push(...(Array.isArray(data.skippedIds) ? data.skippedIds : []));
+        failedIds.push(...(Array.isArray(data.failedIds) ? data.failedIds : []));
+      }
+
+      [...deletedIds, ...skippedIds].forEach((id) => {
+        selectedConversationIds.delete(id);
+        conversationRecords.delete(id);
+        [...(conversationsList?.querySelectorAll(".conversation-list-item") || [])]
+          .find((item) => item.dataset.conversationId === id)
+          ?.remove();
+      });
+      if (currentConversationId && deletedIds.includes(currentConversationId)) {
+        currentConversationId = "";
+        currentConversationStatus = "";
+        conversationContent.hidden = true;
+        conversationEmpty.hidden = false;
+      }
+      updateConversationSelection();
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      const deletionSummary = deletedIds.length
+        ? `${deletedIds.length} discussion${deletedIds.length > 1 ? "s" : ""} supprimée${deletedIds.length > 1 ? "s" : ""}. Messages et vocaux associés purgés.`
+        : "Aucune discussion n’a été supprimée.";
+      const remainingSummary = failedIds.length
+        ? ` ${failedIds.length} échec${failedIds.length > 1 ? "s" : ""} à réessayer.`
+        : skippedIds.length
+          ? ` ${skippedIds.length} discussion${skippedIds.length > 1 ? "s" : ""} introuvable${skippedIds.length > 1 ? "s" : ""}.`
+          : "";
+      setStatus(conversationsStatus, deletionSummary + remainingSummary, failedIds.length ? "error" : "");
+    } catch (error) {
+      setStatus(conversationsStatus, error instanceof Error ? error.message : "La suppression groupée a échoué.", "error");
+    } finally {
+      [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+        if (button) button.disabled = false;
+      });
+      updateBulkToolbar();
     }
   };
 
@@ -617,6 +903,47 @@
       threadDeleteButton.disabled = false;
     }
   };
+
+  mailFilterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.mailFilter;
+      if (!["all", "unread", "favorites", "audio"].includes(filter) || filter === activeMailFilter) return;
+      activeMailFilter = filter;
+      mailFilterButtons.forEach((tab) => {
+        tab.setAttribute("aria-pressed", String(tab === button));
+      });
+      selectedConversationIds.clear();
+      updateConversationSelection();
+      void loadConversations({ reset: true });
+    });
+  });
+
+  conversationSubjectFilter?.addEventListener("change", () => {
+    activeSubjectFilter = conversationSubjectFilter.value;
+    selectedConversationIds.clear();
+    updateConversationSelection();
+    void loadConversations({ reset: true });
+  });
+
+  selectAllConversations?.addEventListener("change", () => {
+    const ids = visibleConversationIds();
+    if (selectAllConversations.checked) ids.forEach((id) => selectedConversationIds.add(id));
+    else ids.forEach((id) => selectedConversationIds.delete(id));
+    updateConversationSelection();
+  });
+
+  bulkFavoriteButton?.addEventListener("click", () => {
+    const selected = [...selectedConversationIds].map((id) => conversationRecords.get(id)).filter(Boolean);
+    const allFavorite = selected.length > 0 && selected.every((conversation) => conversation.favorite === true);
+    void runBulkPatch({ favorite: !allFavorite });
+  });
+  bulkReadButton?.addEventListener("click", () => {
+    const selected = [...selectedConversationIds].map((id) => conversationRecords.get(id)).filter(Boolean);
+    const allRead = selected.length > 0 && selected.every((conversation) => conversation.adminUnread !== true);
+    void runBulkPatch({ unread: allRead });
+  });
+  bulkCloseButton?.addEventListener("click", () => void runBulkPatch({ status: "closed" }));
+  bulkDeleteButton?.addEventListener("click", () => void deleteSelectedConversations());
 
   replyForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
