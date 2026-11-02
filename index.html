@@ -116,6 +116,35 @@
             </div>
           </div>
         </div>
+        <div class="member-access" aria-label="Accès au compte">
+          <div class="member-access-actions" data-member-logged-out>
+            <button class="member-access-button" type="button" data-member-login>Se connecter</button>
+            <button class="member-access-button member-access-button--accent" type="button" data-member-register>S’inscrire</button>
+          </div>
+          <button
+            class="member-profile-chip"
+            type="button"
+            data-member-logged-in
+            data-member-profile
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="profile-dialog"
+            hidden
+          >
+            <span class="member-profile-avatar" aria-hidden="true">
+              <svg viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="19" />
+                <circle cx="20" cy="15" r="6" />
+                <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
+              </svg>
+            </span>
+            <span class="member-profile-pseudo" data-member-pseudo></span>
+            <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden>
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg>
+            </span>
+            <span class="member-profile-chevron" aria-hidden="true">⌄</span>
+          </button>
+        </div>
       </header>
 
       <main class="hub-layout" id="main">
@@ -151,26 +180,6 @@
               <p class="welcome-copy">
                 La commu, les lives et les meilleurs moments sont ici.
               </p>
-              <section class="member-bar" aria-label="Espace membre" data-member-bar>
-                <span class="member-bar-title">ESPACE MEMBRE</span>
-                <div class="member-bar-state" data-member-logged-out>
-                  <span class="member-bar-message">Retrouve ta discussion privée en te connectant.</span>
-                  <div class="member-bar-actions">
-                    <button type="button" class="member-button member-button--primary" data-member-login>Se connecter</button>
-                    <button type="button" class="member-button" data-member-register>S'inscrire</button>
-                  </div>
-                </div>
-                <div class="member-bar-state member-bar-state--connected" data-member-logged-in hidden>
-                  <span class="member-status" aria-live="polite">
-                    <span class="member-status-dot" aria-hidden="true"></span>
-                    <span>Connecté : <strong data-member-pseudo></strong></span>
-                  </span>
-                  <div class="member-bar-actions">
-                    <button type="button" class="member-button member-button--primary" data-member-messages>Mes messages</button>
-                    <button type="button" class="member-button member-button--logout" data-contact-logout>Déconnexion</button>
-                  </div>
-                </div>
-              </section>
             </div>
           </div>
 
@@ -565,7 +574,7 @@
           <div class="contact-compose-heading">
             <div>
               <h2>Nouvelle discussion</h2>
-              <p>Connecté·e en tant que <strong data-account-pseudo></strong></p>
+              <p>Connecté·e en tant que <strong data-account-pseudo></strong><span class="contact-host-crown" data-account-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span></p>
             </div>
             <button class="contact-logout" type="button" data-contact-logout>Déconnexion</button>
           </div>
@@ -609,7 +618,7 @@
           <div class="contact-thread-heading">
             <div>
               <h2 id="contact-thread-title">Ta discussion</h2>
-              <p><span data-contact-thread-pseudo></span> · <span data-contact-thread-subject></span></p>
+              <p><span data-contact-thread-pseudo></span><span class="contact-host-crown" data-contact-thread-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span> · <span data-contact-thread-subject></span></p>
             </div>
             <div class="contact-thread-actions">
               <span class="contact-thread-state" data-contact-thread-state>Ouverte</span>
@@ -642,6 +651,72 @@
         </section>
       </div>
     </aside>
+
+    <dialog
+      class="profile-dialog"
+      id="profile-dialog"
+      aria-labelledby="profile-dialog-title"
+      aria-describedby="profile-dialog-copy"
+      data-profile-dialog
+    >
+      <div class="profile-dialog-card">
+        <div class="profile-dialog-topline">
+          <span class="profile-dialog-kicker">ESPACE MEMBRE · COMPTE</span>
+          <button class="profile-dialog-close" type="button" data-profile-close aria-label="Fermer Mon Profil">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="profile-dialog-identity">
+          <span class="profile-dialog-avatar" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="19"/><circle cx="20" cy="15" r="6"/><path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3"/></svg>
+          </span>
+          <div>
+            <h2 id="profile-dialog-title">Mon Profil</h2>
+            <p id="profile-dialog-copy">Gère ton pseudo et les paramètres de ton compte.</p>
+          </div>
+          <span class="profile-dialog-crown" data-profile-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg>
+          </span>
+        </div>
+        <form class="profile-edit-form" data-profile-pseudo-form>
+          <label class="contact-field">
+            <span>Mon pseudo</span>
+            <input name="pseudo" type="text" autocomplete="nickname" minlength="2" maxlength="32" required data-profile-pseudo />
+          </label>
+          <p class="profile-cooldown" data-profile-cooldown role="status" aria-live="polite"></p>
+          <p class="contact-status" data-profile-pseudo-status role="status" aria-live="polite"></p>
+          <button class="contact-send profile-save-button" type="submit" data-profile-pseudo-submit>
+            <span>Enregistrer le pseudo</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </button>
+        </form>
+        <section class="profile-password-section" aria-labelledby="profile-password-title">
+          <button class="profile-password-toggle" type="button" data-profile-password-toggle aria-expanded="false" aria-controls="profile-password-form">
+            <span id="profile-password-title">Changer mon mot de passe</span>
+            <span aria-hidden="true">＋</span>
+          </button>
+          <form class="profile-password-form" id="profile-password-form" data-profile-password-form hidden>
+            <label class="contact-field">
+              <span>Mot de passe actuel</span>
+              <input name="currentPassword" type="password" autocomplete="current-password" maxlength="128" required />
+            </label>
+            <label class="contact-field">
+              <span>Nouveau mot de passe</span>
+              <input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="8 caractères minimum" required />
+            </label>
+            <p class="contact-status" data-profile-password-status role="status" aria-live="polite"></p>
+            <button class="contact-send profile-save-button" type="submit" data-profile-password-submit>
+              <span>Mettre à jour le mot de passe</span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
+          </form>
+        </section>
+        <div class="profile-dialog-actions">
+          <button class="profile-logout-button" type="button" data-profile-logout>Déconnexion</button>
+          <button class="profile-done-button" type="button" data-profile-close>Terminé</button>
+        </div>
+      </div>
+    </dialog>
 
     <dialog
       class="about-dialog"

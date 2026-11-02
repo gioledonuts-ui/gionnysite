@@ -1668,3 +1668,309 @@ button {
     flex: 1 1 120px;
   }
 }
+
+/* Admin sections: settings, member accounts, and private conversations. */
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 18px;
+  padding: 5px;
+  border: 1px solid rgba(159, 194, 239, 0.12);
+  border-radius: 14px;
+  background: rgba(3, 12, 24, 0.38);
+}
+
+.admin-tab {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #a9bad1;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+
+.admin-tab:hover,
+.admin-tab:focus-visible {
+  color: #f2f7ff;
+  background: rgba(79, 131, 244, 0.09);
+}
+
+.admin-tab[aria-selected="true"] {
+  border-color: rgba(114, 214, 255, 0.24);
+  background: linear-gradient(135deg, rgba(79, 131, 244, 0.19), rgba(114, 214, 255, 0.08));
+  color: #eaf5ff;
+  box-shadow: inset 0 1px 0 rgba(220, 239, 255, 0.05);
+}
+
+.admin-tab-panel[hidden] {
+  display: none !important;
+}
+
+.admin-tab-panel {
+  min-width: 0;
+}
+
+.admin-tab-panel > .settings-section {
+  margin-top: 0;
+}
+
+.members-section {
+  display: grid;
+  gap: 12px;
+}
+
+.members-heading {
+  align-items: center;
+}
+
+.members-heading > div {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.members-refresh {
+  flex: 0 0 auto;
+}
+
+.members-status {
+  min-height: 18px;
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 11px;
+}
+
+.members-status[data-kind="error"] {
+  color: #ff9ca6;
+}
+
+.members-list {
+  display: grid;
+  gap: 9px;
+}
+
+.member-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 14px;
+  padding: 13px;
+  border: 1px solid rgba(183, 210, 249, 0.13);
+  border-radius: 14px;
+  background: linear-gradient(120deg, rgba(3, 12, 24, 0.44), rgba(11, 24, 41, 0.45));
+}
+
+.member-row-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+}
+
+.member-default-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(143, 194, 248, 0.28);
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(117, 174, 229, 0.19), rgba(39, 65, 99, 0.57));
+  color: #cfe5ff;
+}
+
+.member-default-avatar svg {
+  width: 100%;
+  height: 100%;
+  fill: rgba(185, 216, 246, 0.12);
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.45;
+}
+
+.member-row-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.member-row-name-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 7px;
+}
+
+.member-row-pseudo {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: #eef6ff;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.member-row-crown,
+.conversation-list-host-crown,
+.thread-message-host-crown,
+.conversation-host-crown {
+  color: #ffd36f;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(255, 191, 70, 0.3);
+}
+
+.member-host-badge,
+.member-banned-badge {
+  display: inline-flex;
+  min-height: 19px;
+  align-items: center;
+  padding: 1px 7px;
+  border: 1px solid rgba(255, 204, 104, 0.25);
+  border-radius: 999px;
+  background: rgba(255, 188, 70, 0.1);
+  color: #ffdc8b;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.member-banned-badge {
+  border-color: rgba(255, 110, 126, 0.24);
+  background: rgba(255, 38, 56, 0.09);
+  color: #ff9ca6;
+}
+
+.member-row-date {
+  color: var(--admin-muted);
+  font-size: 10px;
+}
+
+.member-row-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.member-action-button {
+  min-height: 31px;
+  padding: 0 9px;
+  border: 1px solid rgba(148, 186, 234, 0.18);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #cfe0f5;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.member-action-button:hover:not(:disabled),
+.member-action-button:focus-visible:not(:disabled) {
+  border-color: rgba(114, 214, 255, 0.4);
+  background: rgba(79, 131, 244, 0.11);
+  color: #fff;
+}
+
+.member-action-button--view {
+  border-color: rgba(114, 214, 255, 0.2);
+  color: var(--admin-ice);
+}
+
+.member-action-button--danger {
+  border-color: rgba(255, 135, 145, 0.2);
+  color: #ffb4bb;
+}
+
+.member-action-button--delete {
+  border-color: rgba(255, 94, 111, 0.2);
+  color: #ff9ca6;
+}
+
+.member-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+@media (max-width: 760px) {
+  .member-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .member-row-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .admin-tab {
+    min-width: 0;
+    min-height: 36px;
+    padding-inline: 5px;
+    font-size: 9px;
+  }
+
+  .members-heading {
+    align-items: flex-start;
+  }
+
+  .members-refresh {
+    margin-left: 0;
+  }
+
+  .member-row {
+    padding: 11px;
+  }
+
+  .member-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .member-action-button {
+    width: 100%;
+    min-height: 34px;
+    padding-inline: 5px;
+    font-size: 9px;
+  }
+}
+
+.member-row-crown svg,
+.conversation-list-host-crown svg,
+.thread-message-host-crown svg,
+.conversation-host-crown svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  stroke: #fff1bf;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 0.65;
+}

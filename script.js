@@ -797,9 +797,25 @@
   const memberLoggedOut = document.querySelector("[data-member-logged-out]");
   const memberLoggedIn = document.querySelector("[data-member-logged-in]");
   const memberPseudo = document.querySelector("[data-member-pseudo]");
+  const memberCrown = document.querySelector("[data-member-crown]");
   const memberLoginButton = document.querySelector("[data-member-login]");
   const memberRegisterButton = document.querySelector("[data-member-register]");
-  const memberMessagesButton = document.querySelector("[data-member-messages]");
+  const profileDialog = document.querySelector("[data-profile-dialog]");
+  const profileOpenButton = document.querySelector("[data-member-profile]");
+  const profileCloseButtons = profileDialog?.querySelectorAll("[data-profile-close]") || [];
+  const profilePseudoForm = document.querySelector("[data-profile-pseudo-form]");
+  const profilePseudoInput = profilePseudoForm?.elements.namedItem("pseudo");
+  const profilePseudoSubmit = document.querySelector("[data-profile-pseudo-submit]");
+  const profilePseudoStatus = document.querySelector("[data-profile-pseudo-status]");
+  const profileCooldownStatus = document.querySelector("[data-profile-cooldown]");
+  const profileCrown = document.querySelector("[data-profile-crown]");
+  const profilePasswordToggle = document.querySelector("[data-profile-password-toggle]");
+  const profilePasswordForm = document.querySelector("[data-profile-password-form]");
+  const profilePasswordSubmit = document.querySelector("[data-profile-password-submit]");
+  const profilePasswordStatus = document.querySelector("[data-profile-password-status]");
+  const profileLogoutButton = document.querySelector("[data-profile-logout]");
+  const accountHostCrown = document.querySelector("[data-account-host-crown]");
+  const contactThreadCrown = document.querySelector("[data-contact-thread-crown]");
   const contactNewView = document.querySelector("[data-contact-new]");
   const contactForm = document.querySelector("[data-contact-form]");
   const contactSubmit = document.querySelector("[data-contact-submit]");
@@ -821,6 +837,8 @@
   const VISITOR_SEEN_PREFIX = "gionny:conversation:last-seen:v1:";
   const MAX_VOICE_DURATION_SECONDS = 60;
   const MAX_VOICE_BYTES = 200_000;
+  const USERNAME_CHANGE_COOLDOWN_MS = 15 * 24 * 60 * 60 * 1000;
+  let profileSaving = false;
 
   let visitorAccount = null;
   let visitorConversation = null;
@@ -897,6 +915,50 @@
     }).format(date);
   };
 
+  const updateProfilePseudoControls = () => {
+    if (!visitorAccount || !profilePseudoInput || !profilePseudoSubmit) {
+      if (profilePseudoSubmit) profilePseudoSubmit.disabled = true;
+      return;
+    }
+    const isHost = visitorAccount.role === "host";
+    const hasChanged = profilePseudoInput.value.normalize("NFKC").trim().replace(/\s+/gu, " ") !== visitorAccount.pseudo;
+    const lastChange = typeof visitorAccount.lastUsernameChange === "string"
+      ? Date.parse(visitorAccount.lastUsernameChange)
+      : Number.NaN;
+    const remainingMs = !isHost && Number.isFinite(lastChange)
+      ? Math.max(0, lastChange + USERNAME_CHANGE_COOLDOWN_MS - Date.now())
+      : 0;
+    const daysRemaining = remainingMs > 0 ? Math.max(1, Math.ceil(remainingMs / (24 * 60 * 60 * 1000))) : 0;
+    if (profileCooldownStatus) {
+      const message = isHost
+        ? "Le compte Hôte peut modifier son pseudo sans délai."
+        : daysRemaining > 0
+          ? `Prochain changement possible dans ${daysRemaining} jours.`
+          : "Tu peux modifier ton pseudo une fois tous les 15 jours.";
+      setStatusNode(profileCooldownStatus, message, daysRemaining > 0 ? "warning" : "");
+    }
+    profilePseudoSubmit.disabled = profileSaving || !hasChanged || daysRemaining > 0;
+    if (profilePasswordSubmit) profilePasswordSubmit.disabled = profileSaving;
+  };
+
+  const createHostCrownBadge = (className) => {
+    const badge = document.createElement("span");
+    badge.className = className;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", "Compte Hôte");
+    badge.title = "Compte Hôte";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 20 20");
+    svg.setAttribute("aria-hidden", "true");
+    const crown = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    crown.setAttribute("d", "m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z");
+    const base = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    base.setAttribute("d", "M4 17.2h12");
+    svg.append(crown, base);
+    badge.append(svg);
+    return badge;
+  };
+
   const createVisitorChatMessage = (message) => {
     const item = document.createElement("article");
     const sender = message.sender === "gionny" ? "gionny" : "visitor";
@@ -905,6 +967,9 @@
     const name = document.createElement("span");
     name.className = "contact-chat-sender";
     name.textContent = sender === "gionny" ? "Gionny" : visitorConversation?.pseudo || "Toi";
+    if (sender === "visitor" && visitorConversation?.isHost) {
+      name.append(createHostCrownBadge("contact-chat-host-crown"));
+    }
     item.append(name);
 
     if (message.kind === "audio" || message.hasAudio) {
@@ -972,15 +1037,27 @@
     if (!contactWidget.hidden) markVisitorThreadSeen();
   };
 
-  const renderMemberBar = () => {
+  const renderMemberAccess = () => {
     const isConnected = Boolean(visitorAccount);
+    const isHost = visitorAccount?.role === "host";
     if (memberLoggedOut) memberLoggedOut.hidden = isConnected;
     if (memberLoggedIn) memberLoggedIn.hidden = !isConnected;
     if (memberPseudo) memberPseudo.textContent = isConnected ? visitorAccount.pseudo || "" : "";
+    if (memberCrown) memberCrown.hidden = !isHost;
+    if (profileCrown) profileCrown.hidden = !isHost;
+    if (accountHostCrown) accountHostCrown.hidden = !isHost;
+    if (contactThreadCrown) contactThreadCrown.hidden = !isHost;
+    if (profileOpenButton) {
+      profileOpenButton.setAttribute(
+        "aria-label",
+        isConnected ? `Mon profil : ${visitorAccount.pseudo || "membre"}` : "Mon profil"
+      );
+    }
+    if (profileDialog?.open) updateProfilePseudoControls();
   };
 
   const renderContactState = () => {
-    renderMemberBar();
+    renderMemberAccess();
     if (!visitorAccount) {
       if (contactAuth) contactAuth.hidden = false;
       if (contactNewView) contactNewView.hidden = true;
@@ -1088,6 +1165,7 @@
       setContactStatus("Impossible de joindre le serveur pour te déconnecter.", "error");
       return;
     }
+    if (profileDialog?.open) profileDialog.close();
     visitorAccount = null;
     visitorConversation = null;
     visitorConversationMessages = [];
@@ -1106,7 +1184,102 @@
     setAuthMode("register");
     openContactWidget();
   });
-  memberMessagesButton?.addEventListener("click", () => openContactWidget());
+
+  const openProfileDialog = () => {
+    if (!visitorAccount || !profileDialog?.showModal) return;
+    if (profilePseudoInput) profilePseudoInput.value = visitorAccount.pseudo || "";
+    if (profilePseudoStatus) setStatusNode(profilePseudoStatus, "");
+    if (profilePasswordStatus) setStatusNode(profilePasswordStatus, "");
+    profilePasswordForm?.reset();
+    if (profilePasswordForm) profilePasswordForm.hidden = true;
+    profilePasswordToggle?.setAttribute("aria-expanded", "false");
+    if (profilePasswordToggle?.lastElementChild) profilePasswordToggle.lastElementChild.textContent = "＋";
+    profileDialog.showModal();
+    lockBackgroundScroll("profile-dialog");
+    profileOpenButton?.setAttribute("aria-expanded", "true");
+    updateProfilePseudoControls();
+    profilePseudoInput?.focus({ preventScroll: true });
+  };
+
+  profileOpenButton?.addEventListener("click", openProfileDialog);
+  profileCloseButtons.forEach((button) => button.addEventListener("click", () => profileDialog?.close()));
+  profileDialog?.addEventListener("click", (event) => {
+    if (event.target === profileDialog) profileDialog.close();
+  });
+  profileDialog?.addEventListener("close", () => {
+    unlockBackgroundScroll("profile-dialog");
+    profileOpenButton?.setAttribute("aria-expanded", "false");
+    if (profileOpenButton && !profileOpenButton.hidden) profileOpenButton.focus({ preventScroll: true });
+  });
+  profilePseudoInput?.addEventListener("input", updateProfilePseudoControls);
+  profilePasswordToggle?.addEventListener("click", () => {
+    if (!profilePasswordForm) return;
+    profilePasswordForm.hidden = !profilePasswordForm.hidden;
+    const expanded = !profilePasswordForm.hidden;
+    profilePasswordToggle.setAttribute("aria-expanded", String(expanded));
+    if (profilePasswordToggle.lastElementChild) profilePasswordToggle.lastElementChild.textContent = expanded ? "−" : "＋";
+    if (expanded) profilePasswordForm.elements.namedItem("currentPassword")?.focus({ preventScroll: true });
+  });
+
+  const submitProfileUpdate = async (payload, statusNode, submitButton) => {
+    if (!submitButton || submitButton.disabled || profileSaving) return;
+    profileSaving = true;
+    submitButton.disabled = true;
+    updateProfilePseudoControls();
+    setStatusNode(statusNode, "Enregistrement du profil…");
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "profile", ...payload }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) {
+        setStatusNode(statusNode, data.error || "Le profil n’a pas pu être enregistré. Réessaie.", "error");
+        if (response.status === 409 && Number.isInteger(data.daysRemaining)) {
+          if (profileCooldownStatus) setStatusNode(profileCooldownStatus, data.error, "warning");
+          const nextAllowed = Date.parse(data.nextUsernameChangeAt);
+          if (Number.isFinite(nextAllowed) && visitorAccount) {
+            visitorAccount.lastUsernameChange = new Date(nextAllowed - USERNAME_CHANGE_COOLDOWN_MS).toISOString();
+          }
+        }
+        return;
+      }
+      updateConversationFromResponse(data);
+      renderContactState();
+      if (profilePseudoInput && visitorAccount) profilePseudoInput.value = visitorAccount.pseudo || "";
+      if (profilePasswordForm) profilePasswordForm.reset();
+      setStatusNode(statusNode, "Profil mis à jour.", "success");
+      updateProfilePseudoControls();
+    } catch {
+      setStatusNode(statusNode, "Impossible de joindre le serveur. Réessaie dans un instant.", "error");
+    } finally {
+      profileSaving = false;
+      updateProfilePseudoControls();
+    }
+  };
+
+  profilePseudoForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!profilePseudoForm.reportValidity() || !visitorAccount) return;
+    void submitProfileUpdate(
+      { pseudo: String(profilePseudoInput?.value || "") },
+      profilePseudoStatus,
+      profilePseudoSubmit
+    );
+  });
+  profilePasswordForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!profilePasswordForm.reportValidity() || !visitorAccount) return;
+    const passwordData = new FormData(profilePasswordForm);
+    void submitProfileUpdate({
+      currentPassword: String(passwordData.get("currentPassword") || ""),
+      newPassword: String(passwordData.get("newPassword") || ""),
+    }, profilePasswordStatus, profilePasswordSubmit);
+  });
+  profileLogoutButton?.addEventListener("click", () => void logoutVisitor());
 
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -1528,9 +1701,7 @@
 
     void loadVisitorConversation();
     visitorPollTimer = window.setInterval(() => {
-      if (visitorAccount && visitorConversation && !newConversationMode && !contactWidget.hidden) {
-        void loadVisitorConversation({ quiet: true });
-      }
+      if (visitorAccount && !newConversationMode) void loadVisitorConversation({ quiet: true });
     }, 20_000);
   } else if (contactLauncher) {
     contactLauncher.hidden = true;

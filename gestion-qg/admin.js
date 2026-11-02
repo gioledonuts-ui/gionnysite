@@ -12,6 +12,13 @@
   const SOCIAL_INFO = ["twitch", "tiktok", "youtube", "x", "instagram"];
   const loginPanel = document.querySelector("[data-login-panel]");
   const adminPanel = document.querySelector("[data-admin-panel]");
+  const adminTabs = [...document.querySelectorAll("[data-admin-tab]")];
+  const adminTabPanels = [...document.querySelectorAll("[data-admin-tab-panel]")];
+  const adminTitle = document.querySelector("[data-admin-title]");
+  const membersList = document.querySelector("[data-members-list]");
+  const membersStatus = document.querySelector("[data-members-status]");
+  const membersRefreshButton = document.querySelector("[data-members-refresh]");
+  const membersMoreButton = document.querySelector("[data-members-more]");
   const loginForm = document.querySelector("#login-form");
   const settingsForm = document.querySelector("#settings-form");
   const loginInput = document.querySelector("#admin-password");
@@ -42,6 +49,7 @@
   const conversationEmpty = document.querySelector("[data-conversation-empty]");
   const conversationContent = document.querySelector("[data-conversation-content]");
   const threadPseudo = document.querySelector("[data-thread-pseudo]");
+  const threadHostCrown = document.querySelector("[data-thread-host-crown]");
   const threadStatus = document.querySelector("[data-thread-status]");
   const threadSubject = document.querySelector("[data-thread-subject]");
   const threadMessages = document.querySelector("[data-thread-messages]");
@@ -71,6 +79,11 @@
   let currentConversationStatus = "";
   let selectedConversationLoading = false;
   let adminPollTimer = 0;
+  let activeAdminTab = "settings";
+  let membersLoading = false;
+  let membersCursor = "";
+  let membersHasMore = false;
+  const memberRecords = new Map();
 
   const setStatus = (element, message, kind = "") => {
     if (!element) return;
@@ -324,6 +337,282 @@
     }
   };
 
+  const formatMemberDate = (value) => {
+    const date = typeof value === "string" ? new Date(value) : null;
+    if (!date || !Number.isFinite(date.getTime())) return "Membre pionnier";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  };
+
+  const createHostCrownBadge = (className) => {
+    const badge = document.createElement("span");
+    badge.className = className;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", "Compte Hôte");
+    badge.title = "Compte Hôte";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 20 20");
+    svg.setAttribute("aria-hidden", "true");
+    const crown = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    crown.setAttribute("d", "m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z");
+    const base = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    base.setAttribute("d", "M4 17.2h12");
+    svg.append(crown, base);
+    badge.append(svg);
+    return badge;
+  };
+
+  const createMemberAvatar = () => {
+    const avatar = document.createElement("span");
+    avatar.className = "member-default-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.innerHTML = '<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="19"/><circle cx="20" cy="15" r="6"/><path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3"/></svg>';
+    return avatar;
+  };
+
+  const createMemberItem = (member) => {
+    memberRecords.set(member.id, member);
+    const row = document.createElement("article");
+    row.className = "member-row";
+    row.dataset.memberId = member.id;
+
+    const identity = document.createElement("div");
+    identity.className = "member-row-identity";
+    identity.append(createMemberAvatar());
+    const copy = document.createElement("div");
+    copy.className = "member-row-copy";
+    const nameLine = document.createElement("div");
+    nameLine.className = "member-row-name-line";
+    const pseudo = document.createElement("strong");
+    pseudo.className = "member-row-pseudo";
+    pseudo.textContent = member.pseudo || "Membre";
+    nameLine.append(pseudo);
+    if (member.role === "host") {
+      nameLine.append(createHostCrownBadge("member-row-crown"));
+      const hostBadge = document.createElement("span");
+      hostBadge.className = "member-host-badge";
+      hostBadge.textContent = "Hôte";
+      nameLine.append(hostBadge);
+    }
+    if (member.status === "banned") {
+      const bannedBadge = document.createElement("span");
+      bannedBadge.className = "member-banned-badge";
+      bannedBadge.textContent = "Banni";
+      nameLine.append(bannedBadge);
+    }
+    const joined = document.createElement("span");
+    joined.className = "member-row-date";
+    joined.textContent = formatMemberDate(member.createdAt);
+    copy.append(nameLine, joined);
+    identity.append(copy);
+
+    const actions = document.createElement("div");
+    actions.className = "member-row-actions";
+    const viewButton = document.createElement("button");
+    viewButton.className = "member-action-button member-action-button--view";
+    viewButton.type = "button";
+    viewButton.textContent = "Voir la conversation";
+    viewButton.disabled = !member.conversationId;
+    viewButton.addEventListener("click", () => {
+      if (!member.conversationId) return;
+      setAdminTab("conversations");
+      void selectConversation(member.conversationId, { scroll: true });
+    });
+
+    const roleButton = document.createElement("button");
+    roleButton.className = "member-action-button";
+    roleButton.type = "button";
+    roleButton.textContent = member.role === "host" ? "Retirer Hôte" : "Nommer Hôte";
+    roleButton.addEventListener("click", () => void changeMemberRole(member, roleButton));
+
+    const banButton = document.createElement("button");
+    banButton.className = "member-action-button member-action-button--danger";
+    banButton.type = "button";
+    banButton.textContent = member.status === "banned" ? "Réactiver" : "Bannir";
+    banButton.disabled = member.role === "host";
+    banButton.title = member.role === "host" ? "Retire d’abord le rôle Hôte" : "";
+    banButton.addEventListener("click", () => void changeMemberBan(member, banButton));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "member-action-button member-action-button--delete";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Supprimer";
+    deleteButton.disabled = member.role === "host";
+    deleteButton.title = member.role === "host" ? "Retire d’abord le rôle Hôte" : "";
+    deleteButton.addEventListener("click", () => void removeMember(member, deleteButton));
+
+    actions.append(viewButton, roleButton, banButton, deleteButton);
+    row.append(identity, actions);
+    return row;
+  };
+
+  const loadMembers = async ({ reset = false, quiet = false } = {}) => {
+    if (!membersList || membersLoading) return;
+    if (reset) {
+      membersList.replaceChildren();
+      memberRecords.clear();
+      membersCursor = "";
+      membersHasMore = false;
+      if (membersMoreButton) membersMoreButton.hidden = true;
+    }
+    membersLoading = true;
+    if (membersRefreshButton) membersRefreshButton.disabled = true;
+    if (membersMoreButton) membersMoreButton.disabled = true;
+    if (!quiet) setStatus(membersStatus, "Chargement des membres…");
+    try {
+      const url = new URL("/api/admin-members", window.location.origin);
+      if (membersCursor) url.searchParams.set("cursor", membersCursor);
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(membersStatus, data.error || "Les membres n’ont pas pu être chargés.", "error");
+        return;
+      }
+      const members = Array.isArray(data.members) ? data.members : [];
+      members.forEach((member) => membersList.append(createMemberItem(member)));
+      membersCursor = typeof data.cursor === "string" ? data.cursor : "";
+      membersHasMore = data.hasMore === true && Boolean(membersCursor);
+      if (membersMoreButton) membersMoreButton.hidden = !membersHasMore;
+      const count = membersList.querySelectorAll(".member-row").length;
+      setStatus(membersStatus, count ? `${count} membre${count > 1 ? "s" : ""} affiché${count > 1 ? "s" : ""}.` : "Aucun compte membre pour le moment.");
+    } catch {
+      if (!quiet) setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      membersLoading = false;
+      if (membersRefreshButton) membersRefreshButton.disabled = false;
+      if (membersMoreButton) membersMoreButton.disabled = false;
+    }
+  };
+
+  const performMemberPatch = async (member, action, button) => {
+    if (!member || !button || button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/admin-members", {
+        method: "PATCH",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id: member.id, ...action }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return false;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(membersStatus, data.error || "L’action sur ce membre a échoué.", "error");
+        return false;
+      }
+      await loadMembers({ reset: true, quiet: true });
+      if (member.conversationId && member.conversationId === currentConversationId) {
+        await loadSelectedConversation({ quiet: true });
+      }
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      setStatus(membersStatus, "Modification du membre enregistrée.");
+      return true;
+    } catch {
+      setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+      return false;
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  const changeMemberRole = async (member, button) => {
+    const nextRole = member.role === "host" ? "member" : "host";
+    const confirmation = nextRole === "host"
+      ? `Nommer ${member.pseudo} compte Hôte ? Ce choix remplacera l’unique compte Hôte actuel, s’il y en a un.`
+      : `Retirer le rôle Hôte de ${member.pseudo} ?`;
+    if (!window.confirm(confirmation)) return;
+    await performMemberPatch(member, { role: nextRole }, button);
+  };
+
+  const changeMemberBan = async (member, button) => {
+    const banned = member.status !== "banned";
+    const confirmation = banned
+      ? `Bannir le compte de ${member.pseudo} ? Ses conversations et ses vocaux seront conservés.`
+      : `Réactiver le compte de ${member.pseudo} ?`;
+    if (!window.confirm(confirmation)) return;
+    await performMemberPatch(member, { banned }, button);
+  };
+
+  const removeMember = async (member, button) => {
+    if (!window.confirm(`Supprimer le compte de ${member.pseudo} ? Ses conversations et ses vocaux resteront conservés.`)) return;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/admin-members", {
+        method: "DELETE",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id: member.id }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.deleted !== true) {
+        setStatus(membersStatus, data.error || "Le compte n’a pas pu être supprimé.", "error");
+        return;
+      }
+      memberRecords.delete(member.id);
+      await loadMembers({ reset: true, quiet: true });
+      setStatus(membersStatus, "Compte supprimé. La conversation et les vocaux ont été conservés.");
+    } catch {
+      setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  const setAdminTab = (tabName, { focus = false } = {}) => {
+    const validTab = ["settings", "members", "conversations"].includes(tabName) ? tabName : "settings";
+    activeAdminTab = validTab;
+    const tabTitles = { settings: "Tes réglages", members: "👥 Membres", conversations: "Discussions privées" };
+    adminTabs.forEach((tab) => {
+      const selected = tab.dataset.adminTab === validTab;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      if (focus && selected) tab.focus();
+    });
+    adminTabPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.adminTabPanel !== validTab;
+    });
+    if (adminTitle) adminTitle.textContent = tabTitles[validTab];
+    if (validTab === "members" && !adminPanel.hidden) void loadMembers({ reset: true, quiet: true });
+    if (validTab === "conversations" && !adminPanel.hidden && !conversationsList?.childElementCount) {
+      void loadConversations({ reset: true, quiet: true });
+    }
+  };
+
+  adminTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => setAdminTab(tab.dataset.adminTab));
+    tab.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const nextIndex = event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? adminTabs.length - 1
+          : (index + (event.key === "ArrowRight" ? 1 : adminTabs.length - 1)) % adminTabs.length;
+      setAdminTab(adminTabs[nextIndex]?.dataset.adminTab, { focus: true });
+    });
+  });
+  membersRefreshButton?.addEventListener("click", () => void loadMembers({ reset: true }));
+  membersMoreButton?.addEventListener("click", () => void loadMembers());
+
   const statusLabel = (status) => {
     if (status === "blocked") return "Bloquée";
     if (status === "closed") return "Fermée";
@@ -427,7 +716,11 @@
     status.className = "conversation-list-status";
     status.dataset.state = conversation.status;
     status.textContent = statusLabel(conversation.status);
-    head.append(pseudo, subject, unread, status);
+    head.append(pseudo);
+    if (conversation.isHost) {
+      head.append(createHostCrownBadge("conversation-list-host-crown"));
+    }
+    head.append(subject, unread, status);
 
     const preview = document.createElement("span");
     preview.className = "conversation-list-preview";
@@ -553,6 +846,9 @@
     const name = document.createElement("span");
     name.className = "thread-message-sender";
     name.textContent = sender === "gionny" ? "Gionny" : "Visiteur";
+    if (sender === "visitor" && conversationRecords.get(currentConversationId)?.isHost) {
+      name.append(createHostCrownBadge("thread-message-host-crown"));
+    }
 
     let content;
     if (message.kind === "audio" || message.hasAudio) {
@@ -584,6 +880,7 @@
     conversationEmpty.hidden = true;
     conversationContent.hidden = false;
     threadPseudo.textContent = conversation.pseudo || "Visiteur";
+    if (threadHostCrown) threadHostCrown.hidden = conversation.isHost !== true;
     if (threadSubject) threadSubject.textContent = conversation.subject || "💬 Discussion";
     threadStatus.textContent = statusLabel(conversation.status);
     threadStatus.dataset.state = conversation.status;
@@ -999,6 +1296,7 @@
     adminPollTimer = window.setInterval(() => {
       if (adminPanel.hidden) return;
       void loadConversations({ reset: true, quiet: true });
+      if (activeAdminTab === "members") void loadMembers({ reset: true, quiet: true });
       if (currentConversationId) void loadSelectedConversation({ quiet: true });
     }, 20_000);
   };
@@ -1014,6 +1312,7 @@
   const showAdmin = async () => {
     loginPanel.hidden = true;
     adminPanel.hidden = false;
+    setAdminTab(activeAdminTab);
     setStatus(loginStatus, "");
     setStatus(saveStatus, "");
     await Promise.all([

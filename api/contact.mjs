@@ -13,6 +13,7 @@ import {
   readVisitorConversationCookie,
   registerVisitorAccount,
   saveAccountSessionCookie,
+  updateVisitorAccountProfile,
 } from "../lib/contact-inbox.mjs";
 
 const RATE_WINDOW_MS = 15 * 60 * 1000;
@@ -149,6 +150,10 @@ async function handleAuthentication(request, response, body, action) {
       response.status(409).json({ error: "Ce pseudo a déjà un compte. Essaie de te connecter." });
       return;
     }
+    if (result.reason === "banned") {
+      response.status(403).json({ error: "Ce compte a été désactivé par l’administration." });
+      return;
+    }
     response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
     return;
   }
@@ -162,6 +167,44 @@ async function handleAuthentication(request, response, body, action) {
     messages: state?.messages || [],
     subjects: CONVERSATION_SUBJECTS,
   });
+}
+
+async function handleProfile(request, response, body, sessionToken) {
+  if (!sessionToken) return response.status(401).json({ error: "Connecte-toi pour modifier ton profil." });
+  const retryAfter = isRateLimited(`profile:${getClientKey(request)}`);
+  if (setRateLimitResponse(response, retryAfter)) return;
+  if (!isBlobStorageConfigured()) {
+    return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+  }
+
+  const result = await updateVisitorAccountProfile(sessionToken, {
+    pseudo: Object.hasOwn(body, "pseudo") ? body.pseudo : undefined,
+    currentPassword: typeof body.currentPassword === "string" ? body.currentPassword : "",
+    newPassword: Object.hasOwn(body, "newPassword") ? body.newPassword : "",
+  });
+  if (!result.ok) {
+    if (result.reason === "unauthorized") return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });
+    if (result.reason === "cooldown") {
+      return response.status(409).json({
+        error: `Prochain changement possible dans ${result.daysRemaining} jours.`,
+        daysRemaining: result.daysRemaining,
+        nextUsernameChangeAt: result.nextUsernameChangeAt,
+      });
+    }
+    if (result.reason === "exists") return response.status(409).json({ error: "Ce pseudo est déjà utilisé." });
+    if (result.reason === "pseudo") return response.status(400).json({ error: "Le pseudo doit contenir entre 2 et 32 caractères." });
+    if (result.reason === "password") return response.status(400).json({ error: "Le nouveau mot de passe doit contenir entre 8 et 128 caractères." });
+    if (result.reason === "current_password") return response.status(400).json({ error: "Le mot de passe actuel est incorrect." });
+    if (result.reason === "no_changes") return response.status(400).json({ error: "Aucune modification à enregistrer." });
+    return response.status(400).json({ error: "Le profil n’a pas pu être modifié." });
+  }
+
+  const state = await getAccountConversation(sessionToken);
+  if (!state) {
+    clearAccountSessionCookie(request, response);
+    return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });
+  }
+  return response.status(200).json({ ok: true, ...state, subjects: CONVERSATION_SUBJECTS });
 }
 
 export default async function handler(request, response) {
@@ -232,6 +275,18 @@ export default async function handler(request, response) {
     }
     clearAccountSessionCookie(request, response);
     return response.status(200).json({ ok: true });
+  }
+
+  if (action === "profile") {
+    try {
+      return await handleProfile(request, response, body, sessionToken);
+    } catch (error) {
+      console.error("[contact] account profile update failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+        code: typeof error?.code === "string" ? error.code : undefined,
+      });
+      return response.status(502).json({ error: "Le profil n’a pas pu être enregistré. Réessaie dans un instant." });
+    }
   }
 
   if (action !== "send") return response.status(400).json({ error: "Cette action n’est pas reconnue." });

@@ -67,14 +67,21 @@
         <div class="admin-toolbar">
           <div>
             <p class="admin-eyebrow">ESPACE ADMIN</p>
-            <h2 id="settings-title">Tes réglages</h2>
+            <h2 id="settings-title" data-admin-title>Tes réglages</h2>
           </div>
           <button class="quiet-button" type="button" data-logout>Se déconnecter</button>
         </div>
 
-        <div class="storage-notice" data-storage-notice role="status" aria-live="polite"></div>
+        <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist">
+          <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="true" aria-controls="settings-panel" data-admin-tab="settings">⚙️ Réglages</button>
+          <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1">👥 Membres</button>
+          <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="false" aria-controls="conversations-panel" data-admin-tab="conversations" tabindex="-1">💬 Discussions</button>
+        </nav>
 
-        <form id="settings-form" class="settings-form">
+        <div class="admin-tab-panel" id="settings-panel" role="tabpanel" aria-labelledby="admin-tab-settings" data-admin-tab-panel="settings">
+          <div class="storage-notice" data-storage-notice role="status" aria-live="polite"></div>
+
+          <form id="settings-form" class="settings-form">
           <section class="settings-section" aria-labelledby="socials-title">
             <div class="section-heading">
               <span class="section-number">01</span>
@@ -237,9 +244,25 @@
               <span aria-hidden="true">✓</span>
             </button>
           </div>
-        </form>
+          </form>
+        </div>
 
-        <section class="settings-section inbox-section" aria-labelledby="inbox-title">
+        <section class="settings-section members-section admin-tab-panel" id="members-panel" role="tabpanel" aria-labelledby="admin-tab-members" data-admin-tab-panel="members" hidden>
+          <div class="section-heading members-heading">
+            <span class="section-number">03</span>
+            <div>
+              <h3 id="members-title">Membres</h3>
+              <p>Gère les comptes sans supprimer leurs messages ni leurs vocaux.</p>
+            </div>
+            <button class="quiet-button members-refresh" type="button" data-members-refresh>Actualiser</button>
+          </div>
+          <p class="members-status" data-members-status role="status" aria-live="polite">Chargement des membres…</p>
+          <div class="members-list" data-members-list aria-live="polite"></div>
+          <button class="quiet-button members-more" type="button" data-members-more hidden>Afficher plus de membres</button>
+        </section>
+
+        <div class="admin-tab-panel" id="conversations-panel" role="tabpanel" aria-labelledby="admin-tab-conversations" data-admin-tab-panel="conversations" hidden>
+          <section class="settings-section inbox-section" aria-labelledby="inbox-title">
           <div class="section-heading inbox-heading">
             <span class="section-number">03</span>
             <div>
@@ -303,7 +326,7 @@
               <div class="conversation-content" data-conversation-content hidden>
                 <header class="conversation-toolbar">
                   <div class="conversation-identity">
-                    <h4 data-thread-pseudo>Visiteur</h4>
+                    <h4><span data-thread-pseudo>Visiteur</span><span class="conversation-host-crown" data-thread-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m2.2 6.3 4.1 3.1 3.7-5.6 3.7 5.6 4.1-3.1-1.6 9.2H3.8L2.2 6.3Z"/><path d="M4 17.2h12"/></svg></span></h4>
                     <span class="thread-status" data-thread-status></span>
                     <span class="thread-subject" data-thread-subject></span>
                   </div>
@@ -341,7 +364,8 @@
             <p class="inbox-status" data-inbox-status role="status" aria-live="polite">Chargement des anciens messages…</p>
             <div class="inbox-list" data-inbox-list aria-live="polite"></div>
           </details>
-        </section>
+          </section>
+        </div>
       </section>
 
       <footer class="admin-footer">Modifications du site · visibles par tous après enregistrement</footer>
