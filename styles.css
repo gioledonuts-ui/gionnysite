@@ -1,19 +1,3 @@
-@font-face {
-  font-family: "Space Grotesk";
-  src: url("/assets/fonts/space-grotesk-latin-variable.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Manrope";
-  src: url("/assets/fonts/manrope-latin-variable.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-}
-
 :root {
   color-scheme: dark;
   --page: #07111f;
@@ -31,7 +15,7 @@
   --shell-width: 1480px;
   --pointer-x: 50vw;
   --pointer-y: 42vh;
-  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -92,7 +76,7 @@ body::before {
 body::after {
   background-image: radial-gradient(rgba(207, 226, 255, 0.24) 0.7px, transparent 0.7px);
   background-size: 28px 28px;
-  opacity: 0.12;
+  opacity: 0.06;
   mask-image: linear-gradient(to bottom, black, transparent 88%);
 }
 
@@ -145,10 +129,12 @@ a:focus-visible {
   position: fixed;
   z-index: -1;
   inset: 0;
-  background-image: linear-gradient(rgba(178, 211, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(178, 211, 255, 0.03) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(ellipse at 55% 48%, black, transparent 78%);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 0%, rgba(0, 0, 0, 0.64) 58%, transparent 100%);
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 0%, rgba(0, 0, 0, 0.64) 58%, transparent 100%);
+  opacity: 0.9;
   pointer-events: none;
 }
 
@@ -196,7 +182,7 @@ a:focus-visible {
   display: block;
   min-width: max-content;
   color: var(--coral);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.055em;
@@ -424,7 +410,7 @@ a:focus-visible {
   margin: 0;
   padding-block: 0.04em;
   color: var(--text);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(3.8rem, 6.4vw, 5.95rem);
   font-weight: 700;
   letter-spacing: -0.085em;
@@ -550,7 +536,7 @@ a:focus-visible {
 }
 
 .discord-copy strong {
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.035em;
@@ -680,7 +666,7 @@ a:focus-visible {
 .schedule-copy h2 {
   margin: 0;
   color: var(--text);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -699,7 +685,7 @@ a:focus-visible {
   align-items: baseline;
   gap: 2px;
   color: var(--ice);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.06em;
@@ -772,7 +758,7 @@ a:focus-visible {
 .networks-heading h2 {
   margin: 0;
   color: var(--text);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(1.55rem, 2.5vw, 2rem);
   font-weight: 700;
   letter-spacing: -0.06em;
@@ -984,7 +970,7 @@ a:focus-visible {
   background: #ff2638;
   box-shadow: 0 0 17px rgba(255, 38, 56, 0.4);
   color: #fff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 11px;
   font-weight: 800;
   line-height: 1;
@@ -1061,7 +1047,7 @@ a:focus-visible {
 .network-copy strong {
   overflow: hidden;
   color: var(--text);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.035em;
@@ -1959,7 +1945,7 @@ body {
   border-radius: 999px;
   background: rgba(63, 126, 227, 0.15);
   color: #c7eaff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.015em;
@@ -4180,6 +4166,9 @@ body {
 
 /* Blue creator palette and a single, full-width headline rail. */
 .site-header {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
   min-height: 64px;
   grid-template-columns: clamp(154px, 13vw, 190px) minmax(0, 1fr);
   gap: 0;
@@ -4193,6 +4182,7 @@ body {
 
 .ticker-label {
   position: relative;
+  z-index: 1;
   min-width: 0;
   min-height: 50px;
   justify-content: center;
@@ -4208,6 +4198,7 @@ body {
 }
 
 .ticker-label::before {
+  display: none;
   position: absolute;
   top: 10px;
   bottom: 10px;
@@ -4372,7 +4363,7 @@ body {
 
 .schedule-days .schedule-day-time {
   color: var(--ice);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 0.92em;
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -4582,7 +4573,7 @@ body {
 
 .about-dialog-kicker {
   color: var(--ice);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.13em;
@@ -4622,7 +4613,7 @@ body {
   border-radius: 19px;
   background: linear-gradient(145deg, rgba(79, 131, 244, 0.25), rgba(114, 214, 255, 0.1));
   color: var(--ice);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 29px;
   font-weight: 700;
   box-shadow: 0 12px 32px rgba(42, 107, 225, 0.19);
@@ -4631,7 +4622,7 @@ body {
 .about-dialog h2 {
   margin: 18px 0 0;
   color: #f1f7ff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(24px, 6vw, 30px);
   font-weight: 700;
   letter-spacing: -0.055em;
@@ -4853,7 +4844,7 @@ body {
 
 .contact-dialog-kicker {
   color: var(--ice);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -4887,7 +4878,7 @@ body {
 .contact-dialog h2 {
   margin: 16px 0 0;
   color: #f1f7ff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(25px, 6vw, 31px);
   font-weight: 700;
   letter-spacing: -0.055em;
@@ -5065,7 +5056,6 @@ body {
 
 /* Slow, one-way diagonal gloss on the main glass panels and social cards. */
 .welcome-panel::after,
-.networks-panel::after,
 .schedule-card::after {
   position: absolute;
   z-index: -1;
@@ -5179,10 +5169,8 @@ body {
 
 @media (hover: hover) and (pointer: fine) {
   .welcome-panel:hover::after,
-  .networks-panel:hover::after,
   .schedule-card:hover::after,
   .welcome-panel:focus-within::after,
-  .networks-panel:focus-within::after,
   .schedule-card:focus-within::after {
     animation: diagonal-panel-shine 1.8s cubic-bezier(0.42, 0, 0.58, 1) 1 both;
   }
@@ -5198,7 +5186,6 @@ body {
   }
 
   .welcome-panel:hover,
-  .networks-panel:hover,
   .schedule-card:hover {
     border-color: rgba(144, 203, 255, 0.43);
     box-shadow: 0 24px 70px rgba(24, 77, 150, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.07);
@@ -5207,7 +5194,6 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .welcome-panel::after,
-  .networks-panel::after,
   .schedule-card::after,
   .network-card::after,
   .profile-frame::after {
@@ -5291,7 +5277,7 @@ body {
 .contact-widget h2 {
   margin: 13px 0 0;
   color: #f1f7ff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(23px, 5vw, 29px);
   font-weight: 700;
   letter-spacing: -0.055em;
@@ -6281,7 +6267,7 @@ body.contact-page-open {
 
 .member-bar-title {
   color: #a9ceff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 8px;
   font-weight: 850;
   letter-spacing: 0.14em;
@@ -6506,7 +6492,7 @@ body.contact-page-open {
   align-items: center;
   gap: 8px;
   color: #fff;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: clamp(23px, 2.4vw, 30px);
   font-weight: 800;
   letter-spacing: 0.015em;
@@ -6596,7 +6582,7 @@ body.contact-page-open {
 
 .discord-invite {
   color: rgba(237, 245, 255, 0.84);
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.025em;
@@ -7221,5 +7207,406 @@ body.contact-page-open {
     min-height: 36px;
     padding-inline: 13px;
     font-size: 10px;
+  }
+}
+
+/* Global scroll lock while a custom or native modal is open. */
+body.page-scroll-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
+body.page-scroll-locked > :not(dialog):not(.contact-widget):not(.contact-scrim) {
+  pointer-events: none;
+  touch-action: none;
+}
+
+body.page-scroll-locked > .contact-scrim {
+  pointer-events: auto;
+  touch-action: none;
+}
+
+body.page-scroll-locked > .contact-widget {
+  pointer-events: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+.contact-widget,
+.contact-widget .contact-dialog-card,
+.contact-thread-messages,
+.contact-dialog-card {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.about-dialog {
+  max-height: min(90vh, 720px);
+  max-height: min(90dvh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.legal-dialog {
+  width: min(590px, calc(100vw - 28px));
+  max-width: none;
+  max-height: min(88vh, 760px);
+  max-height: min(88dvh, 760px);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(137, 190, 255, 0.3);
+  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(18, 38, 66, 0.99), rgba(8, 18, 32, 0.995));
+  box-shadow: 0 32px 100px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.legal-dialog[open] {
+  animation: about-modal-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.legal-dialog::backdrop {
+  background: rgba(2, 7, 16, 0.76);
+  backdrop-filter: blur(10px) saturate(0.78);
+}
+
+.legal-dialog-card {
+  display: flex;
+  min-height: 0;
+  max-height: inherit;
+  flex-direction: column;
+  padding: clamp(18px, 4vw, 28px);
+}
+
+.legal-dialog-topline {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.legal-dialog-kicker {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ice);
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.legal-dialog h2 {
+  max-width: 430px;
+  margin: 0;
+  color: #f1f7ff;
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(22px, 5vw, 29px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+.legal-dialog-close {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(225, 238, 255, 0.16);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.055);
+  color: #e9f5ff;
+  cursor: pointer;
+}
+
+.legal-dialog-close span {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.legal-dialog-content {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: 11px;
+  margin: 17px -5px 13px 0;
+  padding: 0 7px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scrollbar-color: rgba(114, 214, 255, 0.42) rgba(255, 255, 255, 0.06);
+  scrollbar-width: thin;
+}
+
+.legal-dialog-content section {
+  padding: 13px 14px;
+  border: 1px solid rgba(183, 210, 249, 0.13);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.legal-dialog-content h3 {
+  margin: 0 0 5px;
+  color: #f1f7ff;
+  font-family: "Outfit", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.legal-dialog-content p {
+  margin: 0;
+  color: #b9c9df;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.legal-dialog-content a {
+  color: #9ddfff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-dialog-done {
+  min-height: 40px;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(105deg, #4f83f4, #72b8ff);
+  color: #07111f;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.legal-dialog-close:hover,
+.legal-dialog-done:hover {
+  filter: brightness(1.1);
+}
+
+.site-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin-top: auto;
+  padding: 15px 0 calc(80px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(151, 192, 243, 0.13);
+  color: #9fb2ca;
+}
+
+.site-footer-brand p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.site-footer-copyright {
+  color: #d9e5f5;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.site-footer-tagline {
+  margin-top: 2px !important;
+  color: #8399b4;
+  font-size: 9px;
+}
+
+.site-footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.site-footer-nav a,
+.site-footer-admin {
+  transition: color 150ms ease;
+}
+
+.site-footer-nav a:hover,
+.site-footer-nav a:focus-visible,
+.site-footer-admin:hover,
+.site-footer-admin:focus-visible {
+  color: #c7eaff;
+}
+
+.site-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 13px;
+  font-size: 9px;
+}
+
+.site-footer-legal-button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(151, 192, 243, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #c9d8eb;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+
+.site-footer-legal-button:hover,
+.site-footer-legal-button:focus-visible {
+  border-color: rgba(114, 214, 255, 0.42);
+  background: rgba(79, 131, 244, 0.11);
+  color: #fff;
+}
+
+.site-footer-admin {
+  color: #7288a4;
+  font-size: 9px;
+}
+
+.discord-community-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.discord-online-copy {
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.discord-online-copy [data-discord-online-count] {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Outfit for headings and social names, Inter for copy, JetBrains Mono for counters. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.welcome-panel h1,
+.networks-heading h2,
+.schedule-copy h2,
+.about-dialog h2,
+.contact-widget h2,
+.legal-dialog h2 {
+  font-family: "Outfit", sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.welcome-actions .discord-overline {
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(16px, 1.65vw, 21px);
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.welcome-actions .discord-copy strong {
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+.network-copy strong {
+  font-family: "Outfit", sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.schedule-time,
+.schedule-countdown strong,
+.youtube-count-badge,
+.discord-member-count,
+.contact-voice-timer {
+  font-family: "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-time {
+  letter-spacing: -0.07em;
+}
+
+.site-header {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.ticker-label::before {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .welcome-actions .discord-overline {
+    font-size: clamp(14px, 4.5vw, 18px);
+  }
+
+  .welcome-actions .discord-copy strong {
+    font-size: clamp(28px, 8vw, 34px);
+  }
+}
+
+@media (max-width: 760px) {
+  .site-footer {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    gap: 10px;
+    padding-top: 13px;
+  }
+
+  .site-footer-nav {
+    justify-content: flex-start;
+    gap: 7px 14px;
+  }
+
+  .site-footer-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-footer-nav {
+    column-gap: 11px;
+    font-size: 9px;
+  }
+
+  .site-footer-copyright {
+    font-size: 9px;
+  }
+
+  .site-footer-tagline {
+    font-size: 8px;
+  }
+
+  .legal-dialog-content p {
+    font-size: 11px;
   }
 }

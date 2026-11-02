@@ -1,4 +1,78 @@
 (() => {
+  const pageScrollLockOwners = new Set();
+  let savedPageScrollStyles = null;
+
+  const lockBackgroundScroll = (owner) => {
+    if (!owner || pageScrollLockOwners.has(owner)) return;
+
+    const body = document.body;
+    const root = document.documentElement;
+    if (!body || !root) return;
+
+    if (pageScrollLockOwners.size === 0) {
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+      const scrollbarWidth = Math.max(0, window.innerWidth - root.clientWidth);
+      const bodyPaddingRight = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
+      savedPageScrollStyles = {
+        scrollX,
+        scrollY,
+        body: {
+          overflow: body.style.overflow,
+          position: body.style.position,
+          top: body.style.top,
+          left: body.style.left,
+          right: body.style.right,
+          width: body.style.width,
+          paddingRight: body.style.paddingRight,
+        },
+        rootOverflow: root.style.overflow,
+        bodyPaddingRight,
+      };
+
+      root.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+      body.style.position = "fixed";
+      body.style.top = `${-scrollY}px`;
+      body.style.left = `${-scrollX}px`;
+      body.style.right = "0";
+      body.style.width = "100%";
+      if (scrollbarWidth > 0) {
+        body.style.paddingRight = `${bodyPaddingRight + scrollbarWidth}px`;
+      }
+      body.classList.add("page-scroll-locked");
+    }
+
+    pageScrollLockOwners.add(owner);
+  };
+
+  const unlockBackgroundScroll = (owner) => {
+    if (!owner || !pageScrollLockOwners.delete(owner) || pageScrollLockOwners.size > 0) return;
+
+    const body = document.body;
+    const root = document.documentElement;
+    const saved = savedPageScrollStyles;
+    savedPageScrollStyles = null;
+    if (!body || !root || !saved) return;
+
+    body.classList.remove("page-scroll-locked");
+    body.style.overflow = saved.body.overflow;
+    body.style.position = saved.body.position;
+    body.style.top = saved.body.top;
+    body.style.left = saved.body.left;
+    body.style.right = saved.body.right;
+    body.style.width = saved.body.width;
+    body.style.paddingRight = saved.body.paddingRight;
+    root.style.overflow = saved.rootOverflow;
+
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+    window.scrollTo(saved.scrollX, saved.scrollY);
+    window.requestAnimationFrame(() => {
+      root.style.scrollBehavior = previousScrollBehavior;
+    });
+  };
+
   const storageKey = "gionny:visited-links:v1";
   const youtubeSeenKey = "gionny:youtube:last-seen:v1";
   const links = [...document.querySelectorAll("[data-network]")];
@@ -666,9 +740,11 @@
   if (profileTrigger && aboutDialog?.showModal) {
     profileTrigger.setAttribute("aria-expanded", "false");
     profileTrigger.addEventListener("click", () => {
+      if (aboutDialog.open) return;
       aboutDialog.showModal();
+      lockBackgroundScroll("about-dialog");
       profileTrigger.setAttribute("aria-expanded", "true");
-      aboutDialog.querySelector("[data-close-about]")?.focus();
+      aboutDialog.querySelector("[data-close-about]")?.focus({ preventScroll: true });
     });
     closeAboutButtons.forEach((button) => {
       button.addEventListener("click", () => aboutDialog.close());
@@ -677,8 +753,34 @@
       if (event.target === aboutDialog) aboutDialog.close();
     });
     aboutDialog.addEventListener("close", () => {
+      unlockBackgroundScroll("about-dialog");
       profileTrigger.setAttribute("aria-expanded", "false");
       profileTrigger.focus({ preventScroll: true });
+    });
+  }
+
+  const legalDialog = document.querySelector("[data-legal-dialog]");
+  const openLegalButton = document.querySelector("[data-open-legal]");
+  const closeLegalButtons = legalDialog?.querySelectorAll("[data-close-legal]") || [];
+  if (openLegalButton && legalDialog?.showModal) {
+    openLegalButton.setAttribute("aria-expanded", "false");
+    openLegalButton.addEventListener("click", () => {
+      if (legalDialog.open) return;
+      legalDialog.showModal();
+      lockBackgroundScroll("legal-dialog");
+      openLegalButton.setAttribute("aria-expanded", "true");
+      legalDialog.querySelector("[data-close-legal]")?.focus({ preventScroll: true });
+    });
+    closeLegalButtons.forEach((button) => {
+      button.addEventListener("click", () => legalDialog.close());
+    });
+    legalDialog.addEventListener("click", (event) => {
+      if (event.target === legalDialog) legalDialog.close();
+    });
+    legalDialog.addEventListener("close", () => {
+      unlockBackgroundScroll("legal-dialog");
+      openLegalButton.setAttribute("aria-expanded", "false");
+      openLegalButton.focus({ preventScroll: true });
     });
   }
 
@@ -931,6 +1033,7 @@
     contactWidget.hidden = false;
     if (contactScrim) contactScrim.hidden = false;
     document.body.classList.add("contact-page-open");
+    lockBackgroundScroll("contact-widget");
     contactLauncher?.setAttribute("aria-expanded", "true");
     if (contactBadge) contactBadge.hidden = true;
     if (visitorConversation && !newConversationMode) {
@@ -950,6 +1053,7 @@
     contactWidget.hidden = true;
     if (contactScrim) contactScrim.hidden = true;
     document.body.classList.remove("contact-page-open");
+    unlockBackgroundScroll("contact-widget");
     contactLauncher?.setAttribute("aria-expanded", "false");
     contactLauncher?.focus({ preventScroll: true });
     if (visitorConversation && !newConversationMode) renderVisitorConversation({ announceNewReply: true });

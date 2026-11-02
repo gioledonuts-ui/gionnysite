@@ -17,19 +17,11 @@
     <title>QG2GIONNY</title>
     <link rel="icon" href="/assets/gionny-profile.jpg" type="image/jpeg" />
     <link rel="apple-touch-icon" href="/assets/gionny-profile.jpg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="preload"
-      href="/assets/fonts/space-grotesk-latin-variable.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/assets/fonts/manrope-latin-variable.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
     <script>
@@ -45,7 +37,7 @@
 
     <a class="skip-link" href="#main">Aller au contenu</a>
 
-    <div class="site-shell">
+    <div class="site-shell" id="top">
       <header class="site-header">
         <span class="ticker-label" aria-hidden="true">À LA UNE</span>
         <div
@@ -199,10 +191,17 @@
               </span>
               <span class="discord-content">
                 <span class="discord-topline">
-                  <span class="discord-community-pill"><span aria-hidden="true">👥</span> LA COMMU</span>
+                  <span class="discord-community-pill">
+                    <svg class="discord-community-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="10" cy="7" r="4" />
+                      <path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    LA COMMU
+                  </span>
                   <span class="discord-online-badge" data-discord-online hidden>
                     <span class="discord-online-dot" aria-hidden="true"></span>
-                    <span data-discord-online-count>0</span> en ligne
+                    <span class="discord-online-copy"><span data-discord-online-count>0</span> en ligne</span>
                   </span>
                 </span>
                 <span class="discord-copy">
@@ -304,7 +303,7 @@
                   </svg>
                 </span>
                 <span class="network-copy">
-                  <strong>Twitch</strong>
+                  <strong>TWITCH</strong>
                   <span>@7gionny</span>
                   <span class="network-info" data-social-info="twitch" hidden></span>
                   <span class="stream-title" data-stream-title hidden></span>
@@ -347,7 +346,7 @@
                   </span>
                 </span>
                 <span class="network-copy">
-                  <strong>TikTok</strong>
+                  <strong>TIKTOK</strong>
                   <span>@gio_nny</span>
                   <span class="network-info" data-social-info="tiktok" hidden></span>
                 </span>
@@ -382,7 +381,7 @@
                   </span>
                 </span>
                 <span class="network-copy">
-                  <strong>YouTube</strong>
+                  <strong>YOUTUBE</strong>
                   <span>@gionnyyy</span>
                   <span class="network-info" data-social-info="youtube" hidden></span>
                 </span>
@@ -450,7 +449,7 @@
                   </span>
                 </span>
                 <span class="network-copy">
-                  <strong>Instagram</strong>
+                  <strong>INSTAGRAM</strong>
                   <span>@nny_gio</span>
                   <span class="network-info" data-social-info="instagram" hidden></span>
                 </span>
@@ -466,6 +465,38 @@
 
         </section>
       </main>
+      <footer class="site-footer" aria-label="Pied de page">
+        <div class="site-footer-brand">
+          <p class="site-footer-copyright">Le QG de Gionny © 2025 — Tous droits réservés.</p>
+          <p class="site-footer-tagline">La commu, les lives et les meilleurs moments.</p>
+        </div>
+        <nav class="site-footer-nav" aria-label="Liens rapides">
+          <a href="#top">Haut de page</a>
+          <a
+            href="https://discord.gg/nPACfBTnPx"
+            data-config-link="discord"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Rejoindre le Discord</a>
+          <a
+            href="https://www.twitch.tv/7gionny"
+            data-config-link="twitch"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Twitch</a>
+        </nav>
+        <div class="site-footer-actions">
+          <button
+            class="site-footer-legal-button"
+            type="button"
+            data-open-legal
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="legal-dialog"
+          >Mentions légales &amp; Confidentialité</button>
+          <a class="site-footer-admin" href="/gestion-qg/">Accès Admin</a>
+        </div>
+      </footer>
     </div>
 
     <div class="contact-scrim" data-contact-scrim hidden aria-hidden="true"></div>
@@ -630,6 +661,53 @@
         <h2 id="about-dialog-title">Qui suis-je ?</h2>
         <p id="about-dialog-copy">Attends frérot, je me présente bientôt.</p>
         <button class="about-dialog-done" type="button" data-close-about>Ça marche</button>
+      </div>
+    </dialog>
+
+    <dialog
+      class="legal-dialog"
+      id="legal-dialog"
+      aria-labelledby="legal-dialog-title"
+      aria-describedby="legal-dialog-copy"
+      data-legal-dialog
+    >
+      <div class="legal-dialog-card">
+        <div class="legal-dialog-topline">
+          <div>
+            <span class="legal-dialog-kicker">INFORMATIONS DU QG</span>
+            <h2 id="legal-dialog-title">Mentions légales &amp; Confidentialité</h2>
+          </div>
+          <button class="legal-dialog-close" type="button" data-close-legal aria-label="Fermer les mentions légales">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="legal-dialog-content" id="legal-dialog-copy" tabindex="0">
+          <section>
+            <h3>Hébergement</h3>
+            <p>
+              Le site et ses fonctions serveur sont hébergés par Vercel, Inc., via la plateforme
+              <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">Vercel</a>.
+            </p>
+          </section>
+          <section>
+            <h3>Cookies de session</h3>
+            <p>
+              Les espaces membre et Admin utilisent des cookies techniques lorsque tu te connectes.
+              Ils sont nécessaires au maintien de ta session, protégés par les attributs HttpOnly et
+              SameSite=Strict, et marqués Secure lorsque le site est servi en HTTPS. Ils ne servent
+              pas au ciblage publicitaire.
+            </p>
+          </section>
+          <section>
+            <h3>Messagerie privée</h3>
+            <p>
+              Le pseudo, les messages et les vocaux que tu envoies sont utilisés pour faire
+              fonctionner ta discussion privée avec Gionny. Pour toute question à leur sujet,
+              écris-moi depuis le bouton « Écris-moi » du site.
+            </p>
+          </section>
+        </div>
+        <button class="legal-dialog-done" type="button" data-close-legal>Fermer</button>
       </div>
     </dialog>
   </body>
