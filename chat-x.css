@@ -527,6 +527,29 @@
    6.e Bouton flottant : position verrouillée + icône SVG centrée
    -------------------------------------------------------------------------- */
 
+.contact-launcher .contact-launcher-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  display: none;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding: 0 4px;
+  border: 2px solid #091426;
+  border-radius: 999px;
+  background: #f04458;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.contact-launcher .contact-launcher-badge:not([hidden]) {
+  display: grid;
+}
+
 .contact-launcher {
   position: fixed;
   right: 20px;
@@ -574,7 +597,20 @@
   fill: none;
 }
 
-.contact-launcher .contact-launcher-label {
+/* The launcher is a round icon button: never a wide pill with a label. */
+.contact-launcher,
+.contact-launcher[data-has-messages="true"] {
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  min-height: 56px;
+  max-width: 56px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.contact-launcher .contact-launcher-label,
+.contact-launcher[data-has-messages="true"] .contact-launcher-label {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -582,23 +618,6 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.contact-launcher[data-has-messages="true"] {
-  width: 56px;
-  min-width: 56px;
-  height: 56px;
-  min-height: 56px;
-  padding: 0;
-  border-radius: 50%;
-}
-
-.contact-launcher[data-has-messages="true"] .contact-launcher-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 
 @media (max-width: 520px) {

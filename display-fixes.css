@@ -498,6 +498,37 @@ body.contact-page-open {
    -------------------------------------------------------------------------- */
 
 /* @7gionny sits directly under the white action button, aligned left. */
+
+/* Mobile: the handle really sits under the button (overrides earlier layers). */
+@media (max-width: 940px) {
+  .creator-carousel .creator-slide-footer.discord-footer,
+  .creator-carousel .creator-slide .discord-footer,
+  .creator-slide .discord-footer {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 5px;
+    margin-top: 6px;
+  }
+
+  .creator-carousel .discord-action {
+    width: auto;
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+
+  .creator-carousel .creator-slide-footer .discord-community-meta,
+  .creator-carousel .discord-footer .discord-community-meta {
+    width: auto;
+    max-width: 100%;
+    justify-items: start;
+    padding: 0;
+    text-align: left;
+  }
+}
 .creator-carousel .creator-slide-footer.discord-footer,
 .creator-carousel .discord-footer {
   display: flex;
@@ -592,6 +623,22 @@ body.contact-page-open {
 
   .creator-carousel .creator-slide-topline .discord-online-copy {
     font-size: 8px;
+  }
+}
+
+/* Mobile: never split @handle across lines. */
+@media (max-width: 940px) {
+  .creator-carousel .creator-slide-footer .discord-community-meta,
+  .creator-carousel .discord-footer .discord-community-meta {
+    overflow: visible;
+    white-space: nowrap;
+  }
+
+  .creator-carousel .discord-footer .discord-invite,
+  .creator-carousel .discord-footer .discord-member-count {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: nowrap;
   }
 }
 
@@ -1007,9 +1054,28 @@ body.contact-page-open {
 }
 
 .schedule-card--refresh .schedule-countdown-separator {
+  display: inline-flex;
+  width: 6px;
+  flex: 0 0 6px;
+  align-items: center;
+  justify-content: center;
   color: rgba(125, 211, 252, 0.55);
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
+}
+
+/* The three blocks read as [ 23H ] : [ 31M ] : [ 03S ] — equal width, no wrap. */
+.schedule-card--refresh .schedule-countdown-value {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-countdown-unit {
+  min-width: 46px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .schedule-card--refresh .schedule-countdown-value[data-empty="true"] {
@@ -1157,7 +1223,16 @@ body.contact-page-open {
   }
 
   .schedule-card--refresh .schedule-countdown-unit {
-    font-size: 10px;
+    min-width: 40px;
     padding: 2px 5px;
+    font-size: 10px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-value {
+    gap: 3px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    font-size: 8px;
   }
 }
