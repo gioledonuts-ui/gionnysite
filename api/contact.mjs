@@ -7,7 +7,10 @@ import {
   clearVisitorAccountSession,
   CONVERSATION_SUBJECTS,
   getAccountConversation,
+  getVisitorAccountFromSession,
   isConversationSubject,
+  isHostPseudoName,
+  loginHostAccount,
   loginVisitorAccount,
   markAccountConversationRead,
   readAccountSessionCookie,
@@ -131,19 +134,49 @@ function threadError(reason) {
 async function handleAuthentication(request, response, body, action) {
   const retryAfter = isRateLimited(`auth:${getClientKey(request)}`);
   if (setRateLimitResponse(response, retryAfter)) return;
+
+  const pseudo = typeof body.pseudo === "string" ? body.pseudo.trim() : "";
+  const password = typeof body.password === "string" ? body.password : "";
+  const credentials = {
+    pseudo,
+    password,
+    legacyCookieValue: readVisitorConversationCookie(request),
+  };
+
   if (!isBlobStorageConfigured()) {
-    response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+    // Without a Blob store only the owner account can be authenticated: it
+    // lives in RAM, so a cold start or a quota outage never locks it out.
+    if (!isHostPseudoName(pseudo)) {
+      response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
+      return;
+    }
+    const hostResult = await loginHostAccount({ password, legacyCookieValue: credentials.legacyCookieValue });
+    if (!hostResult?.ok) {
+      response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
+      return;
+    }
+    saveAccountSessionCookie(request, response, hostResult.sessionToken);
+    response.status(200).json({
+      ok: true,
+      account: hostResult.account,
+      conversation: null,
+      messages: [],
+      subjects: CONVERSATION_SUBJECTS,
+    });
     return;
   }
 
-  const credentials = {
-    pseudo: typeof body.pseudo === "string" ? body.pseudo.trim() : "",
-    password: typeof body.password === "string" ? body.password : "",
-    legacyCookieValue: readVisitorConversationCookie(request),
-  };
-  const result = action === "register"
-    ? await registerVisitorAccount(credentials)
-    : await loginVisitorAccount(credentials);
+  let result;
+  try {
+    result = action === "register"
+      ? await registerVisitorAccount(credentials)
+      : await loginVisitorAccount(credentials);
+  } catch (error) {
+    // The owner must never stay locked out, even if the account layer throws.
+    if (!isHostPseudoName(pseudo)) throw error;
+    result = await loginHostAccount({ password, legacyCookieValue: credentials.legacyCookieValue }).catch(() => null);
+    if (!result) throw error;
+  }
 
   if (!result.ok) {
     if (result.reason === "pseudo") {
@@ -167,13 +200,19 @@ async function handleAuthentication(request, response, body, action) {
   }
 
   saveAccountSessionCookie(request, response, result.sessionToken);
-  const state = await getAccountConversation(result.sessionToken);
+  let state = null;
+  try {
+    state = await getAccountConversation(result.sessionToken);
+  } catch {
+    state = null;
+  }
   response.status(action === "register" ? 201 : 200).json({
     ok: true,
     account: state?.account || result.account,
     conversation: state?.conversation || null,
     messages: state?.messages || [],
     subjects: CONVERSATION_SUBJECTS,
+    ...(result.recovered ? { recovered: true, notice: "Ton compte a été restauré sur ce serveur. Tu es connecté." } : {}),
   });
 }
 
@@ -185,11 +224,16 @@ async function handleProfile(request, response, body, sessionToken) {
     return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
   }
 
+  const sessionAccount = await getVisitorAccountFromSession(sessionToken).catch(() => null);
+  const viewerIsHost = sessionAccount?.role === "host";
   const result = await updateVisitorAccountProfile(sessionToken, {
     pseudo: Object.hasOwn(body, "pseudo") ? body.pseudo : undefined,
+    // The owner can always set a new password, even after the RAM state (and
+    // therefore the previous password) was lost.
     currentPassword: typeof body.currentPassword === "string" ? body.currentPassword : "",
     newPassword: Object.hasOwn(body, "newPassword") ? body.newPassword : "",
     avatarData: Object.hasOwn(body, "avatarData") ? body.avatarData : undefined,
+    ...(viewerIsHost ? { hostOverride: true } : {}),
   });
   if (!result.ok) {
     if (result.reason === "unauthorized") return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });

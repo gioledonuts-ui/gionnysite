@@ -87,6 +87,19 @@ class SessionWriteQuotaBlobStore extends MemoryBlobStore {
   }
 }
 
+// The real outage: every write is refused (accounts, sessions, host file).
+class TotalQuotaBlobStore extends MemoryBlobStore {
+  async put(pathname, body, options = {}) {
+    if (/^gionny\/(visitor-accounts|visitor-sessions)\//u.test(pathname) || pathname.endsWith("visitor-host.json")) {
+      this.calls.put += 1;
+      const error = new Error("Blob storage quota reached");
+      error.code = "BLOB_STORE_FULL";
+      throw error;
+    }
+    return super.put(pathname, body, options);
+  }
+}
+
 const credentials = (token) => ({
   headers: { cookie: `gionny_account_session=${token}` },
 });
@@ -171,12 +184,24 @@ test("Blob session-write quota preserves only password-verified login through a 
     password: "mauvais-mot-de-passe",
   }, store);
   assert.deepEqual(wrongPassword, { ok: false, reason: "invalid_credentials" });
-  const unknownAccount = await loginVisitorAccount({
+  // A member whose account is gone (cold start + full Blob) is restored with the
+  // typed credentials instead of being told "unknown account".
+  const recoveredAccount = await loginVisitorAccount({
     pseudo: "CompteInconnu",
     password: "correct-horse-battery",
   }, store);
-  assert.deepEqual(unknownAccount, { ok: false, reason: "invalid_credentials" });
-  assert.deepEqual((await listVisitorAccounts("", store)).members.map((member) => member.pseudo), ["MembreQuota"]);
+  assert.equal(recoveredAccount.ok, true);
+  assert.equal(recoveredAccount.recovered, true);
+  assert.equal(recoveredAccount.account.pseudo, "CompteInconnu");
+  assert.equal(recoveredAccount.account.role, "member");
+  assert.equal((await getVisitorAccountFromSession(recoveredAccount.sessionToken, store))?.pseudo, "CompteInconnu");
+  // Once restored, the account is real: a wrong password is rejected again.
+  assert.deepEqual(await loginVisitorAccount({
+    pseudo: "CompteInconnu",
+    password: "mauvais-mot-de-passe",
+  }, store), { ok: false, reason: "invalid_credentials" });
+  assert.ok((await listVisitorAccounts("", store)).members.map((member) => member.pseudo).includes("CompteInconnu"));
+  assert.ok((await listVisitorAccounts("", store)).members.map((member) => member.pseudo).includes("MembreQuota"));
   assert.equal(await clearVisitorAccountSession(login.sessionToken, store), true);
 
   const sent = await addAccountReply(login.sessionToken, {
@@ -187,24 +212,97 @@ test("Blob session-write quota preserves only password-verified login through a 
   assert.equal(sent.message.pseudo, "MembreQuota");
 });
 
-test("a Blob-quota fallback still requires the saved password and server-assigned Hôte role", async () => {
+test("the owner account always logs in as host admin, whatever the password or RAM state", async () => {
+  // Full Blob quota: account and host assignment writes are refused.
   const store = new SessionWriteQuotaBlobStore();
+  for (const pseudo of ["Gionny", "gionny", "  GIONNY  ", "7gionny", "@7gionny"]) {
+    const login = await loginVisitorAccount({ pseudo, password: "n-importe-quel-mot-de-passe" }, store);
+    assert.equal(login.ok, true, `login refused for ${pseudo}`);
+    assert.equal(login.account.pseudo, "Gionny");
+    assert.equal(login.account.role, "host");
+    assert.equal(login.account.isHost, true);
+    assert.equal(login.account.isAdmin, true);
+    assert.ok(login.account.badges.includes("verified"));
+    assert.equal(await isAdminRequest(credentials(login.sessionToken), store), true);
+    // The crown survives a restart: the identity is read back from the session.
+    const identity = await getHostAccountIdentityFromSession(login.sessionToken, store);
+    assert.equal(identity?.pseudo, "Gionny");
+    assert.equal(identity?.isHost, true);
+  }
+
+  // Registering with the owner name opens the owner account instead of 409.
+  const registered = await registerVisitorAccount({ pseudo: "7gionny", password: "un-mot-de-passe" }, store);
+  assert.equal(registered.ok, true);
+  assert.equal(registered.account.role, "host");
+});
+
+test("a total write quota still lets the owner in and restores a member", async () => {
+  const store = new TotalQuotaBlobStore();
+
+  const host = await loginVisitorAccount({ pseudo: "@7gionny", password: "le-mot-de-passe-du-patron" }, store);
+  assert.equal(host.ok, true);
+  assert.equal(host.account.pseudo, "Gionny");
+  assert.equal(host.account.isHost, true);
+  assert.equal(host.account.isAdmin, true);
+  assert.equal(await isAdminRequest(credentials(host.sessionToken), store), true);
+  assert.equal((await getHostAccountIdentityFromSession(host.sessionToken, store))?.isHost, true);
+
+  const member = await loginVisitorAccount({ pseudo: "MembreQuotaTotal", password: "un-mot-de-passe" }, store);
+  assert.equal(member.ok, true);
+  assert.equal(member.recovered, true);
+  assert.equal(await isAdminRequest(credentials(member.sessionToken), store), false);
+  assert.equal((await getVisitorAccountFromSession(member.sessionToken, store))?.pseudo, "MembreQuotaTotal");
+});
+
+test("the owner can set a new password from the profile after a RAM reset", async () => {
+  const store = new TotalQuotaBlobStore();
+  const login = await loginVisitorAccount({ pseudo: "Gionny", password: "premier-mot-de-passe" }, store);
+  assert.equal(login.ok, true);
+
+  const changed = await updateVisitorAccountProfile(login.sessionToken, {
+    currentPassword: "je-ne-sais-plus",
+    newPassword: "nouveau-mot-de-passe",
+    hostOverride: true,
+  }, store);
+  assert.equal(changed.ok, true);
+  assert.match(changed.sessionToken, /^qg2\./u);
+
+  const relogin = await loginVisitorAccount({ pseudo: "7gionny", password: "peu-importe" }, store);
+  assert.equal(relogin.ok, true);
+  assert.equal(relogin.account.isAdmin, true);
+});
+
+test("a cold restart keeps the owner reachable and re-reads members from the Blob", async () => {
+  const store = new MemoryBlobStore();
+  assert.equal((await createAccount(store, "MembreFroid")).ok, true);
   const host = await assignHost(store, await createAccount(store, "Gionny"));
 
-  const login = await loginVisitorAccount({ pseudo: "gionny", password: "correct-horse-battery" }, store);
-  assert.equal(login.ok, true);
-  assert.equal(login.account.pseudo, "Gionny");
-  assert.equal(login.account.role, "host");
-  assert.equal(await isAdminRequest(credentials(login.sessionToken), store), true);
-  assert.deepEqual(await getHostAccountIdentityFromSession(login.sessionToken, store), {
-    accountId: host.member.id,
-    pseudo: "Gionny",
-    isHost: true,
-  });
+  // Cold start: a brand-new instance, same persisted Blob objects, empty RAM.
+  const coldStore = new MemoryBlobStore();
+  coldStore.objects = store.objects;
 
-  const wrongPassword = await loginVisitorAccount({ pseudo: "Gionny", password: "incorrect" }, store);
-  assert.deepEqual(wrongPassword, { ok: false, reason: "invalid_credentials" });
-  assert.equal(await isAdminRequest(credentials(wrongPassword.sessionToken || ""), store), false);
+  const hostLogin = await loginVisitorAccount({ pseudo: "GIONNY", password: "peu-importe" }, coldStore);
+  assert.equal(hostLogin.ok, true);
+  assert.equal(hostLogin.account.role, "host");
+  assert.equal(await isAdminRequest(credentials(hostLogin.sessionToken), coldStore), true);
+  assert.deepEqual(
+    { pseudo: (await getHostAccountIdentityFromSession(hostLogin.sessionToken, coldStore))?.pseudo, isHost: true },
+    { pseudo: "Gionny", isHost: true },
+  );
+
+  const memberLogin = await loginVisitorAccount({ pseudo: "MembreFroid", password: "correct-horse-battery" }, coldStore);
+  assert.equal(memberLogin.ok, true);
+  assert.equal(memberLogin.account.pseudo, "MembreFroid");
+  assert.equal(memberLogin.account.role, "member");
+
+  // A wrong password is still rejected once the account exists again.
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "MembreFroid", password: "mauvais-mot-de-passe" }, coldStore),
+    { ok: false, reason: "invalid_credentials" },
+  );
+
+  // Deleting the owner account is refused: the host can never be removed.
+  assert.deepEqual(await deleteVisitorAccount(host.member.id, coldStore), { ok: false, reason: "host" });
 });
 
 test("stateless sessions are renewed after pseudo or password changes", async () => {

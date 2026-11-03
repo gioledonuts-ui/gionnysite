@@ -1876,14 +1876,18 @@
     if (!authSubmit || authSubmit.disabled) return;
     const pseudoInput = authForm.elements.namedItem("pseudo");
     const passwordInput = authForm.elements.namedItem("password");
-    const pseudo = String(pseudoInput?.value || "").trim();
+    const rawPseudo = String(pseudoInput?.value || "").trim();
+    const pseudo = rawPseudo.replace(/^@+/u, "");
     const password = String(passwordInput?.value || "");
     if (pseudoInput) pseudoInput.value = pseudo;
+    // The owner account ("Gionny", "7gionny", "@7gionny") is always let through:
+    // the server recognises it and re-creates it if the RAM state was lost.
+    const isOwnerPseudo = /^@?7?gionny$/iu.test(rawPseudo);
     if (!pseudo || !password) {
       setStatusNode(authStatus, "Saisis ton pseudo et ton mot de passe.", "error");
       return;
     }
-    if (authMode === "register" && (pseudo.length < 3 || pseudo.length > 16)) {
+    if (authMode === "register" && !isOwnerPseudo && (pseudo.length < 3 || pseudo.length > 16)) {
       setStatusNode(authStatus, "Le pseudo doit contenir entre 3 et 16 caractères après suppression des espaces au début et à la fin.", "error");
       return;
     }
@@ -1922,7 +1926,12 @@
       visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
       newConversationMode = false;
       authForm.reset();
-      setStatusNode(authStatus, "");
+      // A restored account (server lost its RAM) is announced explicitly.
+      setStatusNode(
+        authStatus,
+        data.recovered ? (data.notice || "Ton compte a été restauré sur ce serveur. Tu es connecté.") : "",
+        data.recovered ? "success" : undefined
+      );
       renderContactState();
       if (visitorConversation) markVisitorThreadSeen();
       if (closeAfterAuthentication) {
