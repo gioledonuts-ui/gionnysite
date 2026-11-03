@@ -907,13 +907,11 @@
   const contactForm = document.querySelector("[data-contact-form]");
   const contactSubmit = document.querySelector("[data-contact-submit]");
   const contactStatus = document.querySelector("[data-contact-status]");
-  const accountPseudo = document.querySelector("[data-account-pseudo]");
   const contactReplyForm = document.querySelector("[data-contact-reply-form]");
   const contactReplySubmit = document.querySelector("[data-contact-reply-submit]");
   const contactReplyStatus = document.querySelector("[data-contact-thread-status]");
   const contactThread = document.querySelector("[data-contact-thread]");
   const contactThreadMessages = document.querySelector("[data-contact-thread-messages]");
-  const contactThreadPseudo = document.querySelector("[data-contact-thread-pseudo]");
   const contactThreadSubject = document.querySelector("[data-contact-thread-subject]");
   const contactThreadState = document.querySelector("[data-contact-thread-state]");
   const contactThreadClosed = document.querySelector("[data-contact-closed]");
@@ -1209,7 +1207,6 @@
     if (contactAuth) contactAuth.hidden = true;
     contactNewView.hidden = true;
     contactThread.hidden = false;
-    if (contactThreadPseudo) contactThreadPseudo.textContent = visitorConversation.pseudo || visitorAccount?.pseudo || "Ta discussion privée";
     const currentSubject = visitorConversation.subject || "Discussion";
     renderSubjectLabel(contactThreadSubject, currentSubject);
     renderSubjectLabel(contactHeaderSubject, currentSubject);
@@ -1335,7 +1332,6 @@
     }
 
     if (contactAuth) contactAuth.hidden = true;
-    if (accountPseudo) accountPseudo.textContent = visitorAccount.pseudo || "";
     if (visitorConversation && !newConversationMode) {
       renderVisitorConversation();
       return;
