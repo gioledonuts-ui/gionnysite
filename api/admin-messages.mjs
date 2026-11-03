@@ -13,7 +13,6 @@ import {
   isConversationSubject,
   listContactMessages,
   listConversations,
-  markConversationReadByAdmin,
   setConversationFavorite,
   setConversationStatus,
   setConversationSubject,
@@ -70,6 +69,13 @@ function readCursor(request) {
   return queryValue(request, "cursor");
 }
 
+function readAfterSequence(request) {
+  const value = queryValue(request, "after");
+  if (!/^(0|[1-9]\d{0,2})$/u.test(value)) return null;
+  const sequence = Number(value);
+  return sequence <= 400 ? sequence : null;
+}
+
 function cleanAdminMessage(value) {
   if (typeof value !== "string") return "";
   return value
@@ -120,7 +126,9 @@ export default async function handler(request, response) {
           return response.status(400).json({ error: "Les filtres de conversations sont invalides." });
         }
         const result = await listConversations(cursor, undefined, { filter, subject });
-        const unreadCount = await countUnreadConversations().catch(() => null);
+        const unreadCount = queryValue(request, "summary") === "0"
+          ? null
+          : await countUnreadConversations().catch(() => null);
         return response.status(200).json({
           ...result,
           ...(Number.isInteger(unreadCount) ? { unreadCount } : {}),
@@ -131,8 +139,11 @@ export default async function handler(request, response) {
         if (!isConversationId(id)) {
           return response.status(400).json({ error: "Cette discussion est introuvable." });
         }
-        await markConversationReadByAdmin(id);
-        const conversation = await getConversationForAdmin(id);
+        const afterSequence = readAfterSequence(request);
+        const conversation = await getConversationForAdmin(id, undefined, {
+          ...(afterSequence === null ? {} : { afterSequence }),
+          markRead: true,
+        });
         if (!conversation) return response.status(404).json({ error: "Cette discussion n’existe plus." });
         return response.status(200).json(conversation);
       }

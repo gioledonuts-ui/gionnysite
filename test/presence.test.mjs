@@ -1,26 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { PRESENCE_PATH, PRESENCE_WINDOW_MS, recordPresence } from "../lib/presence.mjs";
+import { PRESENCE_WINDOW_MS, recordPresence } from "../lib/presence.mjs";
 
 class MemoryBlobStore {
   constructor() {
     this.objects = new Map();
+    this.calls = { get: 0, list: 0, put: 0 };
   }
 
-  async get(pathname) {
-    const body = this.objects.get(pathname);
-    if (!body) return null;
-    return { statusCode: 200, stream: new Response(body).body };
+  async get() {
+    this.calls.get += 1;
+    throw new Error("Presence must not read Blob storage");
   }
 
-  async put(pathname, body) {
-    this.objects.set(pathname, Buffer.from(body));
-    return { pathname };
+  async list() {
+    this.calls.list += 1;
+    throw new Error("Presence must not list Blob storage");
+  }
+
+  async put() {
+    this.calls.put += 1;
+    throw new Error("Presence must not write Blob storage");
   }
 }
 
-test("presence counts unique sessions over the rolling three-minute window", async () => {
+test("presence counts unique sessions in the rolling three-minute in-memory window", async () => {
   const store = new MemoryBlobStore();
   const now = Date.now();
   const first = "A".repeat(32);
@@ -32,16 +37,15 @@ test("presence counts unique sessions over the rolling three-minute window", asy
   assert.equal(await recordPresence(second, store, now + 2_000), 2);
   assert.equal(await recordPresence(third, store, now + 3_000), 3);
 
-  const stored = JSON.parse(store.objects.get(PRESENCE_PATH).toString("utf8"));
-  assert.equal(stored.version, 1);
-  assert.equal(Object.keys(stored.sessions).length, 3);
-
   const afterWindow = now + PRESENCE_WINDOW_MS + 5_000;
   assert.equal(await recordPresence(first, store, afterWindow), 1);
+  assert.deepEqual(store.calls, { get: 0, list: 0, put: 0 });
+  assert.equal(store.objects.size, 0);
 });
 
 test("presence rejects arbitrary client-provided session identifiers", async () => {
   const store = new MemoryBlobStore();
   await assert.rejects(recordPresence("not-a-session", store), TypeError);
   assert.equal(store.objects.size, 0);
+  assert.deepEqual(store.calls, { get: 0, list: 0, put: 0 });
 });

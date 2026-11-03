@@ -2,6 +2,21 @@
   const pageScrollLockOwners = new Set();
   let savedPageScrollStyles = null;
 
+  const syncVisualViewportBounds = () => {
+    const root = document.documentElement;
+    const viewport = window.visualViewport;
+    if (!root) return;
+    const height = Math.max(1, Math.round(viewport?.height || window.innerHeight || root.clientHeight));
+    const top = Math.max(0, Math.round(viewport?.offsetTop || 0));
+    root.style.setProperty("--qg-visual-viewport-height", `${height}px`);
+    root.style.setProperty("--qg-visual-viewport-top", `${top}px`);
+  };
+
+  syncVisualViewportBounds();
+  window.addEventListener("resize", syncVisualViewportBounds, { passive: true });
+  window.visualViewport?.addEventListener("resize", syncVisualViewportBounds, { passive: true });
+  window.visualViewport?.addEventListener("scroll", syncVisualViewportBounds, { passive: true });
+
   const lockBackgroundScroll = (owner) => {
     if (!owner || pageScrollLockOwners.has(owner)) return;
 
@@ -590,6 +605,30 @@
     return null;
   };
 
+  const getNextScheduledDayKey = () => {
+    if (!nextScheduledLiveAt) return "";
+    const parisDate = readParisDateParts(nextScheduledLiveAt);
+    const weekdayIndex = new Date(Date.UTC(parisDate.year, parisDate.month - 1, parisDate.day)).getUTCDay();
+    return PARIS_DAY_KEYS[weekdayIndex] || "";
+  };
+
+  const updateHighlightedScheduleDay = () => {
+    const nextDayKey = getNextScheduledDayKey();
+    document.querySelectorAll("[data-schedule-day]").forEach((item) => {
+      const isNextLive = Boolean(nextDayKey) && item.dataset.scheduleDay === nextDayKey;
+      item.toggleAttribute("data-next-live", isNextLive);
+      const nextLabel = item.querySelector(".schedule-day-next-label");
+      if (nextLabel) nextLabel.hidden = !isNextLive;
+      if (isNextLive) {
+        item.setAttribute("aria-current", "date");
+        item.setAttribute("aria-label", `${item.querySelector(".schedule-day-name")?.textContent || "Jour"}, prochain live`);
+      } else {
+        item.removeAttribute("aria-current");
+        item.setAttribute("aria-label", item.querySelector(".schedule-day-name")?.textContent || "Jour de live");
+      }
+    });
+  };
+
   const updateScheduleCountdown = () => {
     const countdown = document.querySelector("[data-next-live-countdown]");
     const countdownPrefix = document.querySelector("[data-next-live-prefix]");
@@ -611,19 +650,27 @@
       nextScheduledLiveAt = findNextScheduledLiveAt(currentSchedule, now);
       if (scheduledTimeReached) void refreshTicker();
     }
+    updateHighlightedScheduleDay();
 
     if (!nextScheduledLiveAt) {
       countdownPrefix.hidden = true;
+      countdownValue.dataset.empty = "true";
       countdownValue.textContent = "Aucun live programmé";
+      countdownValue.setAttribute("aria-label", "Aucun live programmé");
       return;
     }
 
     countdownPrefix.hidden = false;
+    delete countdownValue.dataset.empty;
     const remainingSeconds = Math.max(0, Math.floor((nextScheduledLiveAt - Date.now()) / 1000));
     const hours = Math.floor(remainingSeconds / 3600);
     const minutes = Math.floor((remainingSeconds % 3600) / 60);
     const seconds = remainingSeconds % 60;
-    countdownValue.textContent = `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+    const formattedHours = String(hours).padStart(2, "0");
+    const formattedMinutes = String(minutes).padStart(2, "0");
+    const formattedSeconds = String(seconds).padStart(2, "0");
+    countdownValue.textContent = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    countdownValue.setAttribute("aria-label", `Prochain live dans ${hours} heures, ${minutes} minutes et ${seconds} secondes`);
   };
 
   const renderSchedule = (schedule) => {
@@ -668,11 +715,13 @@
       emptyItem.className = "schedule-empty";
       emptyItem.textContent = "Aucun live programmé";
       daysList.append(emptyItem);
+      updateHighlightedScheduleDay();
       return;
     }
 
     for (const { key, label } of activeDays) {
       const item = document.createElement("li");
+      item.dataset.scheduleDay = key;
       const dayName = document.createElement("span");
       dayName.className = "schedule-day-name";
       dayName.textContent = label;
@@ -684,8 +733,14 @@
         hour.textContent = formatScheduleTime(schedule[key].time);
         item.append(hour);
       }
+      const nextLabel = document.createElement("span");
+      nextLabel.className = "schedule-day-next-label";
+      nextLabel.textContent = "PROCHAIN";
+      nextLabel.hidden = key !== getNextScheduledDayKey();
+      item.append(nextLabel);
       daysList.append(item);
     }
+    updateHighlightedScheduleDay();
   };
 
   const applySiteConfig = (config) => {
@@ -779,6 +834,7 @@
   const welcomeName = document.querySelector("[data-welcome-name]");
   const welcomeComma = document.querySelector("[data-welcome-comma]");
   const memberCrown = document.querySelector("[data-member-crown]");
+  const memberProfileCrown = document.querySelector("[data-member-profile-crown]");
   const memberLoginButton = document.querySelector("[data-member-login]");
   const memberRegisterButton = document.querySelector("[data-member-register]");
   const profileDialog = document.querySelector("[data-profile-dialog]");
@@ -1054,6 +1110,7 @@
     item.append(identity);
 
     if (message.kind === "audio" || message.hasAudio) {
+      item.classList.add("contact-chat-message--audio");
       const audioUrl = `/api/contact-audio?conversationId=${encodeURIComponent(visitorConversation.id)}&messageId=${encodeURIComponent(message.id)}`;
       const player = typeof window.createQGVoicePlayer === "function"
         ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`, { peaks: message.audioPeaks })
@@ -1207,6 +1264,7 @@
     }
     const isVerified = visitorAccount?.badges?.includes("verified") === true;
     if (memberCrown) memberCrown.hidden = !isHost;
+    if (memberProfileCrown) memberProfileCrown.hidden = !isHost;
     if (profileCrown) profileCrown.hidden = !isHost;
     if (accountHostCrown) accountHostCrown.hidden = !isHost;
     if (contactThreadCrown) contactThreadCrown.hidden = !isHost;
@@ -1256,7 +1314,12 @@
     if (!contactWidget || visitorConversationLoading) return;
     visitorConversationLoading = true;
     try {
-      const response = await fetch("/api/contact", {
+      const afterSequence = quiet && visitorConversation && Number.isInteger(visitorConversation.messageCount)
+        ? visitorConversation.messageCount
+        : null;
+      const url = new URL("/api/contact", window.location.origin);
+      if (afterSequence !== null) url.searchParams.set("after", String(afterSequence));
+      const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
         cache: "no-store",
@@ -1267,9 +1330,23 @@
         return;
       }
 
+      const previousConversationId = visitorConversation?.id;
       visitorAccount = data.account || null;
       visitorConversation = data.conversation || null;
-      visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
+      if (previousConversationId !== visitorConversation?.id) {
+        visitorConversationMessages = [];
+        visitorReadMarkKey = "";
+      }
+      const incomingMessages = Array.isArray(data.messages) ? data.messages : [];
+      if (data.messagesComplete === false) {
+        const messagesById = new Map(visitorConversationMessages.map((message) => [message.id, message]));
+        incomingMessages.forEach((message) => messagesById.set(message.id, message));
+        visitorConversationMessages = [...messagesById.values()]
+          .sort((left, right) => (left.sequence || 0) - (right.sequence || 0));
+      } else {
+        const pendingMessages = visitorConversationMessages.filter((message) => message.pending === true);
+        visitorConversationMessages = [...incomingMessages, ...pendingMessages];
+      }
       newConversationMode = false;
       renderContactState();
       if (visitorConversation) renderVisitorConversation({ announceNewReply: true });
@@ -1283,19 +1360,8 @@
   const openContactWidget = ({ context = "launcher", trigger = contactLauncher } = {}) => {
     if (!contactWidget) return;
     const opensAtHero = context === "top";
-    const anchorRect = opensAtHero ? memberAccessBar?.getBoundingClientRect() : null;
     lastContactTrigger = trigger || contactLauncher;
     contactWidget.dataset.openContext = opensAtHero ? "top" : "launcher";
-    if (anchorRect) {
-      const preferredTop = Math.round(anchorRect.bottom + 9);
-      const top = Math.max(10, Math.min(preferredTop, Math.max(10, window.innerHeight - 220)));
-      const right = Math.max(12, Math.round(window.innerWidth - anchorRect.right));
-      contactWidget.style.setProperty("--contact-top", `${top}px`);
-      contactWidget.style.setProperty("--contact-right", `${right}px`);
-    } else {
-      contactWidget.style.removeProperty("--contact-top");
-      contactWidget.style.removeProperty("--contact-right");
-    }
     contactWidget.hidden = false;
     if (contactScrim) contactScrim.hidden = false;
     document.body.classList.add("contact-page-open");
@@ -1320,8 +1386,6 @@
     voiceControlStates.forEach((state) => state.cancel());
     contactWidget.hidden = true;
     delete contactWidget.dataset.openContext;
-    contactWidget.style.removeProperty("--contact-top");
-    contactWidget.style.removeProperty("--contact-right");
     if (contactScrim) contactScrim.hidden = true;
     document.body.classList.remove("contact-page-open");
     unlockBackgroundScroll("contact-widget");
@@ -1606,17 +1670,8 @@
     openContactWidget({ context: "top", trigger: memberRegisterButton });
   });
 
-  const openProfileDialog = (event) => {
+  const openProfileDialog = () => {
     if (!visitorAccount || !profileDialog?.showModal) return;
-    const trigger = event?.currentTarget || profileOpenButton;
-    const triggerRect = (memberLoggedIn?.getBoundingClientRect() || trigger?.getBoundingClientRect());
-    if (triggerRect) {
-      profileDialog.dataset.openContext = "top";
-      const preferredTop = Math.round(triggerRect.bottom + 9);
-      const top = Math.max(10, Math.min(preferredTop, Math.max(10, window.innerHeight - 220)));
-      profileDialog.style.setProperty("--profile-dialog-top", `${top}px`);
-      profileDialog.style.setProperty("--profile-dialog-right", `${Math.max(12, Math.round(window.innerWidth - triggerRect.right))}px`);
-    }
     if (profilePseudoInput) profilePseudoInput.value = visitorAccount.pseudo || "";
     if (profileDisplayName) profileDisplayName.textContent = visitorAccount.pseudo || "";
     if (profilePseudoForm) profilePseudoForm.hidden = true;
@@ -1644,9 +1699,6 @@
   });
   profileDialog?.addEventListener("close", () => {
     unlockBackgroundScroll("profile-dialog");
-    delete profileDialog.dataset.openContext;
-    profileDialog.style.removeProperty("--profile-dialog-top");
-    profileDialog.style.removeProperty("--profile-dialog-right");
     profileOpenButton?.setAttribute("aria-expanded", "false");
     if (profileOpenButton && !profileOpenButton.closest("[hidden]")) profileOpenButton.focus({ preventScroll: true });
   });
@@ -1805,6 +1857,7 @@
       setStatusNode(authStatus, "Le mot de passe ne peut pas dépasser 128 caractères.", "error");
       return;
     }
+    const closeAfterAuthentication = lastContactTrigger === memberLoginButton || lastContactTrigger === memberRegisterButton;
     authSubmit.disabled = true;
     setStatusNode(authStatus, authMode === "register" ? "Création de ton compte…" : "Connexion…");
     try {
@@ -1831,10 +1884,10 @@
       authForm.reset();
       setStatusNode(authStatus, "");
       renderContactState();
-      if (visitorConversation) {
-        renderVisitorConversation();
-        markVisitorThreadSeen();
-      } else {
+      if (visitorConversation) markVisitorThreadSeen();
+      if (closeAfterAuthentication) {
+        minimizeContactWidget();
+      } else if (!visitorConversation) {
         contactForm?.elements.namedItem("message")?.focus({ preventScroll: true });
       }
     } catch {
@@ -2137,8 +2190,10 @@
 
     void loadVisitorConversation();
     visitorPollTimer = window.setInterval(() => {
-      if (visitorAccount && !newConversationMode) void loadVisitorConversation({ quiet: true });
-    }, 20_000);
+      if (visitorAccount && !newConversationMode && !contactWidget.hidden && !document.hidden) {
+        void loadVisitorConversation({ quiet: true });
+      }
+    }, 45_000);
   } else if (contactLauncher) {
     contactLauncher.hidden = true;
   }
@@ -2471,6 +2526,9 @@
       void refreshSitePresence();
       void refreshTicker();
       void refreshDiscordStatus();
+      if (visitorAccount && contactWidget && !contactWidget.hidden && !newConversationMode) {
+        void loadVisitorConversation({ quiet: true });
+      }
     }
   });
 

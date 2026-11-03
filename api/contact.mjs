@@ -87,6 +87,21 @@ function isRateLimited(key) {
     : 0;
 }
 
+function readAfterSequence(request) {
+  let value = request.query?.after;
+  if (Array.isArray(value)) value = value[0];
+  if (typeof value !== "string") {
+    try {
+      value = new URL(request.url || "/", `https://${request.headers?.host || "localhost"}`).searchParams.get("after");
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value !== "string" || !/^(0|[1-9]\d{0,2})$/u.test(value)) return null;
+  const sequence = Number(value);
+  return sequence <= 400 ? sequence : null;
+}
+
 function cleanMessage(value) {
   if (typeof value !== "string") return "";
   return value
@@ -221,7 +236,8 @@ export default async function handler(request, response) {
       return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
     }
     try {
-      const state = await getAccountConversation(sessionToken);
+      const afterSequence = readAfterSequence(request);
+      const state = await getAccountConversation(sessionToken, undefined, afterSequence === null ? {} : { afterSequence });
       if (!state) {
         clearAccountSessionCookie(request, response);
         return response.status(200).json({ account: null, conversation: null, messages: [], subjects: CONVERSATION_SUBJECTS });

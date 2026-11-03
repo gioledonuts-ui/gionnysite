@@ -1,7 +1,4 @@
-/* Shared scale, SVG badge, player, and X-style composer refinements. */
-body {
-  zoom: 1.15;
-}
+/* Shared SVG badge, player, and X-style composer refinements. */
 
 .qg-icon {
   display: inline-block;
@@ -389,10 +386,6 @@ body {
 }
 
 @media (max-width: 460px) {
-  body {
-    zoom: 1.15;
-  }
-
   .creator-slide .discord-footer {
     gap: 7px;
   }
@@ -422,9 +415,6 @@ body {
 }
 
 /* Admin companion styles: keep the same shared controller and SVG vocabulary. */
-.admin-body {
-  zoom: 1.35;
-}
 
 .admin-body button,
 .admin-body .member-action-button,
@@ -741,4 +731,977 @@ body {
 .contact-voice-send.x-voice-send[hidden],
 .chat-plus-button[hidden] {
   display: none !important;
+}
+
+
+/* Normal-scale layout, visual-viewport dialogs, and stable X-style chat. */
+:root {
+  --qg-visual-viewport-height: 100dvh;
+  --qg-visual-viewport-top: 0px;
+}
+
+html,
+body {
+  max-width: 100%;
+}
+
+.site-shell,
+.hub-layout,
+.welcome-panel,
+.networks-panel,
+.creator-carousel,
+.network-grid,
+.contact-widget {
+  min-width: 0;
+}
+
+.member-profile-crown {
+  width: 13px;
+  height: 13px;
+  color: #ffd36f;
+  filter: drop-shadow(0 1px 2px rgba(227, 151, 21, 0.38));
+}
+
+.member-profile-crown[hidden] {
+  display: none !important;
+}
+
+.welcome-account-bar {
+  height: 42px;
+  min-height: 42px;
+  align-items: center;
+  padding-block: 3px;
+}
+
+.welcome-account-identity,
+.member-visitor,
+.member-identity {
+  min-height: 30px;
+  align-items: center;
+}
+
+.member-access-actions {
+  height: 30px;
+  min-height: 30px;
+  flex-shrink: 1;
+  align-items: center;
+}
+
+.member-access-button {
+  display: inline-flex;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.site-presence {
+  min-height: 26px;
+  align-items: center;
+}
+
+/* Native account/legal dialogs stay centered in the visible viewport, including above a mobile keyboard. */
+:is(.about-dialog, .legal-dialog, .profile-dialog)[open] {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--qg-visual-viewport-top, 0px);
+  bottom: max(0px, calc(100vh - var(--qg-visual-viewport-top, 0px) - var(--qg-visual-viewport-height, 100dvh)));
+  margin-block: auto;
+}
+
+.about-dialog {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 720px);
+}
+
+.legal-dialog {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 760px);
+}
+
+.profile-dialog {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 760px);
+}
+
+.profile-dialog-card {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 760px);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.legal-dialog-card {
+  min-height: 0;
+  max-height: inherit;
+}
+
+.legal-dialog-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.legal-dialog-done {
+  width: 100%;
+  min-height: 42px;
+  align-self: stretch;
+  justify-self: stretch;
+}
+
+:is(.about-dialog-close, .legal-dialog-close, .profile-dialog-close, .contact-dialog-close) {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  text-align: center;
+}
+
+:is(.about-dialog-close, .legal-dialog-close, .profile-dialog-close, .contact-dialog-close) > .qg-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Login/register from the account bar opens a centered root-level dialog; launcher chat remains docked. */
+.contact-widget[data-open-context="top"] {
+  position: fixed;
+  top: var(--qg-visual-viewport-top, 0px);
+  right: 0;
+  bottom: max(0px, calc(100vh - var(--qg-visual-viewport-top, 0px) - var(--qg-visual-viewport-height, 100dvh)));
+  left: 0;
+  width: min(430px, calc(100vw - 24px));
+  height: min(620px, calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px));
+  max-height: calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
+  margin: auto;
+  transform: none;
+  animation-name: contact-widget-in;
+}
+
+.contact-widget[data-open-context="top"] .contact-dialog-card {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Keep chat history scrollable while the composer remains anchored to the widget bottom. */
+.contact-widget .contact-thread {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.contact-widget .contact-thread-heading,
+.contact-widget .contact-thread-closed {
+  flex: 0 0 auto;
+}
+
+.contact-widget .contact-thread-messages {
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 10px 13px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.contact-widget .contact-thread-status {
+  min-height: 0;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 13px;
+}
+
+.contact-widget .contact-thread-status:empty {
+  display: none;
+}
+
+.contact-widget .contact-reply-form.contact-chat-composer {
+  width: 100%;
+  min-height: 0;
+  flex: 0 0 auto;
+  margin-top: auto;
+  gap: 6px;
+  padding: 8px 13px max(10px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(183, 210, 249, 0.12);
+}
+
+.contact-widget .contact-voice-status {
+  min-height: 0;
+  margin: 0 2px;
+  color: #a9c6e8;
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+.contact-widget .contact-voice-status[data-kind="error"] {
+  color: #ffabb5;
+}
+
+.contact-widget .contact-voice-status[data-kind="success"] {
+  color: #91e6c4;
+}
+
+.contact-widget .contact-voice-status[hidden],
+.admin-body .admin-voice-status[hidden] {
+  display: none !important;
+}
+
+/* Audio is the blue message bubble itself; metadata and receipts stay below it. */
+.contact-chat-message.contact-chat-message--audio,
+.thread-message.thread-message--audio {
+  width: min(100%, 340px);
+  max-width: min(90%, 360px);
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.contact-chat-message--audio .contact-chat-identity,
+.thread-message--audio .thread-message-identity {
+  min-width: 0;
+  margin-inline: 2px;
+}
+
+.contact-chat-message--audio .contact-chat-audio,
+.thread-message--audio .thread-message-audio {
+  width: min(320px, 100%);
+  max-width: 100%;
+  margin: 0;
+}
+
+.contact-chat-message--audio .qg-voice-player--message,
+.thread-message--audio .qg-voice-player--message {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 999px;
+}
+
+.contact-chat-message--audio .contact-chat-meta,
+.thread-message--audio .thread-message-meta {
+  min-height: 14px;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-inline: 4px;
+}
+
+.contact-chat-date,
+.thread-message-date {
+  color: rgba(196, 210, 231, 0.86);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-chat-sender,
+.thread-message-sender {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.contact-chat-text,
+.thread-message-text {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Stable floating contact action: unread state adds a badge, never changes the button footprint. */
+.contact-launcher,
+.contact-launcher[data-has-messages="true"] {
+  width: 158px;
+  min-width: 158px;
+  height: 54px;
+  min-height: 54px;
+  padding: 0 17px;
+  border-radius: 999px;
+}
+
+.contact-launcher .contact-launcher-label,
+.contact-launcher[data-has-messages="true"] .contact-launcher-label {
+  display: inline;
+}
+
+.contact-launcher svg {
+  display: block;
+}
+
+/* Social-carousel badges stay on one line; action buttons and account handles share a fixed footer stack. */
+.creator-carousel .discord-footer {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-top: auto;
+}
+
+.creator-carousel .discord-action {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.creator-carousel .discord-community-meta {
+  width: 100%;
+  flex: 0 0 auto;
+  justify-items: start;
+  gap: 1px;
+  padding: 0;
+  text-align: left;
+}
+
+.creator-carousel .discord-invite {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+@media (max-width: 940px) {
+  .network-grid {
+    justify-items: stretch;
+  }
+
+  .network-item:last-child,
+  .network-item:last-child:nth-child(odd) {
+    width: auto;
+    grid-column: auto;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 760px) {
+  .welcome-account-bar {
+    height: 42px;
+    min-height: 42px;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 3px 5px;
+    border-radius: 13px;
+  }
+
+  .welcome-account-identity {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .member-access-actions {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .member-access-button {
+    padding-inline: 6px;
+    font-size: 7.5px;
+    letter-spacing: 0.035em;
+  }
+
+  .member-profile-pseudo {
+    max-width: clamp(38px, 13vw, 78px);
+    font-size: 9px;
+  }
+
+  .site-presence {
+    min-height: 21px;
+    gap: 3px;
+    padding-inline: 5px;
+    font-size: 7px;
+  }
+
+  .site-presence strong {
+    font-size: 8px;
+  }
+
+  .creator-carousel .creator-slide-topline {
+    position: relative;
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+
+  .creator-carousel .creator-slide-topline::-webkit-scrollbar {
+    display: none;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-visited-badge,
+  .creator-carousel .creator-slide-topline > .creator-state-pill--visited {
+    position: static;
+    inset: auto;
+    flex: 0 0 auto;
+    min-height: 19px;
+    margin: 0;
+    padding: 2px 5px;
+    font-size: 6.5px;
+    letter-spacing: 0.045em;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-visited-badge[hidden],
+  .creator-carousel .creator-slide-topline > .creator-state-pill--visited[hidden] {
+    display: none !important;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-state-pill {
+    min-height: 19px;
+    gap: 3px;
+    padding: 2px 5px;
+    font-size: 6.5px;
+    letter-spacing: 0.045em;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-state-pill .creator-pill-icon,
+  .creator-carousel .creator-slide-topline > .creator-state-pill .qg-icon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .creator-carousel .discord-content {
+    min-height: 0;
+    gap: 6px;
+  }
+
+  .creator-carousel .discord-detail {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .creator-carousel .discord-footer {
+    gap: 2px;
+  }
+
+  .creator-carousel .discord-community-meta {
+    padding: 0;
+  }
+
+  .network-grid {
+    justify-items: stretch;
+  }
+
+  .network-item:last-child,
+  .network-item:last-child:nth-child(odd) {
+    width: auto;
+    grid-column: auto;
+    justify-self: stretch;
+  }
+
+  .network-card--instagram {
+    min-height: 68px;
+  }
+
+  .contact-launcher,
+  .contact-launcher[data-has-messages="true"] {
+    width: 150px;
+    min-width: 150px;
+    height: 50px;
+    min-height: 50px;
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .welcome-account-bar {
+    gap: 3px;
+    padding-inline: 4px;
+  }
+
+  .member-identity .member-profile-avatar {
+    display: none;
+  }
+
+  .member-identity {
+    gap: 4px;
+  }
+
+  .member-profile-pseudo {
+    max-width: clamp(36px, 11vw, 43px);
+  }
+
+  .member-access-button {
+    padding-inline: 4px;
+    font-size: 7px;
+    letter-spacing: 0.025em;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-state-pill,
+  .creator-carousel .creator-slide-topline > .creator-visited-badge,
+  .creator-carousel .creator-slide-topline > .creator-state-pill--visited {
+    padding-inline: 4px;
+    font-size: 6px;
+  }
+}
+
+@media (max-width: 350px) {
+  .site-presence {
+    display: none !important;
+  }
+}
+
+/* The desktop homepage shares the viewport between the hero and five social cards. */
+@media (min-width: 941px) and (max-width: 1179px) {
+  .site-shell {
+    min-height: 100svh;
+  }
+
+  .hub-layout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-content: stretch;
+    align-items: stretch;
+    gap: 12px;
+    padding-block: 8px;
+  }
+
+  .welcome-panel {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
+    padding: 44px 13px 12px;
+  }
+
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: clamp(78px, 9vw, 104px) minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .profile-frame {
+    width: clamp(78px, 9vw, 104px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+  }
+
+  .welcome-actions {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 7px;
+  }
+
+  .creator-carousel {
+    height: 218px;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 218px;
+  }
+
+  .welcome-actions .schedule-card {
+    padding: 8px 10px;
+  }
+
+  .networks-panel {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .network-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 64px;
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .site-footer {
+    margin-top: 0;
+    padding-block: 6px;
+  }
+}
+
+@media (min-width: 1180px) {
+  .site-shell {
+    min-height: 100svh;
+  }
+
+  .hub-layout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+    align-content: stretch;
+    align-items: stretch;
+    gap: clamp(12px, 1.2vw, 18px);
+    padding-block: clamp(6px, 1vh, 12px);
+  }
+
+  .welcome-panel {
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.06fr) minmax(260px, 0.94fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-content: stretch;
+    gap: clamp(12px, 1.5vw, 22px);
+    padding: 44px clamp(16px, 1.5vw, 24px) 16px;
+  }
+
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: clamp(90px, 8.4vw, 128px) minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .profile-frame {
+    width: clamp(90px, 8.4vw, 128px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(2.05rem, 3.15vw, 3.35rem);
+  }
+
+  .welcome-actions {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 8px;
+  }
+
+  .creator-carousel {
+    height: clamp(220px, 28vh, 250px);
+  }
+
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 0;
+  }
+
+  .networks-panel {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(14px, 1.4vw, 20px);
+  }
+
+  .network-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 8px;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 68px;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .site-footer {
+    margin-top: 0;
+    padding-block: 6px;
+  }
+}
+
+@media (min-width: 961px) {
+  body.admin-body {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .admin-body .admin-shell {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .admin-body .admin-layout {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .admin-body .admin-workspace,
+  .admin-body .admin-workspace > .admin-panel,
+  .admin-body .conversation-content,
+  .admin-body .conversation-detail {
+    min-height: 0;
+  }
+
+  .admin-body .admin-workspace {
+    height: 100%;
+  }
+
+  .admin-body .conversation-content {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .admin-body .conversation-history {
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    overflow-y: auto;
+  }
+
+  .admin-body .conversation-reply-form {
+    flex: 0 0 auto;
+    margin-top: auto;
+  }
+}
+
+.admin-body .thread-message.thread-message--audio {
+  width: min(100%, 360px);
+  max-width: min(90%, 380px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-body .thread-message--audio .thread-message-audio {
+  width: min(320px, 100%);
+  max-width: 100%;
+  margin: 0;
+}
+
+.admin-body .thread-message--audio .qg-voice-player--message {
+  width: 100%;
+  border-radius: 999px;
+}
+
+.admin-body .thread-message--audio .thread-message-meta {
+  padding-inline: 4px;
+}
+
+.admin-body .thread-message-date {
+  color: rgba(196, 210, 231, 0.92);
+  font-size: 10px;
+}
+
+.admin-body .admin-chat-composer {
+  gap: 5px;
+}
+
+.admin-body .admin-voice-status {
+  min-height: 0;
+  margin: 0 2px;
+  color: #a9c6e8;
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+@media (max-width: 760px) {
+  .contact-widget[data-open-context="top"] {
+    width: calc(100vw - 24px);
+  }
+}
+
+/* Compact, legible schedule with a strong hour and an explicit next-live marker. */
+.schedule-card {
+  margin-top: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
+.schedule-topline {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.schedule-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.schedule-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.schedule-copy h2 {
+  font-size: 12px;
+}
+
+.schedule-copy p {
+  font-size: 8px;
+}
+
+.schedule-topline .schedule-time {
+  min-width: 52px;
+  justify-content: center;
+  padding: 6px 8px;
+  border: 1px solid rgba(114, 214, 255, 0.24);
+  border-radius: 11px;
+  background: rgba(79, 131, 244, 0.13);
+  color: #b9eeff;
+  font-size: 23px;
+  font-weight: 850;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  text-shadow: 0 0 16px rgba(114, 214, 255, 0.22);
+}
+
+.schedule-topline .schedule-time span {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.schedule-topline .schedule-time[data-layout="varied"] {
+  max-width: 76px;
+  min-width: 0;
+  padding: 6px;
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: pre-line;
+}
+
+.schedule-topline .schedule-time[data-layout="empty"] {
+  min-width: 0;
+  font-size: 14px;
+}
+
+.schedule-days li {
+  min-height: 29px;
+  border-radius: 9px;
+  font-size: 8px;
+}
+
+.schedule-days li[data-next-live] {
+  display: flex;
+  min-height: 39px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  border-color: rgba(102, 207, 255, 0.58);
+  background: linear-gradient(145deg, rgba(50, 132, 220, 0.3), rgba(79, 131, 244, 0.16));
+  box-shadow: 0 0 0 1px rgba(73, 174, 255, 0.08), 0 5px 15px rgba(33, 117, 208, 0.14);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.schedule-days li[data-next-live] .schedule-day-name {
+  font-weight: 900;
+}
+
+.schedule-days .schedule-day-next-label {
+  color: #9ee9ff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+}
+
+.schedule-days .schedule-day-next-label[hidden] {
+  display: none !important;
+}
+
+.schedule-countdown,
+.schedule-countdown-live {
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 8px;
+}
+
+.schedule-countdown {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.schedule-countdown [data-next-live-prefix] {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.schedule-countdown [data-next-live-prefix] .qg-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.schedule-countdown .schedule-countdown-value {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid rgba(114, 214, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(4, 13, 26, 0.52);
+  color: #eaf8ff;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(98, 188, 255, 0.22);
+}
+
+.schedule-countdown .schedule-countdown-value[data-empty="true"] {
+  max-width: 132px;
+  color: #aabbd2;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-align: right;
+  text-shadow: none;
+  white-space: normal;
+}
+
+.schedule-countdown-live {
+  font-size: 9px;
+}
+
+@media (max-width: 390px) {
+  .schedule-card {
+    padding: 9px 10px;
+  }
+
+  .schedule-topline .schedule-time {
+    min-width: 47px;
+    padding-inline: 6px;
+    font-size: 20px;
+  }
+
+  .schedule-countdown {
+    gap: 4px;
+  }
+
+  .schedule-countdown [data-next-live-prefix] {
+    gap: 3px;
+    font-size: 7px;
+  }
+
+  .schedule-countdown .schedule-countdown-value {
+    padding: 4px 5px;
+    font-size: 10px;
+    letter-spacing: 0.055em;
+  }
+}
+
+.contact-widget .contact-form.contact-chat-composer {
+  min-height: 0;
+  flex: 1 1 auto;
+  align-content: end;
+  gap: 6px;
+}
+
+.member-access-button--profile {
+  text-transform: uppercase;
+}
+
+.legal-dialog-done {
+  text-transform: uppercase;
 }

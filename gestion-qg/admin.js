@@ -111,6 +111,8 @@
   const conversationRecords = new Map();
   let currentConversationId = "";
   let currentConversationStatus = "";
+  let currentConversationMessages = [];
+  let currentConversationMessageCount = -1;
   let adminVoiceState = null;
   let selectedConversationLoading = false;
   let adminPollTimer = 0;
@@ -783,8 +785,9 @@
     }
   };
 
-  const setAdminTab = (tabName, { focus = false } = {}) => {
+  const setAdminTab = (tabName, { focus = false, refresh = true } = {}) => {
     const validTab = ["settings", "members", "conversations"].includes(tabName) ? tabName : "settings";
+    const previousTab = activeAdminTab;
     activeAdminTab = validTab;
     if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
     if (adminPanel) adminPanel.dataset.activeTab = validTab;
@@ -802,8 +805,9 @@
     if (validTab === "members" && !adminPanel.hidden && !membersLoaded) {
       void loadMembers({ reset: true, quiet: false });
     }
-    if (validTab === "conversations" && !adminPanel.hidden && !conversationsList?.childElementCount) {
-      void loadConversations({ reset: true, quiet: true });
+    if (validTab === "conversations" && !adminPanel.hidden && refresh &&
+        (previousTab !== validTab || !conversationsList?.childElementCount)) {
+      void loadConversations({ reset: true, quiet: true, skipSelected: true });
     }
   };
 
@@ -1068,6 +1072,7 @@
       if (requestedCursor) url.searchParams.set("cursor", requestedCursor);
       url.searchParams.set("filter", requestedFilter);
       if (requestedSubject) url.searchParams.set("subject", requestedSubject);
+      if (quiet) url.searchParams.set("summary", "0");
       const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -1194,6 +1199,7 @@
     item.append(identity);
 
     if (message.kind === "audio" || message.hasAudio) {
+      item.classList.add("thread-message--audio");
       const audioUrl = message.pending && typeof message.previewUrl === "string" && message.previewUrl
         ? message.previewUrl
         : `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
@@ -1319,6 +1325,9 @@
       const url = new URL("/api/admin-messages", window.location.origin);
       url.searchParams.set("view", "conversation");
       url.searchParams.set("id", requestedId);
+      if (quiet && currentConversationMessageCount >= 0) {
+        url.searchParams.set("after", String(currentConversationMessageCount));
+      }
       const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -1334,6 +1343,8 @@
         if (requestedId === currentConversationId && response.status === 404) {
           currentConversationId = "";
           currentConversationStatus = "";
+          currentConversationMessages = [];
+          currentConversationMessageCount = -1;
           conversationContent.hidden = true;
           conversationEmpty.hidden = false;
         } else if (requestedId === currentConversationId) {
@@ -1342,8 +1353,21 @@
         return;
       }
       if (requestedId === currentConversationId) {
-        renderSelectedConversation(data);
-        return data;
+        const incomingMessages = Array.isArray(data.messages) ? data.messages : [];
+        if (data.messagesComplete === false) {
+          const messagesById = new Map(currentConversationMessages.map((message) => [message.id, message]));
+          incomingMessages.forEach((message) => messagesById.set(message.id, message));
+          currentConversationMessages = [...messagesById.values()]
+            .sort((left, right) => (left.sequence || 0) - (right.sequence || 0));
+        } else {
+          currentConversationMessages = incomingMessages;
+        }
+        currentConversationMessageCount = Number.isInteger(data.conversation?.messageCount)
+          ? data.conversation.messageCount
+          : currentConversationMessageCount;
+        const completeData = { ...data, messages: currentConversationMessages };
+        renderSelectedConversation(completeData);
+        return completeData;
       }
     } catch {
       if (!quiet) setStatus(replyStatus, "Impossible de charger cette discussion.", "error");
@@ -1388,7 +1412,12 @@
 
   const selectConversation = async (id, { scroll = false, markRead = true } = {}) => {
     if (!id) return;
-    if (id !== currentConversationId && adminVoiceState && !adminVoiceState.sending) adminVoiceState.cancel();
+    const changedConversation = id !== currentConversationId;
+    if (changedConversation && adminVoiceState && !adminVoiceState.sending) adminVoiceState.cancel();
+    if (changedConversation) {
+      currentConversationMessages = [];
+      currentConversationMessageCount = -1;
+    }
     currentConversationId = id;
     setStatus(replyStatus, "");
     conversationEmpty.hidden = true;
@@ -1544,6 +1573,8 @@
       if (currentConversationId && deletedIds.includes(currentConversationId)) {
         currentConversationId = "";
         currentConversationStatus = "";
+        currentConversationMessages = [];
+        currentConversationMessageCount = -1;
         conversationContent.hidden = true;
         conversationEmpty.hidden = false;
       }
@@ -1633,6 +1664,8 @@
       }
       currentConversationId = "";
       currentConversationStatus = "";
+      currentConversationMessages = [];
+      currentConversationMessageCount = -1;
       conversationContent.hidden = true;
       conversationEmpty.hidden = false;
       setStatus(replyStatus, "Discussion supprimée.");
@@ -2019,11 +2052,14 @@
   const startAdminPolling = () => {
     if (adminPollTimer) window.clearInterval(adminPollTimer);
     adminPollTimer = window.setInterval(() => {
-      if (adminPanel.hidden) return;
-      void loadConversations({ quiet: true });
-      if (activeAdminTab === "members") void loadMembers({ quiet: true });
-      if (currentConversationId) void loadSelectedConversation({ quiet: true });
-    }, 20_000);
+      if (adminPanel.hidden || document.hidden) return;
+      if (activeAdminTab === "conversations") {
+        void loadConversations({ quiet: true, skipSelected: true });
+        if (currentConversationId) void loadSelectedConversation({ quiet: true });
+      } else if (activeAdminTab === "members") {
+        void loadMembers({ quiet: true });
+      }
+    }, 60_000);
   };
 
   const startAdminPresence = () => {
@@ -2063,7 +2099,7 @@
     if (adminTabNavigation) adminTabNavigation.hidden = false;
     if (logoutButton) logoutButton.hidden = false;
     if (adminPresence) adminPresence.hidden = false;
-    setAdminTab(activeAdminTab);
+    setAdminTab(activeAdminTab, { refresh: false });
     startAdminPresence();
     setStatus(loginStatus, "");
     setStatus(saveStatus, "");

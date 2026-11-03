@@ -33,9 +33,11 @@ import {
 class MemoryBlobStore {
   constructor() {
     this.objects = new Map();
+    this.calls = { get: 0, list: 0, put: 0 };
   }
 
   async put(pathname, body, options = {}) {
+    this.calls.put += 1;
     if (!options.allowOverwrite && this.objects.has(pathname)) {
       throw new Error(`Object already exists: ${pathname}`);
     }
@@ -44,12 +46,14 @@ class MemoryBlobStore {
   }
 
   async get(pathname) {
+    this.calls.get += 1;
     const body = this.objects.get(pathname);
     if (!body) return null;
     return { statusCode: 200, stream: new Response(body).body };
   }
 
   async list({ prefix = "", limit = 1000, cursor = "" } = {}) {
+    this.calls.list += 1;
     const paths = [...this.objects.keys()].filter((path) => path.startsWith(prefix)).sort();
     const offset = cursor ? Number(cursor) : 0;
     const start = Number.isInteger(offset) && offset >= 0 ? offset : 0;
@@ -152,6 +156,71 @@ test("account messages persist and return the exact account pseudo", async () =>
   const storedPath = [...store.objects.keys()].find((path) => path.startsWith(`gionny/conversation-messages/${sent.conversation.id}/`));
   const storedMessage = JSON.parse(store.objects.get(storedPath).toString("utf8"));
   assert.equal(storedMessage.pseudo, "MembreTest");
+});
+
+test("unchanged member polls skip Blob message lists and incremental polls read only new sequenced messages", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "MembreIncrem");
+  const sent = await addAccountReply(member.sessionToken, {
+    subject: "Discussion",
+    message: "Premier message.",
+  }, store);
+  const initial = await getAccountConversation(member.sessionToken, store);
+  assert.equal(initial.messages.length, 1);
+
+  store.calls = { get: 0, list: 0, put: 0 };
+  const unchanged = await getAccountConversation(member.sessionToken, store, {
+    afterSequence: initial.conversation.messageCount,
+  });
+  assert.equal(unchanged.messagesComplete, false);
+  assert.deepEqual(unchanged.messages, []);
+  assert.equal(store.calls.list, 0);
+  assert.equal(store.calls.get, 4);
+
+  await addAdminReply(sent.conversation.id, "Nouvelle réponse.", { pseudo: "HoteExact", isHost: true }, store);
+  store.calls = { get: 0, list: 0, put: 0 };
+  const incremental = await getAccountConversation(member.sessionToken, store, {
+    afterSequence: initial.conversation.messageCount,
+  });
+  assert.equal(incremental.messagesComplete, false);
+  assert.equal(incremental.messages.length, 1);
+  assert.equal(incremental.messages[0].sequence, 2);
+  assert.equal(incremental.messages[0].pseudo, "HoteExact");
+  assert.equal(store.calls.list, 1);
+  assert.equal(store.calls.get, 6);
+});
+
+test("conversation rows resolve owner records directly without rescanning the account directory", async () => {
+  const store = new MemoryBlobStore();
+  for (const pseudo of ["MembreListeA", "MembreListeB"]) {
+    const member = await createAccount(store, pseudo);
+    await addAccountReply(member.sessionToken, { subject: "Discussion", message: `Message de ${pseudo}.` }, store);
+  }
+
+  store.calls = { get: 0, list: 0, put: 0 };
+  const page = await listConversations("", store);
+  assert.equal(page.conversations.length, 2);
+  assert.equal(store.calls.list, 1);
+});
+
+test("unchanged Admin thread polls skip the Blob message list after receipts are recorded", async () => {
+  const store = new MemoryBlobStore();
+  const member = await createAccount(store, "MembreAdminPoll");
+  const sent = await addAccountReply(member.sessionToken, {
+    subject: "Discussion",
+    message: "À lire une fois.",
+  }, store);
+  const initial = await getConversationForAdmin(sent.conversation.id, store, { markRead: true });
+  assert.equal(initial.messages[0].read, true);
+
+  store.calls = { get: 0, list: 0, put: 0 };
+  const unchanged = await getConversationForAdmin(sent.conversation.id, store, {
+    afterSequence: initial.conversation.messageCount,
+    markRead: true,
+  });
+  assert.equal(unchanged.messagesComplete, false);
+  assert.deepEqual(unchanged.messages, []);
+  assert.equal(store.calls.list, 0);
 });
 
 test("verified badges and 38-bar voice peaks persist across member and Admin views", async () => {

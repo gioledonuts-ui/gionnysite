@@ -2,7 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#07111f" />
     <meta
       name="description"
@@ -158,7 +158,7 @@
                 aria-haspopup="dialog"
                 aria-expanded="false"
                 aria-controls="profile-dialog"
-              >Mon Profil</button>
+              ><svg class="qg-icon host-crown-icon member-profile-crown" data-member-profile-crown aria-hidden="true" hidden><use href="/assets/qg-icons.svg#icon-crown"></use></svg>Mon Profil</button>
               <a class="member-access-button member-access-button--admin" href="/gestion-qg/" data-host-admin-link hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Admin</a>
               <button class="member-access-button member-access-button--logout" type="button" data-contact-logout>Déconnexion</button>
             </div>
@@ -378,7 +378,7 @@
               </ul>
               <p class="schedule-countdown" data-next-live-countdown aria-live="off">
                 <span data-next-live-prefix><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg> Prochain live dans :</span>
-                <strong data-next-live-value>--h --m --s</strong>
+                <strong class="schedule-countdown-value" data-next-live-value aria-label="Temps avant le prochain live">--:--:--</strong>
               </p>
               <p class="schedule-countdown-live" data-current-live role="status" hidden><span class="creator-live-dot" aria-hidden="true"></span> EN DIRECT ACTUELLEMENT</p>
             </section>
@@ -701,6 +701,7 @@
               <img data-chat-image-preview-img alt="Aperçu de l’image à joindre" />
               <button type="button" data-chat-image-remove aria-label="Retirer l’image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
             </div>
+            <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <div class="chat-compose-row x-chat-compose-row">
               <button class="chat-plus-button x-chat-plus" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
               <button class="x-chat-cancel-button" type="button" data-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
@@ -734,7 +735,6 @@
                 </div>
               </div>
             </div>
-            <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Ne pas remplir</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
             <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
             <p class="contact-privacy">Discussion privée · vocaux jusqu’à 1 min / 200 Ko.</p>
@@ -762,6 +762,7 @@
               <img data-chat-image-preview-img alt="Aperçu de l’image à joindre" />
               <button type="button" data-chat-image-remove aria-label="Retirer l’image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
             </div>
+            <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <div class="chat-compose-row x-chat-compose-row">
               <button class="chat-plus-button x-chat-plus" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
               <button class="x-chat-cancel-button" type="button" data-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
@@ -795,7 +796,6 @@
                 </div>
               </div>
             </div>
-            <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <button class="sr-only" type="submit" data-contact-reply-submit>Envoyer</button>
           </form>
           <div class="contact-thread-closed" data-contact-closed hidden>
@@ -936,7 +936,6 @@
           </section>
         </div>
         <div class="legal-dialog-actions">
-          <a class="legal-admin-button" href="/gestion-qg/"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Accès Admin</a>
           <button class="legal-dialog-done" type="button" data-close-legal>Fermer</button>
         </div>
       </div>
