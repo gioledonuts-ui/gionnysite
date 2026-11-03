@@ -225,6 +225,8 @@
 
   const showVisitedState = (link) => {
     if (link.dataset.network === "youtube") return;
+    // Nothing is "already visited" before the member actually opened the link.
+    if (!visitedNetworks.has(link.dataset.network)) return;
     const badge = link.querySelector(".visited-badge");
     const twitchIsLive = link.dataset.network === "twitch" && link.dataset.live === "true";
     if (badge) badge.hidden = twitchIsLive;
@@ -644,8 +646,13 @@
     document.querySelectorAll("[data-schedule-day]").forEach((item) => {
       const isNextLive = Boolean(nextDayKey) && item.dataset.scheduleDay === nextDayKey;
       item.toggleAttribute("data-next-live", isNextLive);
+      // "PROCHAIN" is the first line of the highlighted day card, so it is
+      // visible by default and only hidden on the three other days.
       const nextLabel = item.querySelector(".schedule-day-next-label");
-      if (nextLabel) nextLabel.hidden = !isNextLive;
+      if (nextLabel) {
+        nextLabel.hidden = false;
+        nextLabel.toggleAttribute("aria-hidden", !isNextLive);
+      }
       if (isNextLive) {
         item.setAttribute("aria-current", "date");
         item.setAttribute("aria-label", `${item.querySelector(".schedule-day-name")?.textContent || "Jour"}, prochain live`);
@@ -767,7 +774,7 @@
       const nextLabel = document.createElement("span");
       nextLabel.className = "schedule-day-next-label";
       nextLabel.textContent = "PROCHAIN";
-      nextLabel.hidden = key !== getNextScheduledDayKey();
+      nextLabel.setAttribute("aria-hidden", "true");
       item.append(nextLabel);
       daysList.append(item);
     }

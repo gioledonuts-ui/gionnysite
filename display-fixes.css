@@ -10,6 +10,18 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
+   0. L'attribut [hidden] gagne toujours
+   --------------------------------------------------------------------------
+   Plusieurs composants (badges « Déjà visité », libellé PROCHAIN, pastilles)
+   posent `display: inline-flex`, ce qui écrasait l'attribut `hidden` et les
+   affichait alors qu'ils devaient rester invisibles.
+   -------------------------------------------------------------------------- */
+
+[hidden] {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
    1. Anti-débordement global + accueil « one-page » sur PC
    -------------------------------------------------------------------------- */
 
@@ -173,97 +185,7 @@ body {
     padding-inline: 12px;
   }
 
-  /* Planning card: compact but modern. */
-  .welcome-actions .schedule-card {
-    padding: 11px 12px;
-    border-radius: 18px;
-  }
-
-  .schedule-card--refresh .schedule-topline {
-    margin-bottom: 9px;
-  }
-
-  .schedule-card--refresh .schedule-mark {
-    width: 30px;
-    height: 30px;
-    flex-basis: 30px;
-    border-radius: 10px;
-  }
-
-  .schedule-card--refresh .schedule-copy h2 {
-    font-size: 11px;
-    letter-spacing: 0.05em;
-  }
-
-  .schedule-card--refresh .schedule-copy p {
-    font-size: 8px;
-  }
-
-  .schedule-card--refresh .schedule-days {
-    gap: 6px;
-  }
-
-  .schedule-card--refresh .schedule-days li,
-  .schedule-card--refresh .schedule-days li[data-next-live] {
-    min-height: 44px;
-    gap: 2px;
-    padding: 6px 2px;
-    border-radius: 11px;
-  }
-
-  .schedule-card--refresh .schedule-days li[data-next-live] {
-    transform: none;
-  }
-
-  .schedule-card--refresh .schedule-day-name {
-    font-size: 8px;
-  }
-
-  .schedule-card--refresh .schedule-day-time {
-    font-size: 9px;
-  }
-
-  .schedule-card--refresh .schedule-countdown,
-  .schedule-card--refresh .schedule-countdown-live {
-    margin-top: 8px;
-    padding: 7px 9px;
-    border-top: 0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    background: #060a14;
-  }
-
-  .schedule-card--refresh .schedule-countdown-label {
-    font-size: 8px;
-    letter-spacing: 0.05em;
-  }
-
-  .schedule-card--refresh .schedule-countdown-label .qg-icon {
-    width: 12px;
-    height: 12px;
-    flex-basis: 12px;
-  }
-
-  .schedule-card--refresh .schedule-countdown-value {
-    gap: 4px;
-    font-size: 11px;
-  }
-
-  .schedule-card--refresh .schedule-countdown-unit {
-    min-width: 36px;
-    min-height: 22px;
-    padding: 0 5px;
-    border-color: rgba(96, 165, 250, 0.3);
-    border-radius: 6px;
-    background: rgba(59, 130, 246, 0.15);
-    color: #7dd3fc;
-    font-size: 11px;
-    font-weight: 800;
-  }
-
-  .schedule-card--refresh .schedule-countdown-separator {
-    font-size: 10px;
-  }
+  /* Planning card: compact dimensions are handled in section 5 bis. */
 
   .networks-panel {
     padding: clamp(12px, 1.2vw, 16px);
@@ -325,11 +247,6 @@ body {
 
   .creator-carousel .discord-detail {
     -webkit-line-clamp: 1;
-  }
-
-  .schedule-card--refresh .schedule-days li,
-  .schedule-card--refresh .schedule-days li[data-next-live] {
-    min-height: 40px;
   }
 
   .networks-panel .network-card,
@@ -758,143 +675,489 @@ body.contact-page-open {
 }
 
 /* --------------------------------------------------------------------------
-   5. Planning « LES PROCHAINS LIVES »
+   5. Planning « LES PROCHAINS LIVES » — socle commun (mobile inclus)
+   --------------------------------------------------------------------------
+   Le détail du design est défini plus bas dans la section « 5 bis », partagée
+   par le mobile et le PC : une seule carte, un seul design.
    -------------------------------------------------------------------------- */
 
-.schedule-card--refresh .schedule-time {
+.schedule-card--refresh .schedule-day-next-label:not([hidden]) {
+  display: none;
+}
+
+.schedule-card--refresh .schedule-days li[data-disabled="true"] {
+  opacity: 0.55;
+}
+
+/* ==========================================================================
+   5 bis. Carte « LES PROCHAINS LIVES » — refonte lumineuse
+   --------------------------------------------------------------------------
+   En-tête (icône dégradée + titre + badge horaire), grille des 4 jours avec
+   mise en avant automatique du prochain live, barre de décompte à 3 blocs.
+   ========================================================================== */
+
+.welcome-actions .schedule-card.schedule-card--refresh {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, #0b1326 0%, #091020 52%, #060b16 100%);
+  box-shadow: 0 0 30px rgba(37, 99, 235, 0.12), inset 0 1px 0 rgba(191, 219, 254, 0.06);
+  animation: none;
+}
+
+/* 1. En-tête ---------------------------------------------------------------- */
+
+.schedule-card--refresh .schedule-topline {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+
+.schedule-card--refresh .schedule-mark {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6, #4f46e5);
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.3);
+  color: #fff;
+}
+
+.schedule-card--refresh .schedule-mark svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.schedule-card--refresh .schedule-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schedule-card--refresh .schedule-copy h2 {
+  margin: 0;
+  overflow: hidden;
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(13px, 1.15vw, 17px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-copy p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  overflow: hidden;
+  color: rgba(191, 219, 254, 0.8);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-live-indicator {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.9);
+}
+
+.schedule-card--refresh .schedule-live-indicator::after {
+  inset: -3px;
+  border-color: rgba(52, 211, 153, 0.55);
+}
+
+.schedule-card--refresh .schedule-time,
+.schedule-card--refresh .schedule-time[data-layout="varied"],
+.schedule-card--refresh .schedule-time[data-layout="empty"] {
   display: inline-flex;
   min-width: 0;
+  max-width: none;
   min-height: 0;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  padding: 2px 8px;
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 8px;
-  background: rgba(59, 130, 246, 0.15);
-  box-shadow: none;
+  padding: 5px 10px;
+  border: 1px solid rgba(96, 165, 250, 0.5);
+  border-radius: 12px;
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.3), rgba(79, 70, 229, 0.3));
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
   color: #fff;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: clamp(15px, 1.25vw, 19px);
+  font-weight: 900;
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: 1.1;
   text-shadow: none;
   white-space: nowrap;
 }
 
 .schedule-card--refresh .schedule-time[data-layout="varied"] {
-  min-width: 0;
-  min-height: 0;
-  max-width: 92px;
-  font-size: 8px;
+  font-size: 9px;
   line-height: 1.15;
   white-space: normal;
+  text-align: center;
 }
 
-.schedule-card--refresh .schedule-time[data-layout="empty"] {
+/* 2. Grille des 4 jours ----------------------------------------------------- */
+
+.schedule-card--refresh .schedule-days {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.schedule-card--refresh .schedule-days li,
+.schedule-card--refresh .schedule-days li[data-next-live] {
+  display: flex;
   min-width: 0;
-  font-size: 12px;
-}
-
-/* Sober by default, the next live day is the bright one. */
-.schedule-card--refresh .schedule-days li {
-  position: relative;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: none;
-  color: #94a3b8;
+  color: #cbd5e1;
+  text-align: center;
+  transform: none;
+  transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
 }
 
 .schedule-card--refresh .schedule-days li .schedule-day-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
   color: inherit;
+  font-family: "Outfit", sans-serif;
+  font-size: clamp(9px, 0.85vw, 12px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .schedule-card--refresh .schedule-days li .schedule-day-time {
-  color: rgba(148, 163, 184, 0.85);
+  display: block;
+  color: #64748b;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
+/* Le prochain live : carte allumée bleu/indigo + libellé PROCHAIN. */
 .schedule-card--refresh .schedule-days li[data-next-live] {
-  border: 2px solid #60a5fa;
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.25), rgba(79, 70, 229, 0.25));
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
-  color: #fff;
-  font-weight: 700;
-  transform: none;
-}
-
-.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-name,
-.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-time {
+  border-color: rgba(147, 197, 253, 0.8);
+  background: linear-gradient(180deg, #3b82f6, #4f46e5);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.45);
   color: #fff;
 }
 
 .schedule-card--refresh .schedule-days li[data-next-live]::after {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #bfdbfe;
-  box-shadow: 0 0 8px rgba(191, 219, 254, 0.9);
-  content: "";
+  display: none;
+  content: none;
 }
 
-.schedule-card--refresh .schedule-day-next-label {
-  display: none !important;
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-name {
+  color: #fff;
+  font-size: clamp(9.5px, 0.9vw, 13px);
+  font-weight: 800;
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-time {
+  color: rgba(224, 242, 254, 0.9);
+  font-weight: 700;
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-next-label {
+  display: block !important;
+  order: -1;
+  color: #dbeafe;
+  font-family: "Outfit", sans-serif;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .schedule-card--refresh .schedule-days li[data-disabled="true"] {
-  opacity: 0.45;
+  opacity: 0.55;
 }
+
+/* 3. Barre de décompte ------------------------------------------------------ */
 
 .schedule-card--refresh .schedule-countdown,
 .schedule-card--refresh .schedule-countdown-live {
   display: flex;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 9px;
-  padding: 5px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 12px;
-  background: rgba(6, 10, 20, 0.9);
+  background: rgba(5, 9, 20, 0.9);
 }
 
 .schedule-card--refresh .schedule-countdown-live {
   justify-content: center;
-  color: #8cf0ba;
+  color: #86efac;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .schedule-card--refresh .schedule-countdown-label {
-  gap: 5px;
-  color: #93a7c1;
-  font-size: 8px;
-  font-weight: 750;
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: #cbd5e1;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
   letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-countdown-label .qg-icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  color: #60a5fa;
 }
 
 .schedule-card--refresh .schedule-countdown-value {
-  gap: 3px;
-  font-size: 11px;
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #e0f2fe;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: none;
 }
 
 .schedule-card--refresh .schedule-countdown-unit {
+  display: inline-flex;
   min-width: 0;
   min-height: 0;
-  padding: 2px 5px;
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 5px;
-  background: rgba(59, 130, 246, 0.15);
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.2);
   box-shadow: none;
   color: #7dd3fc;
-  font-size: 11px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
+  line-height: 1.1;
 }
 
 .schedule-card--refresh .schedule-countdown-separator {
-  color: rgba(125, 211, 252, 0.6);
+  color: rgba(125, 211, 252, 0.55);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.schedule-card--refresh .schedule-countdown-value[data-empty="true"] {
+  max-width: none;
+  color: #cbd5e1;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 10px;
+  font-weight: 600;
+  text-align: right;
+  white-space: normal;
+}
+
+@media (min-width: 941px) {
+  /* Compact version, still one screen tall on desktop. */
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 9px;
+    padding: 11px 12px;
+    border-radius: 15px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+  }
+
+  .schedule-card--refresh .schedule-mark svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .schedule-card--refresh .schedule-copy h2 {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  .schedule-card--refresh .schedule-copy p {
+    gap: 5px;
+    font-size: 9px;
+  }
+
+  .schedule-card--refresh .schedule-time,
+  .schedule-card--refresh .schedule-time[data-layout="varied"],
+  .schedule-card--refresh .schedule-time[data-layout="empty"] {
+    padding: 3px 9px;
+    border-radius: 9px;
+    font-size: 13px;
+  }
+
+  .schedule-card--refresh .schedule-days {
+    gap: 6px;
+  }
+
+  .schedule-card--refresh .schedule-days li,
+  .schedule-card--refresh .schedule-days li[data-next-live] {
+    gap: 2px;
+    padding: 5px 3px;
+    border-radius: 10px;
+  }
+
+  .schedule-card--refresh .schedule-days li .schedule-day-name {
+    font-size: 9px;
+  }
+
+  .schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-name {
+    font-size: 10px;
+  }
+
+  .schedule-card--refresh .schedule-days li .schedule-day-time {
+    font-size: 8px;
+  }
+
+  .schedule-card--refresh .schedule-day-next-label {
+    font-size: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  .schedule-card--refresh .schedule-countdown,
+  .schedule-card--refresh .schedule-countdown-live {
+    padding: 5px 9px;
+    border-radius: 10px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    gap: 5px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label .qg-icon {
+    width: 11px;
+    height: 11px;
+    flex-basis: 11px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-unit {
+    padding: 2px 5px;
+    font-size: 10px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-separator {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 430px) {
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+  }
+
+  .schedule-card--refresh .schedule-mark svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .schedule-card--refresh .schedule-copy h2 {
+    font-size: 12px;
+  }
+
+  .schedule-card--refresh .schedule-copy p {
+    font-size: 9px;
+  }
+
+  .schedule-card--refresh .schedule-time {
+    font-size: 14px;
+    padding: 4px 8px;
+  }
+
+  .schedule-card--refresh .schedule-days li .schedule-day-name {
+    font-size: 9px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    font-size: 9px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-unit {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
 }

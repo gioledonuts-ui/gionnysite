@@ -360,9 +360,10 @@
             <section class="schedule-card schedule-card--refresh" aria-labelledby="schedule-title">
               <div class="schedule-topline">
                 <div class="schedule-mark" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="8.5" />
-                    <path d="M12 7v5l3.5 2" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4.8" width="18" height="16.2" rx="3.2" />
+                    <path d="M8 2.6v4.2M16 2.6v4.2M3 10h18" />
+                    <path d="M7.6 14h2.2M12 14h2.2M16.4 14h.1M7.6 17.4h2.2M12 17.4h2.2" />
                   </svg>
                 </div>
                 <div class="schedule-copy">
@@ -373,24 +374,24 @@
               </div>
               <ul class="schedule-days" data-schedule-days aria-label="Jours de live">
                 <li data-schedule-day="tuesday">
+                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
                   <span class="schedule-day-name">MARDI</span>
                   <span class="schedule-day-time">22H</span>
-                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
                 </li>
                 <li data-schedule-day="wednesday">
+                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
                   <span class="schedule-day-name">MERCREDI</span>
                   <span class="schedule-day-time">22H</span>
-                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
                 </li>
                 <li data-schedule-day="saturday">
+                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
                   <span class="schedule-day-name">SAMEDI</span>
                   <span class="schedule-day-time">22H</span>
-                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
                 </li>
                 <li data-schedule-day="sunday">
+                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
                   <span class="schedule-day-name">DIMANCHE</span>
                   <span class="schedule-day-time">22H</span>
-                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
                 </li>
               </ul>
               <div class="schedule-countdown" data-next-live-countdown aria-live="off">
