@@ -1323,6 +1323,8 @@
 
   const renderContactState = () => {
     renderMemberAccess();
+    // The chat header shows "Connexion requise" until somebody is signed in.
+    if (contactWidget) contactWidget.dataset.signedOut = visitorAccount ? "false" : "true";
     if (!visitorAccount) {
       if (contactAuth) contactAuth.hidden = false;
       if (contactNewView) contactNewView.hidden = true;
@@ -1346,6 +1348,84 @@
     renderSubjectLabel(contactHeaderSubject, newConversationMode
       ? (contactForm?.elements.namedItem("subject")?.value || "Discussion")
       : "Discussion");
+  };
+
+  // ---------------------------------------------------------------------
+  // Auto-sync : profil + messages gardés dans le navigateur
+  // ---------------------------------------------------------------------
+  // Le serveur vit en RAM + /tmp : un redémarrage à froid peut vider l'état.
+  // Chaque navigateur garde donc son profil et son fil, et les réinjecte à la
+  // première requête. Rien de ce que les membres ont écrit n'est perdu.
+  const QB_SYNC_KEY = "qg.member.sync.v1";
+  const QB_SYNC_MESSAGES_LIMIT = 120;
+
+  const readBrowserSync = () => {
+    try {
+      const raw = localStorage.getItem(QB_SYNC_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeBrowserSync = () => {
+    try {
+      if (!visitorAccount?.pseudo || visitorAccount.isAdmin) return;
+      localStorage.setItem(QB_SYNC_KEY, JSON.stringify({
+        version: 1,
+        pseudo: visitorAccount.pseudo,
+        password: String(authForm?.elements.namedItem("password")?.value || ""),
+        conversationId: visitorConversation?.id || "",
+        messages: visitorConversationMessages
+          .filter((message) => !message.pending)
+          .slice(-QB_SYNC_MESSAGES_LIMIT)
+          .map((message) => ({
+            text: message.text || (message.kind === "audio" ? "" : ""),
+            sender: message.sender || (message.isHost ? "gionny" : "visitor"),
+            isHost: message.isHost === true,
+            createdAt: message.createdAt || "",
+          }))
+          .filter((message) => message.text),
+        savedAt: new Date().toISOString(),
+      }));
+    } catch {
+      // Quota / mode privé : la synchronisation est un bonus, jamais un blocage.
+    }
+  };
+
+  const clearBrowserSync = () => {
+    try {
+      localStorage.removeItem(QB_SYNC_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Called once, before the first conversation read: pushes the browser copy
+  // back so the server can rebuild the account and the thread it lost.
+  const syncBrowserStateToServer = async () => {
+    const saved = readBrowserSync();
+    if (!saved?.pseudo || !Array.isArray(saved.messages) || !saved.messages.length) return null;
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({
+          action: "sync",
+          pseudo: saved.pseudo,
+          password: saved.password || "",
+          messages: saved.messages,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      return data?.ok ? data : null;
+    } catch {
+      return null;
+    }
   };
 
   const loadVisitorConversation = async ({ quiet = false } = {}) => {
@@ -1387,6 +1467,7 @@
       }
       newConversationMode = false;
       renderContactState();
+      writeBrowserSync();
       if (visitorConversation) renderVisitorConversation({ announceNewReply: true });
     } catch {
       if (!quiet) setContactStatus("Impossible de joindre le serveur. Réessaie dans un instant.", "error");
@@ -1400,6 +1481,8 @@
     const opensAtHero = context === "top";
     lastContactTrigger = trigger || contactLauncher;
     contactWidget.dataset.openContext = opensAtHero ? "top" : "launcher";
+    window.clearTimeout(contactCloseTimer);
+    contactWidget.classList.remove("is-closing");
     contactWidget.hidden = false;
     if (contactScrim) contactScrim.hidden = false;
     document.body.classList.add("contact-page-open");
@@ -1419,21 +1502,34 @@
     }
   };
 
-  const minimizeContactWidget = () => {
+  // The window slides down before disappearing: no instant vanish, and the
+  // chevron never rotates (it keeps pointing down).
+  const CONTACT_CLOSE_MS = 250;
+  let contactCloseTimer = null;
+
+  const finishContactClose = () => {
     if (!contactWidget) return;
-    voiceControlStates.forEach((state) => state.cancel());
     contactWidget.hidden = true;
+    contactWidget.classList.remove("is-closing");
     delete contactWidget.dataset.openContext;
     if (contactScrim) contactScrim.hidden = true;
     document.body.classList.remove("contact-page-open");
     unlockBackgroundScroll("contact-widget");
-    contactLauncher?.setAttribute("aria-expanded", "false");
-    memberLoginButton?.setAttribute("aria-expanded", "false");
-    memberRegisterButton?.setAttribute("aria-expanded", "false");
     const trigger = lastContactTrigger && !lastContactTrigger.closest("[hidden]") ? lastContactTrigger : contactLauncher;
     trigger?.focus({ preventScroll: true });
     lastContactTrigger = null;
-    if (visitorConversation && !newConversationMode) renderVisitorConversation({ announceNewReply: true });
+  };
+
+  const minimizeContactWidget = () => {
+    if (!contactWidget || contactWidget.hidden) return;
+    voiceControlStates.forEach((state) => state.cancel());
+    contactWidget.classList.add("is-closing");
+    if (contactScrim) contactScrim.hidden = true;
+    contactLauncher?.setAttribute("aria-expanded", "false");
+    memberLoginButton?.setAttribute("aria-expanded", "false");
+    memberRegisterButton?.setAttribute("aria-expanded", "false");
+    window.clearTimeout(contactCloseTimer);
+    contactCloseTimer = window.setTimeout(finishContactClose, CONTACT_CLOSE_MS);
   };
 
   const updateConversationFromResponse = (data) => {
@@ -1692,6 +1788,7 @@
     visitorAccount = null;
     visitorConversation = null;
     visitorConversationMessages = [];
+    clearBrowserSync();
     newConversationMode = false;
     renderContactState();
     setAuthMode("register");
@@ -1921,6 +2018,7 @@
       visitorConversation = data.conversation || null;
       visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
       newConversationMode = false;
+      writeBrowserSync();
       authForm.reset();
       setStatusNode(authStatus, "");
       renderContactState();
@@ -2242,7 +2340,18 @@
       contactForm?.querySelector("[data-chat-message]")?.focus({ preventScroll: true });
     });
 
-    void loadVisitorConversation();
+    // Auto-sync first: if this instance was cold-started, the browser copy
+    // rebuilds the account and its thread before anything is read.
+    void (async () => {
+      const restored = visitorAccount ? null : await syncBrowserStateToServer();
+      if (restored?.account) {
+        visitorAccount = restored.account;
+        visitorConversation = restored.conversation || null;
+        visitorConversationMessages = Array.isArray(restored.messages) ? restored.messages : [];
+        renderContactState();
+      }
+      await loadVisitorConversation({ quiet: true });
+    })();
     visitorPollTimer = window.setInterval(() => {
       if (visitorAccount && !newConversationMode && !contactWidget.hidden && !document.hidden) {
         void loadVisitorConversation({ quiet: true });

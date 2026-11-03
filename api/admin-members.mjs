@@ -1,5 +1,4 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
-import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   deleteVisitorAccount,
   isConversationId,
@@ -7,6 +6,7 @@ import {
   setVisitorAccountBanned,
   setVisitorAccountBadges,
   setVisitorAccountRole,
+  ensureOwnerAccountSeeded,
 } from "../lib/contact-inbox.mjs";
 
 const MAX_BODY_BYTES = 4000;
@@ -63,14 +63,13 @@ function memberError(reason) {
 
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureOwnerAccountSeeded().catch(() => {});
   if (!["GET", "PATCH", "DELETE"].includes(request.method)) {
     response.setHeader("Allow", "GET, PATCH, DELETE");
     return response.status(405).json({ error: "Méthode non autorisée." });
   }
   if (!isSameOriginRequest(request)) return response.status(403).json({ error: "Requête refusée." });
   if (!(await isAdminRequest(request))) return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
-  if (!isBlobStorageConfigured()) return response.status(503).json({ error: "Le stockage privé des comptes n’est pas disponible." });
-
   try {
     if (request.method === "GET") {
       const cursor = queryValue(request, "cursor");

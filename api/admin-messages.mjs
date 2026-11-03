@@ -1,5 +1,4 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
-import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAdminImageReply,
   addAdminReply,
@@ -18,6 +17,7 @@ import {
   setConversationSubject,
   setConversationUnread,
   startAdminConversationForAccount,
+  ensureOwnerAccountSeeded,
 } from "../lib/contact-inbox.mjs";
 
 const MAX_BODY_BYTES = 6000;
@@ -96,6 +96,7 @@ function conversationError(reason) {
 
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureOwnerAccountSeeded().catch(() => {});
 
   if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
     response.setHeader("Allow", "GET, POST, PATCH, DELETE");
@@ -106,9 +107,6 @@ export default async function handler(request, response) {
   }
   if (!(await isAdminRequest(request))) {
     return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
-  }
-  if (!isBlobStorageConfigured()) {
-    return response.status(503).json({ error: "Le stockage privé des messages n’est pas disponible." });
   }
 
   try {

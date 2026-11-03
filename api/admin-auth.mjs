@@ -6,7 +6,12 @@ import {
   safePasswordMatch,
   setAdminSessionCookie,
 } from "../lib/admin-security.mjs";
-import { getAdminReplyIdentity, getHostAccountIdentityFromSession, readAccountSessionCookie } from "../lib/contact-inbox.mjs";
+import {
+  ensureOwnerAccountSeeded,
+  getAdminReplyIdentity,
+  getHostAccountIdentityFromSession,
+  readAccountSessionCookie,
+} from "../lib/contact-inbox.mjs";
 
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -79,6 +84,7 @@ function methodNotAllowed(response) {
 
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureOwnerAccountSeeded().catch(() => {});
 
   if (request.method === "GET") {
     let hostAuthenticated = false;

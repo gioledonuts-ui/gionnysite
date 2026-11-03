@@ -1,5 +1,4 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
-import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAccountReply,
   addAdminAudioReply,
@@ -156,8 +155,6 @@ function parseRange(value, size) {
 export default async function handler(request, response) {
   setNoStore(response);
   if (!isSameOriginRequest(request)) return sendJson(response, 403, { error: "Requête refusée." });
-  if (!isBlobStorageConfigured()) return sendJson(response, 503, { error: "Le stockage privé des vocaux n’est pas disponible." });
-
   if (request.method === "POST") {
     const adminReply = firstHeader(request.headers?.["x-admin-reply"]) === "true";
     const sessionToken = readAccountSessionCookie(request);

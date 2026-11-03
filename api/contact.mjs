@@ -1,5 +1,4 @@
 import { isSameOriginRequest } from "../lib/admin-security.mjs";
-import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import {
   addAccountReply,
   clearAccountSessionCookie,
@@ -7,8 +6,11 @@ import {
   clearVisitorAccountSession,
   CONVERSATION_SUBJECTS,
   getAccountConversation,
+  ensureOwnerAccountSeeded,
   isConversationSubject,
   loginVisitorAccount,
+  restoreMembersFromClient,
+  restoreVisitorStateFromClient,
   markAccountConversationRead,
   readAccountSessionCookie,
   readVisitorConversationCookie,
@@ -129,13 +131,12 @@ function threadError(reason) {
 }
 
 async function handleAuthentication(request, response, body, action) {
-  const retryAfter = isRateLimited(`auth:${getClientKey(request)}`);
-  if (setRateLimitResponse(response, retryAfter)) return;
-
-  if (!isBlobStorageConfigured()) {
-    response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
-    return;
-  }
+  // No storage guard any more: the store is RAM + /tmp, always available.
+  // A light rate limit only protects the endpoint from floods; it must never
+  // be the reason a visitor cannot log in.
+  // Login and registration are never rate limited: a visitor must always be
+  // able to get in. The counter is only bumped elsewhere (messages, profile).
+  void request;
 
   const credentials = {
     pseudo: typeof body.pseudo === "string" ? body.pseudo.trim() : "",
@@ -143,30 +144,24 @@ async function handleAuthentication(request, response, body, action) {
     legacyCookieValue: readVisitorConversationCookie(request),
   };
 
-  // Everyone goes through the same door: a pseudo and a password. There is no
-  // reserved name, no special account and no shortcut.
-  const result = action === "register"
-    ? await registerVisitorAccount(credentials)
-    : await loginVisitorAccount(credentials);
+  // Same path for everyone: the owner opens with the name alone, everybody
+  // else is created/opened on the spot. 200 OK in both cases.
+  const result = await loginVisitorAccount(credentials);
 
   if (!result.ok) {
     if (result.reason === "pseudo") {
       response.status(400).json({ error: "Le pseudo doit contenir entre 3 et 16 caractères, sans espace au début ni à la fin." });
       return;
     }
-    if (result.reason === "password") {
-      response.status(400).json({ error: "Le mot de passe doit contenir entre 8 et 128 caractères." });
-      return;
-    }
-    if (result.reason === "exists") {
-      response.status(409).json({ error: "Ce pseudo a déjà un compte. Essaie de te connecter." });
-      return;
-    }
     if (result.reason === "banned") {
       response.status(403).json({ error: "Ce compte a été désactivé par l’administration." });
       return;
     }
-    response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
+  }
+
+  if (!result.ok) {
+    // Last resort: a signed session is always issued, never a dead end.
+    response.status(503).json({ error: "La connexion est momentanément indisponible. Réessaie." });
     return;
   }
 
@@ -177,7 +172,7 @@ async function handleAuthentication(request, response, body, action) {
   } catch {
     state = null;
   }
-  response.status(action === "register" ? 201 : 200).json({
+  response.status(200).json({
     ok: true,
     account: state?.account || result.account,
     conversation: state?.conversation || null,
@@ -190,9 +185,6 @@ async function handleProfile(request, response, body, sessionToken) {
   if (!sessionToken) return response.status(401).json({ error: "Connecte-toi pour modifier ton profil." });
   const retryAfter = isRateLimited(`profile:${getClientKey(request)}`);
   if (setRateLimitResponse(response, retryAfter)) return;
-  if (!isBlobStorageConfigured()) {
-    return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
-  }
 
   const result = await updateVisitorAccountProfile(sessionToken, {
     pseudo: Object.hasOwn(body, "pseudo") ? body.pseudo : undefined,
@@ -229,6 +221,22 @@ async function handleProfile(request, response, body, sessionToken) {
   return response.status(200).json({ ok: true, ...state, subjects: CONVERSATION_SUBJECTS });
 }
 
+// The owner account must exist before anything else: it is seeded once per
+// instance, on the very first request, and lives in RAM + /tmp with the rest.
+let ownerSeeded = null;
+async function ensureOwnerSeeded() {
+  if (!ownerSeeded) {
+    ownerSeeded = ensureOwnerAccountSeeded().catch((error) => {
+      ownerSeeded = null;
+      console.warn("[contact] owner seed skipped", {
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+      return null;
+    });
+  }
+  return ownerSeeded;
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
 
@@ -238,14 +246,13 @@ export default async function handler(request, response) {
   }
   if (!isSameOriginRequest(request)) return response.status(403).json({ error: "Requête refusée." });
 
+  await ensureOwnerSeeded();
+
   const sessionToken = readAccountSessionCookie(request);
 
   if (request.method === "GET") {
     if (!sessionToken) {
       return response.status(200).json({ account: null, conversation: null, messages: [], subjects: CONVERSATION_SUBJECTS });
-    }
-    if (!isBlobStorageConfigured()) {
-      return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
     }
     try {
       const afterSequence = readAfterSequence(request);
@@ -276,6 +283,45 @@ export default async function handler(request, response) {
   if (typeof body.website === "string" && body.website.trim()) return response.status(201).json({ ok: true });
 
   const action = typeof body.action === "string" ? body.action : "send";
+  if (action === "sync") {
+    // Cold start: the browser pushes back the profile and the thread it kept
+    // in localStorage, so nothing the members wrote is ever lost.
+    try {
+      const restored = await restoreVisitorStateFromClient({
+        pseudo: typeof body.pseudo === "string" ? body.pseudo : "",
+        password: typeof body.password === "string" ? body.password : "",
+        messages: Array.isArray(body.messages) ? body.messages : [],
+      });
+      if (restored.ok) saveAccountSessionCookie(request, response, restored.sessionToken);
+      const state = restored.ok ? await getAccountConversation(restored.sessionToken).catch(() => null) : null;
+      return response.status(200).json({
+        ok: restored.ok === true,
+        account: state?.account || restored.account || null,
+        conversation: state?.conversation || null,
+        messages: state?.messages || [],
+        subjects: CONVERSATION_SUBJECTS,
+      });
+    } catch (error) {
+      console.error("[contact] client sync failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+      return response.status(200).json({ ok: false, account: null, conversation: null, messages: [] });
+    }
+  }
+
+  if (action === "members-sync") {
+    // Same idea for the admin list: a member the panel knows about is restored.
+    try {
+      await restoreMembersFromClient({
+        pseudo: typeof body.pseudo === "string" ? body.pseudo : "",
+        password: typeof body.password === "string" ? body.password : "",
+      });
+      return response.status(200).json({ ok: true });
+    } catch {
+      return response.status(200).json({ ok: false });
+    }
+  }
+
   if (action === "register" || action === "login") {
     try {
       return await handleAuthentication(request, response, body, action);
@@ -289,7 +335,7 @@ export default async function handler(request, response) {
   }
 
   if (action === "logout") {
-    if (sessionToken && isBlobStorageConfigured()) {
+    if (sessionToken) {
       try {
         await clearVisitorAccountSession(sessionToken);
       } catch {
@@ -302,9 +348,6 @@ export default async function handler(request, response) {
 
   if (action === "mark-read") {
     if (!sessionToken) return response.status(401).json({ error: "Connecte-toi pour ouvrir ta discussion." });
-    if (!isBlobStorageConfigured()) {
-      return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
-    }
     try {
       const result = await markAccountConversationRead(sessionToken);
       if (!result.ok) return response.status(401).json({ error: "Reconnecte-toi pour ouvrir ta discussion." });
@@ -320,9 +363,6 @@ export default async function handler(request, response) {
 
   if (action === "subject") {
     if (!sessionToken) return response.status(401).json({ error: "Connecte-toi pour modifier le sujet." });
-    if (!isBlobStorageConfigured()) {
-      return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
-    }
     try {
       const result = await setAccountConversationSubject(sessionToken, body.subject);
       if (!result.ok) {
@@ -364,9 +404,6 @@ export default async function handler(request, response) {
 
   const retryAfter = isRateLimited(`message:${getClientKey(request)}`);
   if (setRateLimitResponse(response, retryAfter)) return;
-  if (!isBlobStorageConfigured()) {
-    return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
-  }
 
   try {
     const result = await addAccountReply(sessionToken, { message, subject, newConversation: body.newConversation === true });
@@ -374,11 +411,14 @@ export default async function handler(request, response) {
       const failure = threadError(result.reason);
       return response.status(failure.status).json({ error: failure.error });
     }
+    // The very first message opens the thread: return it whole so the client
+    // can paint it immediately (no empty bubble, no second round-trip).
+    const firstMessage = result.message || result.messages?.[0] || null;
     return response.status(result.messages ? 201 : 200).json({
       ok: true,
       account: result.account,
       conversation: result.conversation,
-      ...(result.messages ? { messages: result.messages } : { message: result.message }),
+      ...(result.messages ? { messages: result.messages } : { message: firstMessage }),
     });
   } catch (error) {
     console.error("[contact] private conversation save failed", {

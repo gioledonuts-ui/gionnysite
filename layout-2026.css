@@ -1,0 +1,537 @@
+/* ==========================================================================
+   Passe « stockage autonome » : hero plus dense, en-tête plus grand, chat
+   --------------------------------------------------------------------------
+   Ce fichier est chargé en dernier : il ne fait que corriger/compléter, il ne
+   redéfinit jamais une règle utile ailleurs.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Aucune barre de scroll à l'intérieur des grands rectangles
+   -------------------------------------------------------------------------- */
+/* Le Hero et « Retrouve-moi ici : » ne défilent jamais : leur contenu est
+   dimensionné pour tenir, et tout débordement est coupé net. */
+.welcome-panel,
+.networks-panel {
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.welcome-panel::-webkit-scrollbar,
+.networks-panel::-webkit-scrollbar,
+.welcome-actions::-webkit-scrollbar,
+.creator-carousel::-webkit-scrollbar,
+.network-grid::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.welcome-actions,
+.creator-carousel,
+.network-grid,
+.welcome-identity,
+.welcome-intro {
+  overflow: visible;
+  scrollbar-width: none;
+}
+
+/* La grille des réseaux ne défile pas non plus : elle garde sa composition
+   d'origine, sans barre de scroll interne. */
+.network-grid {
+  overflow: visible;
+}
+
+/* --------------------------------------------------------------------------
+   2. Hero : plus grand, plus dense, sans vide au milieu
+   -------------------------------------------------------------------------- */
+.welcome-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 46%);
+  align-items: stretch;
+  gap: clamp(18px, 2.2vw, 30px);
+  padding: clamp(18px, 2vw, 28px);
+}
+
+.welcome-identity {
+  grid-template-columns: clamp(132px, 10.5vw, 168px) minmax(0, 1fr);
+  gap: clamp(18px, 2.2vw, 30px);
+  align-content: center;
+}
+
+/* La colonne de droite prend plus d'ampleur pour combler le centre. */
+.welcome-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: 12px;
+  min-height: 0;
+  width: 100%;
+  justify-self: stretch;
+}
+
+/* Photo de profil : le cadre est plus grand et l'image remplit le cercle. */
+.profile-frame {
+  width: clamp(132px, 10.5vw, 168px);
+  border-width: 2px;
+}
+
+.profile-avatar {
+  border: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.creator-handle {
+  min-height: 32px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.profile-trigger {
+  align-items: center;
+}
+
+/* Titre et sous-titre franchement plus grands. */
+.welcome-panel h1 {
+  max-width: none;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: clamp(2rem, 2.9vw, 2.875rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.welcome-copy {
+  display: block;
+  max-width: 30ch;
+  margin-top: 12px;
+  overflow: visible;
+  color: #cbd5e1;
+  font-size: clamp(0.95rem, 1.05vw, 1.125rem);
+  font-weight: 500;
+  line-height: 1.4;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------------------
+   3. Carrousel + planning : plus hauts, plus lisibles, largeurs différenciées
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel {
+  width: 100%;
+  height: auto;
+  min-height: 250px;
+  align-self: stretch;
+}
+
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta,
+.welcome-actions .creator-carousel .creator-slide--discord,
+.welcome-actions .creator-carousel .creator-slide--twitch,
+.welcome-actions .creator-carousel .creator-slide--youtube {
+  min-height: 250px;
+  padding: 20px 22px;
+  border-radius: 22px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+/* Le planning est décalé et un peu plus étroit : plus deux rectangles identiques. */
+.welcome-actions .schedule-card {
+  width: 92%;
+  margin-left: auto;
+  padding: 16px 18px;
+  border-radius: 22px;
+  align-self: stretch;
+}
+
+.welcome-actions .schedule-card h2 {
+  font-size: clamp(0.95rem, 1.1vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.welcome-actions .schedule-copy p {
+  font-size: 11px;
+}
+
+.welcome-actions .schedule-time {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.welcome-actions .schedule-days {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.welcome-actions .schedule-days li {
+  min-height: 42px;
+  padding: 8px 6px;
+  border-radius: 12px;
+}
+
+.welcome-actions .schedule-day-name {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.welcome-actions .schedule-day-time {
+  font-size: 11px;
+}
+
+.welcome-actions .schedule-countdown {
+  margin-top: 10px;
+}
+
+.welcome-actions .schedule-countdown-label {
+  font-size: 10px;
+}
+
+.welcome-actions .schedule-countdown-value {
+  font-size: clamp(1.05rem, 1.35vw, 1.45rem);
+  font-weight: 800;
+}
+
+.welcome-actions .schedule-countdown-unit {
+  min-width: 52px;
+}
+
+/* Titres et descriptions du carrousel : plus grands, boutons plus généreux. */
+.welcome-actions .creator-carousel .discord-copy strong {
+  font-size: clamp(1.5rem, 1.9vw, 1.9rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.welcome-actions .creator-carousel .discord-copy strong .discord-title-mark {
+  width: 0.9em;
+  height: 0.9em;
+}
+
+.welcome-actions .creator-carousel .discord-overline {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+
+.welcome-actions .creator-carousel .discord-detail {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.welcome-actions .creator-carousel .discord-action .discord-action-default {
+  min-height: 38px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.welcome-actions .creator-carousel .discord-invite {
+  font-size: 11px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Barre du compte : plus grande, police minuscule ultra-lisible
+   -------------------------------------------------------------------------- */
+.welcome-account-bar {
+  height: 52px;
+  min-height: 52px;
+  gap: 10px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 999px;
+}
+
+.member-access-actions {
+  height: 44px;
+  min-height: 44px;
+  gap: 8px;
+}
+
+.member-access-button {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* « Non connecté », « X en ligne » : petites capitales lisibles, jamais condensées. */
+.member-visitor,
+.site-presence,
+.site-presence span,
+.discord-online-copy,
+[data-site-presence-count],
+[data-discord-online-count] {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-caps: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #f1f6ff;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.member-visitor {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+}
+
+.member-visitor-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+/* Pastille de présence : point parfaitement centré, texte sur une ligne. */
+.site-presence {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid rgba(126, 214, 178, 0.24);
+  border-radius: 999px;
+  background: rgba(25, 60, 48, 0.32);
+  line-height: 1;
+}
+
+.site-presence-dot,
+.discord-online-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
+}
+
+.site-presence span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Carte Discord : [LA COMMU] [🟢 X en ligne] à gauche, [Déjà visité] à droite. */
+.creator-carousel .creator-slide--discord .discord-badge-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-row > .creator-visited-badge {
+  justify-self: end;
+  margin-left: 0;
+}
+
+.creator-carousel .discord-online-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid rgba(126, 214, 178, 0.24);
+  border-radius: 999px;
+  background: rgba(25, 60, 48, 0.32);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.creator-carousel .discord-online-copy {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   5. Fenêtre de chat : en-tête neutre hors connexion + fermeture qui glisse
+   -------------------------------------------------------------------------- */
+.contact-dialog-topline .contact-header-context {
+  display: none;
+  min-width: 0;
+}
+
+/* Non connecté : ni photo de Gionny, ni « Gionny 👑 », ni « Discussion ». */
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-avatar,
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-identity {
+  display: none !important;
+}
+
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-context {
+  display: grid;
+  gap: 2px;
+  align-content: center;
+}
+
+.contact-header-context strong {
+  color: #f4f8ff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.contact-header-context span {
+  color: #9fb3c8;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* La flèche pointe toujours vers le bas : aucune rotation, jamais. */
+.contact-dialog-close,
+.contact-dialog-close:hover,
+.contact-dialog-close:focus-visible,
+.contact-dialog-close:active {
+  transform: none !important;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.contact-dialog-close > .qg-icon,
+.contact-dialog-close > svg {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Fermeture : la fenêtre glisse vers le bas puis disparaît. */
+.contact-widget {
+  transition: opacity 250ms ease-in-out, transform 250ms ease-in-out;
+}
+
+.contact-widget.is-closing {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-widget {
+    transition-duration: 1ms;
+  }
+}
+
+/* Le scrim accompagne la fermeture. */
+.contact-scrim {
+  transition: opacity 250ms ease-in-out;
+}
+
+/* --------------------------------------------------------------------------
+   Petits écrans : on garde les mêmes intentions sans casser la mise en page
+   -------------------------------------------------------------------------- */
+@media (max-width: 940px) {
+  .welcome-panel {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(96px, 26vw, 128px) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .profile-frame {
+    width: clamp(96px, 26vw, 128px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.65rem, 6vw, 2.2rem);
+  }
+
+  .welcome-copy {
+    max-width: none;
+    font-size: 0.95rem;
+  }
+
+  .welcome-actions {
+    grid-template-rows: auto auto;
+  }
+
+  .welcome-actions .creator-carousel,
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 220px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 16px;
+  }
+
+  .welcome-actions .schedule-card {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .welcome-account-bar {
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+  }
+
+  .member-access-button {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .creator-carousel .creator-slide--discord .discord-badge-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .creator-carousel .discord-online-badge { height: 24px; padding: 0 8px; }
+  .creator-carousel .discord-online-copy { font-size: 10px; }
+}
+
+@media (max-width: 520px) {
+  .welcome-actions .creator-carousel .discord-badge-group { gap: 5px; }
+  .creator-carousel .creator-slide--discord .discord-badge-row { margin-bottom: 8px; }
+  .welcome-actions .creator-carousel .discord-copy strong { font-size: 1.35rem; }
+  .welcome-actions .creator-carousel .discord-detail { font-size: 12px; -webkit-line-clamp: 2; line-clamp: 2; }
+}

@@ -1,5 +1,5 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
-import { isBlobStorageConfigured, readSharedSiteConfig, writeSharedSiteConfig } from "../lib/blob-store.mjs";
+import { readSharedSiteConfig, writeSharedSiteConfig } from "../lib/blob-store.mjs";
 import { SOCIAL_INFO_FIELDS, validateSiteConfig } from "../lib/site-config.mjs";
 
 function setNoStore(response) {
@@ -50,12 +50,6 @@ export default async function handler(request, response) {
   }
   if (!(await isAdminRequest(request))) {
     return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
-  }
-  if (!isBlobStorageConfigured()) {
-    return response.status(503).json({
-      error: "blob_storage_not_configured",
-      message: "Vercel Blob doit être activé avant de pouvoir enregistrer les changements en ligne.",
-    });
   }
 
   let body = readJsonBody(request);
