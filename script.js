@@ -679,24 +679,29 @@
     ) return;
 
     // Modern counter: the old number slides out, the new one slides in, the
-    // unit (h / m / s) never moves.
+    // unit (h / m / s) never moves. The outgoing copy lives INSIDE the digit
+    // box, so it can never spill over the unit that follows.
+    const reduceCountdownMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
     const setCountdownDigits = (node, value) => {
       if (!node || node.textContent === value) return;
       const previous = node.textContent;
-      const slot = node.parentElement;
       node.textContent = value;
-      if (!slot) return;
-      let ghost = slot.querySelector(".schedule-countdown-ghost");
-      if (!ghost) {
-        ghost = document.createElement("span");
-        ghost.className = "schedule-countdown-ghost";
-        ghost.setAttribute("aria-hidden", "true");
-        slot.insertBefore(ghost, node);
-      }
+      if (reduceCountdownMotion) return;
+      node.querySelectorAll(".schedule-countdown-ghost").forEach((old) => old.remove());
+      const ghost = document.createElement("span");
+      ghost.className = "schedule-countdown-ghost";
+      ghost.setAttribute("aria-hidden", "true");
       ghost.textContent = previous;
+      node.appendChild(ghost);
       node.classList.remove("is-ticking");
       void node.offsetWidth;
       node.classList.add("is-ticking");
+      const cleanup = () => {
+        ghost.remove();
+        node.classList.remove("is-ticking");
+      };
+      ghost.addEventListener("animationend", cleanup, { once: true });
+      window.setTimeout(cleanup, 600);
     };
 
     if (currentTwitchIsLive) {

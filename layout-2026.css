@@ -1853,6 +1853,7 @@
   animation: qg-countdown-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.schedule-card--refresh .schedule-countdown-digits .is-ticking .schedule-countdown-ghost,
 .schedule-card--refresh .schedule-countdown-chunk:has(.is-ticking) .schedule-countdown-ghost {
   animation: qg-countdown-out 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -2354,4 +2355,827 @@
   .schedule-card--refresh .schedule-live-indicator::after {
     animation: none;
   }
+}
+
+/* ==========================================================================
+   14. Passe « Hero équilibré » : une seule hauteur, aucun chevauchement
+   --------------------------------------------------------------------------
+   Trois causes de chevauchement / de vide étaient en jeu :
+     • la carte du carrousel (et chaque slide) était bridée à 200 px par
+       `display-fixes.css` alors que sa colonne en faisait 260 → 60 px de vide
+       sous Discord, et le contenu débordait par-dessus les badges ;
+     • `.discord-copy` était en `flex: 1 1 auto` avec `min-height: 0` : elle se
+       comprimait à 30 px et laissait titre + description sortir de la boîte ;
+     • la carte faisait 88 % de la colonne avec un décalage à droite, d'où la
+       bande vide à gauche de Discord et l'impression de « petit rectangle ».
+   Désormais la carte visible définit la hauteur de la pile, le contenu ne
+   descend jamais sous sa taille naturelle, et la colonne de droite remplit
+   exactement la hauteur du panneau.
+   ========================================================================== */
+
+/* 14.1 Le carrousel prend la hauteur de sa carte visible ------------------ */
+.welcome-actions .creator-carousel {
+  display: flex;
+  min-height: 0;
+  max-height: none;
+  flex-direction: column;
+  touch-action: pan-y;
+}
+
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+/* Les slides inactives sont posées les unes sur les autres… */
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="false"] {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+/* …la carte visible reste dans le flux : elle donne sa hauteur à la pile. */
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+  position: relative;
+  inset: auto;
+  height: auto;
+  flex: 1 1 auto;
+}
+
+/* 14.2 Le contenu ne se comprime plus jamais sous sa taille naturelle ---- */
+.welcome-actions .creator-carousel .discord-content {
+  display: flex;
+  min-height: 0;
+  height: auto;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.welcome-actions .creator-carousel .discord-copy {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.welcome-actions .creator-carousel .discord-detail {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  margin-bottom: 0;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+.welcome-actions .creator-carousel .discord-footer {
+  flex: 0 0 auto;
+}
+
+/* 14.3 Hero ≥ 941 px : colonne de droite pleine, carte large, zéro vide --- */
+@media (min-width: 941px) {
+  /* Une seule colonne, deux étages : le Hero prend la place restante, la
+     carte « Retrouve-moi ici » garde sa hauteur. Plus de scroll parasite. */
+  .hub-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: stretch;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .welcome-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .welcome-actions {
+    justify-content: flex-start;
+    gap: clamp(12px, 1.1vw, 16px);
+  }
+
+  /* La carte réseau fait toute la largeur de la colonne, comme le planning. */
+  .welcome-actions .creator-carousel {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin-left: 0;
+    flex: 1 1 auto;
+    align-self: stretch;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  /* Un peu plus d'air dans la carte : elle a maintenant la place. */
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 20px 22px 22px;
+  }
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.6rem, 2vw, 2.05rem);
+  }
+
+  .welcome-actions .creator-carousel .discord-detail {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+/* 14.4 Écrans bas : on comprime le gabarit au lieu de créer un scroll ------ */
+@media (min-width: 941px) and (max-height: 820px) {
+  .welcome-panel {
+    padding: 14px clamp(14px, 1.4vw, 20px);
+  }
+
+  .welcome-account-bar {
+    height: 42px;
+    min-height: 42px;
+    flex-basis: 42px;
+    margin-bottom: 10px;
+  }
+
+  .welcome-actions {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 16px 18px 18px;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .discord-detail {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 12px;
+  }
+}
+
+/* 14.5 Téléphone : la pile suit son contenu, plus de carte trop courte ----- */
+@media (max-width: 940px) {
+  .welcome-actions .creator-carousel {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+    min-height: 236px;
+  }
+}
+
+/* 14.6 Barre de compte : le pseudo ne passe plus SOUS les boutons ---------- */
+.welcome-account-bar .welcome-account-identity {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.welcome-account-bar .member-visitor,
+.welcome-account-bar .member-identity {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 460px) {
+  /* Sur un écran étroit, le libellé se raccourcit proprement (…) au lieu de
+     glisser sous « Se connecter ». */
+  .welcome-account-bar {
+    gap: 6px;
+    padding-right: 4px;
+  }
+
+  .welcome-account-bar .member-visitor {
+    flex: 0 1 auto;
+    font-size: 10px;
+  }
+
+  .welcome-account-bar .member-access-actions {
+    flex: 0 0 auto;
+  }
+
+  .welcome-account-bar .member-access-button {
+    padding: 0 9px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  /* Là, vraiment plus de place : on garde les deux boutons, on retire le texte. */
+  .welcome-account-bar .welcome-account-identity {
+    display: none;
+  }
+
+  .welcome-account-bar {
+    justify-content: flex-end;
+  }
+}
+
+/* 14.7 Planning : un peu plus généreux, toujours dans sa carte ------------ */
+.welcome-actions .schedule-card.schedule-card--refresh {
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.schedule-card--refresh .schedule-copy h2 {
+  font-size: clamp(14px, 1.1vw, 17px);
+}
+
+.schedule-card--refresh .schedule-days li {
+  min-height: 48px;
+  padding: 9px 6px;
+}
+
+.schedule-card--refresh .schedule-countdown {
+  padding: 9px 14px;
+}
+
+/* --------------------------------------------------------------------------
+   14.8 Compteur : la durée reste sur une ligne, l'icône du chat ne la mange
+   plus
+   --------------------------------------------------------------------------
+   Le lanceur du chat est fixé en bas à droite par-dessus le site. Sous
+   1 000 px, le compteur du planning passait dessous. On lui laisse donc une
+   réserve à droite, uniquement là où le lanceur peut le recouvrir.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .welcome-actions .schedule-card .schedule-countdown {
+    padding-right: 74px;
+  }
+}
+
+@media (max-width: 420px) {
+  .welcome-actions .schedule-card .schedule-countdown {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 62px 8px 12px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+  }
+
+  .schedule-card--refresh .schedule-countdown-value {
+    gap: 3px;
+    font-size: 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14.9 Carte réseau : le texte respire, le bouton et les points ne se
+   chevauchent jamais
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel .discord-footer {
+  gap: 10px;
+  padding-right: 86px;
+}
+
+.welcome-actions .creator-carousel .discord-community-meta {
+  gap: 8px;
+}
+
+@media (max-width: 940px) {
+  .welcome-actions .creator-carousel .discord-footer {
+    padding-right: 74px;
+  }
+}
+
+/* ==========================================================================
+   15. Passe « aucune compression » : le Hero suit son contenu
+   --------------------------------------------------------------------------
+   Le Hero était posé dans une grille de hauteur fixe (« une seule fenêtre ») :
+   quand la fenêtre était un peu courte (1 024 × 768, 1 366 × 768…), la colonne
+   de droite se faisait rogner et la carte Discord tombait à 60 px de haut, son
+   contenu débordant par-dessus les badges. On laisse désormais le contenu
+   décider de la hauteur (avec un plancher `min-content` qui interdit toute
+   compression), et le Hero s'étire seulement s'il reste de la place.
+   ========================================================================== */
+@media (min-width: 941px) {
+  .site-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .hub-layout {
+    display: grid;
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(min-content, 1fr) auto;
+    align-content: stretch;
+    align-items: stretch;
+    overflow: visible;
+    scrollbar-width: auto;
+  }
+
+  .welcome-panel {
+    height: auto;
+    min-height: min-content;
+    overflow: visible;
+  }
+
+  /* La carte réseau et le planning ne descendent JAMAIS sous leur contenu. */
+  .welcome-actions {
+    height: auto;
+    min-height: min-content;
+  }
+
+  .welcome-actions .creator-carousel {
+    height: auto;
+    min-height: min-content;
+    max-height: none;
+    flex: 1 1 auto;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+    min-height: min-content;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    min-height: min-content;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    min-height: min-content;
+  }
+
+  .networks-panel {
+    min-height: min-content;
+  }
+}
+
+/* Fenêtre courte : on comprime le texte, jamais la carte. */
+@media (min-width: 941px) and (max-height: 860px) {
+  .welcome-actions .creator-carousel .discord-detail {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.35rem, 1.7vw, 1.7rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.1 Les trois cartes ont la MÊME hauteur (celle de la plus grande)
+   --------------------------------------------------------------------------
+   Les slides inactives étaient en `position: absolute` : la pile prenait
+   seulement la hauteur de la carte affichée, si bien que passer de Discord à
+   Twitch faisait sauter le planning. On les empile maintenant dans une seule
+   cellule de grille : la grille prend la hauteur du contenu le plus haut, et
+   chaque carte s'étire dessus. Plus de saut, plus de carte « trop petite ».
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-items: stretch;
+}
+
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide],
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"],
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="false"] {
+  position: relative;
+  inset: auto;
+  grid-area: 1 / 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="false"] {
+  transform: translate3d(18px, 0, 0);
+}
+
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+  transform: translate3d(0, 0, 0);
+}
+
+/* --------------------------------------------------------------------------
+   15.2 Le Hero prend la hauteur restante, sans jamais dépasser la fenêtre
+   --------------------------------------------------------------------------
+   `min-height: min-content` protège le contenu, mais il ne doit pas pousser le
+   pied de page hors de l'écran : la rangée du Hero est bornée par la place
+   réellement disponible, et c'est la carte du planning qui absorbe la
+   différence (elle est en `flex: 0 0 auto`, donc elle garde sa taille).
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  .site-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    padding-bottom: 0;
+  }
+
+  .site-header {
+    flex: 0 0 auto;
+  }
+
+  /* Le plancher `min-content` interdit toute compression de la carte réseau :
+     si la fenêtre est vraiment trop courte, c'est la page qui défile — jamais
+     le contenu qui se chevauche. */
+  .hub-layout {
+    grid-template-rows: minmax(min-content, 1fr) auto;
+    align-content: stretch;
+    padding-block: 8px 6px;
+    row-gap: 8px;
+  }
+
+  .welcome-panel {
+    overflow: visible;
+  }
+
+  .site-footer {
+    flex: 0 0 auto;
+    padding-block: 4px;
+  }
+}
+
+/* Sous 940 px, la page défile normalement : rien à brider. */
+
+/* --------------------------------------------------------------------------
+   15.3 Un seul scroll, celui de la page
+   --------------------------------------------------------------------------
+   `display-fixes.css` gardait `html, body { height: 100% }` + `overflow-y:
+   auto` sur le body : le défilement se faisait donc DANS le body, d'où cette
+   barre qui semblait glisser « entre le bloc Bienvenue et Retrouve-moi ici ».
+   On rend la hauteur au document : une seule barre, celle de la fenêtre.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .site-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.4 Compteur : la seconde qui « glisse » reste dans sa ligne
+   --------------------------------------------------------------------------
+   La pastille `.schedule-countdown-chunk` clippait la seconde en cours
+   d'animation et les suffixes `h/m/s` se retrouvaient à moitié coupés. Les
+   unités sortent donc du cadre animé : le chiffre glisse, l'unité reste nette.
+   -------------------------------------------------------------------------- */
+.schedule-card--refresh .schedule-countdown-chunk {
+  overflow: visible;
+  gap: 2px;
+}
+
+.schedule-card--refresh .schedule-countdown-digits {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  /* Une ligne de chiffres + sa marge basse : le glissement ne mord jamais
+     sur l'unité voisine. */
+  padding-block: 0.06em 0.12em;
+  line-height: 1.05;
+  vertical-align: baseline;
+}
+
+/* Le doublon sortant est DANS la boîte du chiffre : il glisse vers le bas sans
+   jamais dépasser sur l'unité suivante. */
+.schedule-card--refresh .schedule-countdown-ghost {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: inherit;
+  line-height: 1.05;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.schedule-card--refresh .schedule-countdown-suffix {
+  position: relative;
+  flex: 0 0 auto;
+  color: #38bdf8;
+  font-size: 0.92em;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+/* Une seule ligne, même sur les plus petites largeurs. */
+.schedule-card--refresh .schedule-countdown-value {
+  align-items: baseline;
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+
+@media (max-width: 400px) {
+  .schedule-card--refresh .schedule-countdown-value {
+    font-size: 15px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-suffix {
+    font-size: 0.86em;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.5 La carte a un plafond, la colonne se centre
+   --------------------------------------------------------------------------
+   Sur un très grand écran, la carte réseau prenait toute la hauteur (800 px) et
+   les trois blocs se retrouvaient perdus. On plafonne la carte : l'espace
+   restant devient de l'air entre la carte et « LES PROCHAINS LIVES ».
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  .welcome-actions {
+    justify-content: center;
+  }
+
+  .welcome-actions .creator-carousel {
+    min-height: min-content;
+    max-height: clamp(240px, 30vh, 430px);
+    flex: 0 1 auto;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide] {
+    max-height: clamp(240px, 30vh, 430px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.6 Fenêtres peu hautes : on resserre le texte, jamais les cartes
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) and (max-height: 880px) {
+  .welcome-panel {
+    padding: 12px clamp(14px, 1.3vw, 18px) 14px;
+  }
+
+  .welcome-account-bar {
+    height: 42px;
+    min-height: 42px;
+    flex-basis: 42px;
+    margin-bottom: 10px;
+  }
+
+  .welcome-actions {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 16px 18px;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.3rem, 1.6vw, 1.6rem);
+  }
+
+  .welcome-actions .creator-carousel .discord-detail {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .welcome-actions .creator-carousel .discord-action-default {
+    min-height: 34px;
+    padding: 7px 16px;
+    font-size: 11.5px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    gap: 6px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 10px;
+    padding: 12px 14px 14px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+  }
+
+  .schedule-card--refresh .schedule-mark svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .schedule-card--refresh .schedule-days li {
+    min-height: 40px;
+    padding: 6px 4px;
+  }
+
+  .schedule-card--refresh .schedule-countdown {
+    padding: 7px 12px;
+  }
+
+  .networks-panel {
+    padding: 12px 14px;
+  }
+
+  .networks-panel .networks-heading h2 {
+    font-size: clamp(16px, 1.4vw, 20px);
+  }
+
+  .networks-panel .network-card,
+  .networks-panel .network-card--wide {
+    min-height: 92px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.7 « Retrouve-moi ici » : 5 colonnes sur PC, même fenêtre étroite
+   --------------------------------------------------------------------------
+   Entre 941 et 1 200 px, la grille retombait à 3 colonnes : le panneau doublait
+   de hauteur et poussait le pied de page hors de l'écran. On garde une seule
+   rangée de 5 cartes, simplement plus compactes.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  .networks-panel {
+    min-height: min-content;
+  }
+
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  /* Instagram ne prend plus deux colonnes : la rangée reste unique. */
+  .networks-panel .network-item--instagram {
+    grid-column: auto !important;
+  }
+
+  .networks-panel .network-card,
+  .networks-panel .network-card--wide {
+    min-height: 96px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .networks-panel .network-card .network-copy strong {
+    font-size: clamp(12px, 0.95vw, 15px);
+  }
+
+  .networks-panel .network-card .network-copy > span {
+    font-size: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.8 Fenêtres vraiment courtes (1 366 × 768, 1 024 × 768) : le Hero tient
+   --------------------------------------------------------------------------
+   Dernier étage de compression : on gagne la hauteur sur les marges, la
+   description du carrousel et le planning — jamais en rognant une carte.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) and (max-height: 800px) {
+  .welcome-panel {
+    padding: 10px clamp(12px, 1.2vw, 16px) 12px;
+  }
+
+  .welcome-account-bar {
+    height: 38px;
+    min-height: 38px;
+    flex-basis: 38px;
+    margin-bottom: 8px;
+  }
+
+  .welcome-actions {
+    gap: 8px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 12px 16px;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    gap: 8px;
+  }
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.15rem, 1.45vw, 1.45rem);
+  }
+
+  /* La description reste entière : deux lignes suffisent, on ne tronque pas
+     la phrase en plein milieu. */
+  .welcome-actions .creator-carousel .discord-detail {
+    margin-top: 4px;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+
+  .welcome-actions .creator-carousel .discord-action-default {
+    min-height: 30px;
+    padding: 6px 14px;
+    font-size: 10.5px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    gap: 4px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 8px;
+    padding: 10px 12px 12px;
+  }
+
+  .schedule-card--refresh .schedule-topline {
+    gap: 8px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 9px;
+  }
+
+  .schedule-card--refresh .schedule-mark svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .schedule-card--refresh .schedule-days {
+    gap: 6px;
+  }
+
+  .schedule-card--refresh .schedule-days li {
+    min-height: 36px;
+    padding: 5px 3px;
+  }
+
+  .schedule-card--refresh .schedule-countdown {
+    padding: 6px 10px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    font-size: 12px;
+  }
+
+  .networks-panel {
+    padding: 10px 12px;
+  }
+
+  .networks-panel .network-grid {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .networks-panel .network-card,
+  .networks-panel .network-card--wide {
+    min-height: 84px;
+    padding: 8px 10px;
+  }
+
+  .networks-panel .networks-heading h2 {
+    font-size: clamp(15px, 1.25vw, 18px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.9 Bulle « Qui suis-je ? » : le bouton entier la révèle
+   --------------------------------------------------------------------------
+   `styles.css` ne réagissait qu'au survol du cercle : passer sur le pseudo
+   n'affichait rien. Toute la zone du bouton déclenche désormais la bulle, au
+   survol comme au clavier.
+   -------------------------------------------------------------------------- */
+.welcome-identity .profile-trigger:hover > .profile-tooltip,
+.welcome-identity .profile-trigger:focus-visible > .profile-tooltip,
+.welcome-identity .profile-trigger:focus > .profile-tooltip {
+  opacity: 1;
 }
