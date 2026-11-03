@@ -25,7 +25,9 @@ import {
   getHostAccountIdentityFromSession,
   getVisitorAccountFromSession,
   clearVisitorAccountSession,
+  hasOwnerRecoveryCode,
   isOwnerRecoveryAvailable,
+  issueOwnerRecoveryCode,
   recoverOwnerAccount,
   readAccountSessionCookie,
   saveAccountSessionCookie,
@@ -295,13 +297,27 @@ test("the owner recovery code is the only way back to the account", async () => 
   }
 });
 
-test("without the recovery secret, recovery is disabled", async () => {
+test("the generated recovery code is the key, even without any secret", async () => {
   const store = new MemoryBlobStore();
   assert.equal(isOwnerRecoveryAvailable(), false);
+  // Nothing issued yet: no code can open the account.
   assert.deepEqual(
-    await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: "peu-importe" }, store),
-    { ok: false, reason: "recovery_disabled" },
+    await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: "AAAA-BBBB-CCCC-DDDD" }, store),
+    { ok: false, reason: "recovery_code" },
   );
+
+  const code = await issueOwnerRecoveryCode(store);
+  assert.match(code, /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/u);
+  assert.equal(await hasOwnerRecoveryCode(store), true);
+  // Wrong code is refused, the right one is accepted (lower case and spaces too).
+  assert.deepEqual(
+    await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: "AAAA-BBBB-CCCC-DDDD" }, store),
+    { ok: false, reason: "recovery_code" },
+  );
+  const spaced = code.toLowerCase().replace(/-/gu, " ");
+  const stored = await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: spaced }, store);
+  assert.equal(stored.ok, true);
+  assert.equal(stored.account.isAdmin, true);
 });
 
 test("a cold restart keeps the owner reachable and re-reads members from the Blob", async () => {
