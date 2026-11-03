@@ -130,12 +130,38 @@ function threadError(reason) {
   return { status: 404, error: "Cette discussion n’a pas été retrouvée. Tu peux en démarrer une nouvelle." };
 }
 
+// Why the failure happened, said plainly and in the user's words.
+function authenticationFailure(response, reason) {
+  if (reason === "password") {
+    return response.status(401).json({ error: "Mot de passe incorrect.", reason });
+  }
+  if (reason === "not_found") {
+    return response.status(404).json({ error: "Compte introuvable. Crée-le avec « S’inscrire ».", reason });
+  }
+  if (reason === "exists") {
+    return response.status(409).json({ error: "Ce pseudo est déjà pris. Choisis-en un autre ou connecte-toi.", reason });
+  }
+  if (reason === "password_invalid") {
+    return response.status(400).json({ error: "Le mot de passe doit contenir entre 8 et 128 caractères.", reason });
+  }
+  if (reason === "pseudo") {
+    return response.status(400).json({
+      error: "Le pseudo doit contenir entre 3 et 16 caractères, sans espace au début ni à la fin.",
+      reason,
+    });
+  }
+  if (reason === "banned") {
+    return response.status(403).json({ error: "Ce compte a été désactivé par l’administration.", reason });
+  }
+  if (reason === "owner_claim") {
+    return response.status(409).json({ error: "Ce pseudo est déjà pris. Choisis-en un autre.", reason });
+  }
+  return response.status(400).json({ error: "La connexion n’a pas abouti. Réessaie.", reason });
+}
+
 async function handleAuthentication(request, response, body, action) {
-  // No storage guard any more: the store is RAM + /tmp, always available.
-  // A light rate limit only protects the endpoint from floods; it must never
-  // be the reason a visitor cannot log in.
-  // Login and registration are never rate limited: a visitor must always be
-  // able to get in. The counter is only bumped elsewhere (messages, profile).
+  // Login and registration are never rate limited: the password check is the
+  // only gate, and a flood would also block a legitimate member.
   void request;
 
   const credentials = {
@@ -144,26 +170,13 @@ async function handleAuthentication(request, response, body, action) {
     legacyCookieValue: readVisitorConversationCookie(request),
   };
 
-  // Same path for everyone: the owner opens with the name alone, everybody
-  // else is created/opened on the spot. 200 OK in both cases.
-  const result = await loginVisitorAccount(credentials);
+  // Strict split: register creates the account (free pseudo only), login
+  // requires the exact stored password. Nothing is created on a login.
+  const result = action === "register"
+    ? await registerVisitorAccount(credentials)
+    : await loginVisitorAccount(credentials);
 
-  if (!result.ok) {
-    if (result.reason === "pseudo") {
-      response.status(400).json({ error: "Le pseudo doit contenir entre 3 et 16 caractères, sans espace au début ni à la fin." });
-      return;
-    }
-    if (result.reason === "banned") {
-      response.status(403).json({ error: "Ce compte a été désactivé par l’administration." });
-      return;
-    }
-  }
-
-  if (!result.ok) {
-    // Last resort: a signed session is always issued, never a dead end.
-    response.status(503).json({ error: "La connexion est momentanément indisponible. Réessaie." });
-    return;
-  }
+  if (!result.ok) return authenticationFailure(response, result.reason);
 
   saveAccountSessionCookie(request, response, result.sessionToken);
   let state = null;

@@ -39,6 +39,32 @@
     <script src="/script.js" defer></script>
   </head>
   <body>
+  <svg class="qg-inline-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <linearGradient id="qg-crown-gold-fill" x1="3" y1="3" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#FDCF4A" />
+        <stop offset="0.55" stop-color="#F4B123" />
+        <stop offset="1" stop-color="#D08A05" />
+      </linearGradient>
+    </defs>
+    <symbol id="qg-crown-symbol" viewBox="0 0 24 24">
+      <path d="m3 7.6 4.3 3.1L12 4.2l4.7 6.5L21 7.6l-1.6 9.9H4.6L3 7.6Z" fill="url(#qg-crown-gold-fill)" stroke="#C98A08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.15" />
+      <path d="M5.4 20.1h13.2" fill="none" stroke="#C98A08" stroke-linecap="round" stroke-width="1.7" />
+      <circle cx="3" cy="7.1" r="1.15" fill="#FDD96B" />
+      <circle cx="12" cy="3.9" r="1.15" fill="#FDD96B" />
+      <circle cx="21" cy="7.1" r="1.15" fill="#FDD96B" />
+    </symbol>
+    <symbol id="qg-verified-symbol" viewBox="0 0 24 24">
+      <path d="m12 1.6 2.6 1.72 3.14-.19 1.14 2.93 2.62 1.76-.79 3.05 1.14 2.93-2.33 2.06-.5 3.12-3.02.78L12 22.4l-3.02-.78-3.02-.78-.5-3.12-2.33-2.06 1.14-2.93-.79-3.05 2.62-1.76 1.14-2.93 3.14.19L12 1.6Z" fill="#1D9BF0" />
+      <path d="M7.9 12.05 10.75 14.9 16.2 8.9" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.15" />
+    </symbol>
+    <symbol id="qg-mic-symbol" viewBox="0 0 24 24">
+      <rect x="9.15" y="2.6" width="5.7" height="10.6" rx="2.85" fill="none" stroke="currentColor" stroke-width="1.6" />
+      <path d="M6.1 11.3a5.9 5.9 0 0 0 11.8 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.6" />
+      <path d="M12 17.3V21m-3.1 0h6.2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.6" />
+      <path d="M9.15 6.6h5.7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.3" opacity="0.5" />
+    </symbol>
+  </svg>
     <div class="ambient-glow ambient-glow--blue" aria-hidden="true"></div>
     <div class="ambient-glow ambient-glow--cyan" aria-hidden="true"></div>
     <div class="ambient-glow ambient-glow--ice" aria-hidden="true"></div>
@@ -145,8 +171,8 @@
                     <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
                   </svg>
                 </span>
-                <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span>
-                <span class="member-profile-name-line"><span class="member-profile-pseudo" data-member-pseudo></span><span class="verified-badge" data-member-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span></span>
+                <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg></span>
+                <span class="member-profile-name-line"><span class="member-profile-pseudo" data-member-pseudo></span><span class="verified-badge" data-member-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></span></span>
               </span>
             </div>
             <div class="member-access-actions" data-member-logged-out>
@@ -161,13 +187,13 @@
                 aria-haspopup="dialog"
                 aria-expanded="false"
                 aria-controls="profile-dialog"
-              ><svg class="qg-icon host-crown-icon member-profile-crown" data-member-profile-crown aria-hidden="true" hidden><use href="/assets/qg-icons.svg#icon-crown"></use></svg><span>Mon Profil</span></button>
+              ><svg class="qg-icon host-crown-icon member-profile-crown" data-member-profile-crown aria-hidden="true" hidden><use href="#qg-crown-symbol"></use></svg><span>Mon Profil</span></button>
               <a class="member-access-button member-access-button--admin" href="/gestion-qg/" data-host-admin-link hidden><svg class="qg-icon member-admin-shield" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg><span>Admin</span></a>
               <button class="member-access-button member-access-button--logout" type="button" data-contact-logout><span>Déconnexion</span></button>
             </div>
             <span class="site-presence" data-site-presence hidden aria-live="polite">
               <span class="site-presence-dot" aria-hidden="true"></span>
-              <span><strong data-site-presence-count>0</strong> en ligne</span>
+              <span class="site-presence-text"><strong data-site-presence-count>0</strong>&nbsp;en ligne</span>
             </span>
           </div>
           <div class="welcome-identity">
@@ -236,7 +262,7 @@
                   </span>
                   <span class="discord-online-badge" data-discord-online hidden>
                     <span class="discord-online-dot" aria-hidden="true"></span>
-                    <span class="discord-online-copy"><span data-discord-online-count>0</span> en ligne</span>
+                    <span class="discord-online-copy"><strong data-discord-online-count>0</strong>&nbsp;en ligne</span>
                   </span>
                   </span>
                   <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
@@ -660,8 +686,6 @@
       </footer>
     </div>
 
-    <div class="contact-scrim" data-contact-scrim hidden aria-hidden="true"></div>
-
     <button
       class="contact-launcher"
       type="button"
@@ -683,8 +707,7 @@
       class="contact-widget"
       id="contact-widget"
       role="dialog"
-      aria-modal="true"
-      aria-labelledby="contact-widget-title"
+      aria-label="Discussion privée avec Gionny"
       data-contact-widget
       hidden
     >
@@ -692,8 +715,7 @@
         <div class="contact-dialog-topline">
           <img class="contact-header-avatar" src="/assets/gionny-profile.jpg" alt="" />
           <div class="contact-header-identity">
-            <strong id="contact-widget-title">Gionny <svg class="qg-icon host-crown-icon" role="img" aria-label="Hôte"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></strong>
-            <span class="contact-header-subject" data-contact-header-subject>Discussion</span>
+            <strong id="contact-widget-title"><span class="contact-header-name">Gionny</span><span class="contact-header-badges"><svg class="qg-icon host-crown-icon" role="img" aria-label="Compte Hôte"><use href="#qg-crown-symbol"></use></svg><svg class="qg-icon verified-badge-icon" role="img" aria-label="Membre vérifié"><use href="#qg-verified-symbol"></use></svg></span></strong>
           </div>
           <div class="contact-header-context">
             <strong>Connexion requise</strong>
@@ -731,13 +753,6 @@
         </section>
 
         <section class="contact-new-view" data-contact-new hidden>
-          <div class="contact-compose-heading">
-            <div>
-              <h2>Nouvelle discussion</h2>
-              <p><span data-account-pseudo></span><span class="contact-host-crown" data-account-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span><span class="verified-badge" data-account-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span></p>
-            </div>
-            <button class="contact-logout" type="button" data-contact-logout>Déconnexion</button>
-          </div>
           <form class="contact-form contact-chat-composer" data-contact-form data-chat-composer>
             <input type="hidden" name="subject" value="Discussion" data-chat-subject-select />
             <input type="file" accept="image/*" data-chat-image-input hidden />
@@ -763,7 +778,7 @@
                 </div>
                 <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ton message" data-chat-message></textarea>
                 <button class="contact-voice-record x-chat-action" type="button" data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
-                  <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg>
+                  <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="#qg-mic-symbol"></use></svg>
                   <svg class="qg-icon" data-compose-send-icon hidden aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg>
                 </button>
               </div>
@@ -781,20 +796,18 @@
             </div>
             <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Ne pas remplir</label><input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" /></div>
             <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
-            <p class="contact-privacy">Discussion privée · vocaux jusqu’à 1 min / 200 Ko.</p>
             <button class="sr-only" type="submit" data-contact-submit>Envoyer le message</button>
           </form>
         </section>
 
-        <section class="contact-thread" data-contact-thread aria-labelledby="contact-thread-title" hidden>
+        <section class="contact-thread" data-contact-thread aria-label="Ta conversation avec Gionny" hidden>
           <div class="contact-thread-heading">
-            <div>
-              <h2 id="contact-thread-title">Ta discussion</h2>
-              <p><span data-contact-thread-pseudo></span><span class="contact-host-crown" data-contact-thread-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span><span class="verified-badge" data-contact-thread-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span> · <span data-contact-thread-subject></span></p>
+            <div class="contact-thread-subject-line">
+              <span class="contact-thread-subject-label">Sujet</span>
+              <p><span data-contact-thread-subject></span></p>
             </div>
             <div class="contact-thread-actions">
               <span class="contact-thread-state" data-contact-thread-state>Ouverte</span>
-              <button class="contact-logout" type="button" data-contact-logout>Déconnexion</button>
             </div>
           </div>
           <div class="contact-thread-messages" data-contact-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
@@ -824,7 +837,7 @@
                 </div>
                 <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse" data-chat-message></textarea>
                 <button class="contact-voice-record x-chat-action" type="button" data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
-                  <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg>
+                  <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="#qg-mic-symbol"></use></svg>
                   <svg class="qg-icon" data-compose-send-icon hidden aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg>
                 </button>
               </div>
@@ -877,8 +890,8 @@
             <h2 id="profile-dialog-title">Mon Profil</h2>
             <div class="profile-username-display">
               <span data-profile-display-name></span>
-              <span class="profile-dialog-crown" data-profile-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span>
-              <span class="verified-badge" data-profile-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span>
+              <span class="profile-dialog-crown" data-profile-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg></span>
+              <span class="verified-badge" data-profile-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></span>
               <button class="profile-pseudo-edit" type="button" data-profile-pseudo-edit aria-label="Modifier le pseudo"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-edit"></use></svg></button>
             </div>
             <p id="profile-dialog-copy">Compte de discussion privé · aucun e-mail associé.</p>

@@ -145,10 +145,11 @@
   gap: 8px;
 }
 
-/* Le planning est décalé et un peu plus étroit : plus deux rectangles identiques. */
+/* Carrousel et planning partagent le même axe : deux cartes pleine largeur,
+   espacées de 12 px (repris en 12 plus bas). */
 .welcome-actions .schedule-card {
-  width: 92%;
-  margin-left: auto;
+  width: 100%;
+  margin-left: 0;
   padding: 16px 18px;
   border-radius: 22px;
   align-self: stretch;
@@ -460,6 +461,819 @@
   transition: opacity 250ms ease-in-out;
 }
 
+/* ==========================================================================
+   Passe « sécurité + direction artistique »
+   --------------------------------------------------------------------------
+   Hero (photo plein cadre, carrousel entier, colonne alignée), compteurs en
+   ligne, couronne et badge Validé en SVG, fenêtre de discussion épurée, et
+   ouverture / fermeture animées sans flou d'arrière-plan.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   6. Hero : la photo remplit le grand cercle, sans rond vide intermédiaire
+   -------------------------------------------------------------------------- */
+/* La colonne de gauche suit la taille de la photo pour rester alignée. */
+.welcome-identity {
+  grid-template-columns: clamp(144px, 11vw, 176px) minmax(0, 1fr);
+}
+
+.welcome-identity .profile-trigger {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+}
+
+.profile-frame,
+.profile-trigger .profile-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 176px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid rgba(185, 224, 255, 0.55);
+  border-radius: 50%;
+  background: #0b1a2e;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 18px 44px rgba(4, 9, 19, 0.42),
+    0 0 34px rgba(96, 165, 250, 0.22);
+}
+
+/* La lueur reste derrière le cercle : elle ne mange plus l'intérieur. */
+.profile-frame-glow,
+.profile-frame::after {
+  display: none !important;
+}
+
+.profile-avatar,
+.profile-trigger .profile-avatar {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  transform: none;
+  box-shadow: none;
+}
+
+.profile-tooltip {
+  bottom: -6px;
+}
+
+.creator-handle {
+  margin: 0;
+  justify-self: center;
+}
+
+/* --------------------------------------------------------------------------
+   7. Compteurs « en ligne » : un chiffre et des mots sur la même ligne de base
+   -------------------------------------------------------------------------- */
+.site-presence-text,
+.discord-online-copy {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  color: #eef6ff;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-caps: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.site-presence-text strong,
+.discord-online-copy strong,
+[data-site-presence-count],
+[data-discord-online-count] {
+  display: inline;
+  color: #ffffff;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: 700 !important;
+  letter-spacing: 0;
+  line-height: inherit;
+}
+
+.site-presence {
+  padding: 0 13px;
+  height: 32px;
+}
+
+.site-presence-dot,
+.discord-online-dot {
+  align-self: center;
+  margin: 0;
+}
+
+.creator-carousel .discord-online-copy {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.creator-carousel .discord-online-badge {
+  padding: 0 10px;
+}
+
+/* --------------------------------------------------------------------------
+   8. Couronne et badge Validé : vecteurs nets, coche parfaitement centrée
+   -------------------------------------------------------------------------- */
+.host-crown-icon,
+.contact-chat-host-crown,
+.verified-badge-icon,
+.member-profile-crown,
+.member-admin-shield {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: -0.16em;
+}
+
+.host-crown-icon {
+  width: 1.15em;
+  height: 1.15em;
+  filter: drop-shadow(0 1px 2px rgba(217, 152, 21, 0.34));
+}
+
+.contact-widget .contact-dialog-topline .host-crown-icon {
+  width: 15px;
+  height: 15px;
+  color: #fbbf24;
+}
+
+.verified-badge-icon {
+  width: 1.05em;
+  height: 1.05em;
+  overflow: visible;
+  shape-rendering: geometricPrecision;
+}
+
+/* --------------------------------------------------------------------------
+   9. Carrousel : tout le contenu respire à l'intérieur, points intégrés
+   -------------------------------------------------------------------------- */
+.welcome-actions {
+  gap: 12px;
+  align-content: center;
+  justify-items: stretch;
+}
+
+.welcome-actions .creator-carousel {
+  width: 100%;
+  min-height: 286px;
+  height: 286px;
+  align-self: center;
+}
+
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta {
+  min-height: 286px;
+  height: 100%;
+  padding: 18px 20px 20px;
+  border-radius: 22px;
+}
+
+.welcome-actions .creator-carousel .discord-content {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.welcome-actions .creator-carousel .creator-slide-topline,
+.welcome-actions .creator-carousel .discord-badge-row {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.welcome-actions .creator-carousel .discord-copy {
+  display: grid;
+  flex: 0 1 auto;
+  align-content: start;
+  gap: 4px;
+  min-height: 0;
+}
+
+.welcome-actions .creator-carousel .discord-detail {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.welcome-actions .creator-carousel .discord-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  /* Respiration à droite : place pour les 3 points intégrés. */
+  padding-right: 74px;
+  gap: 10px;
+}
+
+.welcome-actions .creator-carousel .discord-community-meta {
+  flex: 0 1 auto;
+  justify-items: end;
+  padding-right: 0;
+  text-align: right;
+}
+
+.welcome-actions .creator-carousel .discord-invite {
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.welcome-actions .creator-carousel .discord-action-default {
+  min-height: 38px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+/* Les trois points vivent DANS la carte, en bas à droite. */
+.creator-carousel .creator-carousel-dots {
+  right: 14px;
+  bottom: 14px;
+  z-index: 6;
+  padding: 5px 7px;
+  gap: 5px;
+}
+
+.creator-carousel .creator-carousel-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.creator-carousel .creator-carousel-dot[aria-current="true"] {
+  width: 17px;
+}
+
+.creator-carousel-next {
+  right: 10px;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 200ms ease, background-color 200ms ease, border-color 200ms ease;
+}
+
+.welcome-actions .creator-carousel:hover .creator-carousel-next,
+.welcome-actions .creator-carousel:focus-within .creator-carousel-next {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   10. Colonne de droite : carrousel + planning sur le même axe, gap serré
+   -------------------------------------------------------------------------- */
+.welcome-actions .schedule-card {
+  width: 100%;
+  margin-left: 0;
+  padding: 15px 17px;
+  border-radius: 22px;
+  align-self: stretch;
+}
+
+.welcome-actions .schedule-card h2 {
+  font-size: clamp(0.92rem, 1.05vw, 1.1rem);
+}
+
+.welcome-actions .schedule-days {
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.welcome-actions .schedule-days li {
+  min-height: 40px;
+  padding: 7px 5px;
+}
+
+.welcome-actions .schedule-countdown {
+  margin-top: 9px;
+}
+
+.welcome-actions .schedule-countdown-value {
+  font-size: clamp(1.05rem, 1.3vw, 1.4rem);
+}
+
+/* --------------------------------------------------------------------------
+   11. Fenêtre de discussion : Bento QG, en-tête minimal, composeur épuré
+   -------------------------------------------------------------------------- */
+.contact-widget {
+  width: min(418px, calc(100vw - 30px));
+  height: min(560px, 78vh);
+  height: min(560px, 78dvh);
+  max-height: min(78vh, 690px);
+  max-height: min(78dvh, 690px);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 70% at 88% 0%, rgba(59, 130, 246, 0.18), transparent 58%),
+    linear-gradient(180deg, #111c35 0%, #0c1528 52%, #080e1c 100%);
+  color: #eef5ff;
+  box-shadow:
+    0 26px 70px rgba(2, 6, 18, 0.55),
+    0 0 0 1px rgba(96, 165, 250, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  -webkit-font-smoothing: antialiased;
+  transform-origin: bottom right;
+  /* Entrée et sortie ancrées en bas à droite. On anime `translate` / `scale`
+     (et non `transform`) pour ne jamais écraser le centrage existant de la
+     fenêtre quand elle s'ouvre depuis la barre du compte. */
+  opacity: 0;
+  translate: 0 24px;
+  scale: 0.95;
+  transition:
+    opacity 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    scale 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Les anciennes animations d'entrée keyframes sont neutralisées : la
+   transition ci-dessus est la seule source de mouvement. */
+.contact-widget,
+.contact-widget[data-open-context],
+.contact-widget[data-open-context="top"],
+.contact-widget[data-open-context="launcher"] {
+  animation: none !important;
+}
+
+.contact-widget.is-open {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.contact-widget.is-closing {
+  opacity: 0;
+  translate: 0 24px;
+  scale: 0.95;
+  pointer-events: none;
+}
+
+.contact-widget[hidden] {
+  display: none !important;
+}
+
+.contact-widget .contact-dialog-card {
+  border-radius: inherit;
+  background: transparent;
+}
+
+.contact-widget .contact-dialog-topline {
+  min-height: 66px;
+  gap: 11px;
+  padding: 12px 14px 12px 16px;
+  border-bottom: 1px solid rgba(96, 165, 250, 0.14);
+  background: linear-gradient(180deg, rgba(23, 38, 66, 0.55), rgba(9, 16, 30, 0));
+}
+
+.contact-widget .contact-header-avatar {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid rgba(147, 197, 253, 0.55);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  object-fit: cover;
+}
+
+.contact-widget .contact-header-identity {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.contact-widget .contact-header-identity > strong,
+.contact-widget .contact-dialog-topline strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffffff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.contact-header-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Plus de sous-titre « Discussion » ni d'icône bulle sous le pseudo. */
+.contact-header-subject {
+  display: none !important;
+}
+
+.contact-widget .contact-dialog-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(191, 219, 254, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e8f2ff;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.contact-widget .contact-dialog-close:hover,
+.contact-widget .contact-dialog-close:focus-visible {
+  border-color: rgba(147, 197, 253, 0.6);
+  background: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14), 0 0 18px rgba(59, 130, 246, 0.32);
+  transform: none;
+}
+
+/* La flèche descend doucement au survol : jamais de rotation. */
+.contact-widget .contact-dialog-close > svg,
+.contact-widget .contact-dialog-close > .qg-icon {
+  width: 17px;
+  height: 17px;
+  transform: none;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contact-widget .contact-dialog-close:hover > svg,
+.contact-widget .contact-dialog-close:focus-visible > svg,
+.contact-widget .contact-dialog-close:hover > .qg-icon,
+.contact-widget .contact-dialog-close:focus-visible > .qg-icon {
+  transform: translateY(2px);
+}
+
+/* Non connecté : « Connexion requise » + invitation, rien d'autre. */
+.contact-header-context {
+  display: none;
+  min-width: 0;
+}
+
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-avatar,
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-identity {
+  display: none !important;
+}
+
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-context {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 3px;
+  align-content: center;
+}
+
+.contact-header-context strong {
+  color: #f6faff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.contact-header-context span {
+  color: #9db4d0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* Le pseudo du haut est affiché d'office une fois connecté (photo + pseudo +
+   couronne + badge Validé), donc « Connexion requise » ne s'affiche que hors
+   connexion. */
+.contact-widget[data-signed-out="false"] .contact-dialog-topline .contact-header-context {
+  display: none !important;
+}
+
+/* Le fil ne porte plus de titre dupliqué ni de bouton Déconnexion. */
+.contact-widget .contact-thread-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 2px 10px;
+}
+
+.contact-widget .contact-thread-subject-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.contact-widget .contact-thread-subject-label {
+  color: #7f97b5;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.contact-widget .contact-thread-heading p {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  margin: 0;
+  color: #cfe2f8;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.contact-widget .contact-thread-state {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(59, 130, 246, 0.14);
+  color: #cfe4ff;
+  font-size: 9px;
+}
+
+/* Espace libre uniquement pour les messages : plus de bloc « Nouvelle
+   discussion » ni de bouton Déconnexion dans la fenêtre. */
+.contact-widget .contact-new-view {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 12px 14px 14px;
+}
+
+.contact-widget .contact-compose-heading {
+  display: none;
+}
+
+/* Composeur : pilule nette, aucune outline au focus. */
+.chat-input-surface,
+.x-chat-input-pill {
+  outline: none !important;
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.chat-input-surface:focus-within,
+.x-chat-input-pill:focus-within,
+.contact-widget .chat-input-surface:focus-within {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.chat-input-surface textarea,
+.x-chat-input-pill textarea,
+.contact-widget textarea {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.chat-input-surface textarea:focus,
+.chat-input-surface textarea:focus-visible,
+.contact-widget textarea:focus,
+.contact-widget textarea:focus-visible,
+.contact-widget input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Micro studio fin + transition au survol. */
+.contact-voice-record,
+.x-chat-action {
+  border-radius: 999px;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 200ms ease;
+}
+
+.contact-voice-record .qg-icon,
+.x-chat-action .qg-icon {
+  width: 17px;
+  height: 17px;
+  transition: transform 200ms ease;
+}
+
+.contact-voice-record:hover,
+.x-chat-action:hover {
+  border-color: rgba(147, 197, 253, 0.5);
+  background: rgba(59, 130, 246, 0.18);
+  color: #ffffff;
+}
+
+.contact-voice-record:hover .qg-icon,
+.x-chat-action:hover .qg-icon {
+  transform: translateY(-1px) scale(1.04);
+}
+
+/* Déconnexion : plus dans la fenêtre (elle reste dans la barre du compte). */
+.contact-widget .contact-logout {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   11.b Connexion / inscription : même matière Bento, rien de daté
+   -------------------------------------------------------------------------- */
+.contact-widget .contact-auth {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.contact-widget .chat-welcome-mark {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 0;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 13px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #a9d4ff;
+  font-size: 19px;
+}
+
+.contact-widget .contact-auth h2,
+.contact-widget #contact-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.contact-widget #contact-copy {
+  margin: 0;
+  color: #a5bcd6;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.contact-widget .contact-auth-tabs {
+  margin: 4px 0 2px;
+  padding: 4px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 13px;
+  background: rgba(6, 13, 26, 0.5);
+}
+
+.contact-widget .contact-auth-tabs button {
+  min-height: 34px;
+  border-radius: 10px;
+  color: #9db4d0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.contact-widget .contact-auth-tabs button[aria-selected="true"] {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: rgba(59, 130, 246, 0.2);
+  color: #ffffff;
+}
+
+.contact-widget .contact-auth-form {
+  width: 100%;
+  gap: 10px;
+}
+
+.contact-widget .contact-field > span {
+  color: #9db4d0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.contact-widget .contact-field input,
+.contact-widget .contact-field textarea {
+  border: 1px solid rgba(191, 219, 254, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #ffffff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.contact-widget .contact-field input:focus,
+.contact-widget .contact-field textarea:focus {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.contact-widget .contact-privacy {
+  margin: 0;
+  color: #8ba3bf;
+  font-size: 10.5px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.contact-widget .contact-send {
+  min-height: 40px;
+  border: 1px solid rgba(147, 197, 253, 0.42);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(56, 152, 224, 0.92));
+  color: #ffffff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  transition: filter 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+.contact-widget .contact-send:hover:not([disabled]) {
+  filter: brightness(1.06);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.32);
+}
+
+/* Le fil occupe toute la hauteur restante, sans en-tête dupliqué. */
+.contact-widget .contact-thread {
+  padding: 10px 14px 12px;
+}
+
+.contact-widget .contact-thread-messages {
+  padding: 2px 2px 6px;
+}
+
+.contact-widget .contact-reply-form {
+  padding-top: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   12. Le lanceur reste net et actif quand la discussion est ouverte
+   -------------------------------------------------------------------------- */
+.contact-launcher {
+  z-index: 82;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+
+.contact-launcher[aria-expanded="true"] {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16), 0 14px 32px rgba(2, 6, 18, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-widget,
+  .contact-widget.is-open,
+  .contact-widget.is-closing,
+  .contact-widget .contact-dialog-close > svg,
+  .contact-widget .contact-dialog-close > .qg-icon {
+    transition-duration: 1ms;
+  }
+}
+
+/* Sur mobile, la fenêtre ouverte depuis la barre du compte est centrée par un
+   `transform: translateX(-50%)` : on garde ce centrage quand elle glisse. */
+@media (max-width: 760px) {
+  .contact-widget[data-open-context="top"] {
+    translate: none;
+    scale: none;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Petits écrans : on garde les mêmes intentions sans casser la mise en page
    -------------------------------------------------------------------------- */
@@ -494,7 +1308,8 @@
   .welcome-actions .creator-carousel,
   .welcome-actions .creator-carousel .creator-slide,
   .welcome-actions .creator-carousel .discord-cta {
-    min-height: 220px;
+    min-height: 250px;
+    height: 250px;
   }
 
   .welcome-actions .creator-carousel .creator-slide,
@@ -505,6 +1320,20 @@
   .welcome-actions .schedule-card {
     width: 100%;
     padding: 14px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(112px, 30vw, 148px) minmax(0, 1fr);
+  }
+
+  .profile-frame,
+  .profile-trigger .profile-frame {
+    width: 100%;
+    max-width: 148px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    padding-right: 66px;
   }
 
   .welcome-account-bar {
@@ -534,4 +1363,7 @@
   .creator-carousel .creator-slide--discord .discord-badge-row { margin-bottom: 8px; }
   .welcome-actions .creator-carousel .discord-copy strong { font-size: 1.35rem; }
   .welcome-actions .creator-carousel .discord-detail { font-size: 12px; -webkit-line-clamp: 2; line-clamp: 2; }
+  .welcome-actions .creator-carousel .discord-footer { padding-right: 58px; }
+  .contact-widget { width: calc(100vw - 24px); }
+  .contact-widget .contact-dialog-topline { min-height: 60px; padding: 10px 12px 10px 14px; }
 }

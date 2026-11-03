@@ -546,18 +546,31 @@
     writeButton.title = member.conversationId ? "Ouvrir sa discussion" : "Démarrer une discussion sans envoyer de message";
     writeButton.addEventListener("click", () => void writeToMember(member, writeButton));
 
+    // Deux rôles, deux interrupteurs : un clic accorde, le clic suivant retire.
     const badgeButton = document.createElement("button");
-    badgeButton.className = "member-action-button member-action-button--verified";
-    badgeButton.type = "button";
     const hasVerifiedBadge = Array.isArray(member.badges) && member.badges.includes("verified");
+    badgeButton.className = `member-action-button member-action-button--verified${hasVerifiedBadge ? " is-on" : ""}`;
+    badgeButton.type = "button";
+    badgeButton.dataset.role = "verified";
+    badgeButton.setAttribute("aria-pressed", String(hasVerifiedBadge));
     badgeButton.textContent = hasVerifiedBadge ? "Retirer Validé" : "Donner Validé";
-    badgeButton.setAttribute("aria-label", `${hasVerifiedBadge ? "Retirer" : "Donner"} le badge Validé ${hasVerifiedBadge ? "de" : "à"} ${member.pseudo || "ce membre"}`);
+    badgeButton.title = hasVerifiedBadge
+      ? `Retirer le badge Validé de ${member.pseudo || "ce membre"}`
+      : `Donner le badge Validé à ${member.pseudo || "ce membre"}`;
+    badgeButton.setAttribute("aria-label", badgeButton.title);
     badgeButton.addEventListener("click", () => void changeMemberVerified(member, badgeButton));
 
     const roleButton = document.createElement("button");
-    roleButton.className = "member-action-button";
+    const isHostRole = member.role === "host";
+    roleButton.className = `member-action-button member-action-button--role${isHostRole ? " is-on" : ""}`;
     roleButton.type = "button";
-    roleButton.textContent = member.role === "host" ? "Retirer Hôte" : "Nommer Hôte";
+    roleButton.dataset.role = "host";
+    roleButton.setAttribute("aria-pressed", String(isHostRole));
+    roleButton.textContent = isHostRole ? "Retirer Hôte" : "Nommer Hôte";
+    roleButton.title = isHostRole
+      ? `Retirer le rôle Hôte de ${member.pseudo || "ce membre"}`
+      : `Nommer ${member.pseudo || "ce membre"} Hôte`;
+    roleButton.setAttribute("aria-label", roleButton.title);
     roleButton.addEventListener("click", () => void changeMemberRole(member, roleButton));
 
     const banButton = document.createElement("button");
@@ -728,10 +741,12 @@
 
   const changeMemberRole = async (member, button) => {
     const nextRole = member.role === "host" ? "member" : "host";
-    const confirmation = nextRole === "host"
-      ? `Nommer ${member.pseudo} compte Hôte ? Ce choix remplacera l’unique compte Hôte actuel, s’il y en a un.`
-      : `Retirer le rôle Hôte de ${member.pseudo} ?`;
-    if (!window.confirm(confirmation)) return;
+    // Retirer un rôle est immédiat (aucune confirmation) ; l'accorder reste une
+    // décision explicite parce qu'il n'y a qu'un seul compte Hôte.
+    if (nextRole === "host") {
+      const confirmation = `Nommer ${member.pseudo} compte Hôte ? Ce choix remplacera l’unique compte Hôte actuel, s’il y en a un.`;
+      if (!window.confirm(confirmation)) return;
+    }
     await performMemberPatch(member, { role: nextRole }, button);
   };
 

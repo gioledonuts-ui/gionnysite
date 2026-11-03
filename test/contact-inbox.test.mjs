@@ -151,11 +151,14 @@ test("trimmed case-insensitive login reconnects to the server-assigned Hôte acc
   assert.notEqual(reconnect.sessionToken, firstLogin.sessionToken);
   assert.equal((await getHostAccountIdentityFromSession(reconnect.sessionToken, store))?.pseudo, "Chef");
 
-  // New rule of this build: opening your own thread is always possible, the
-  // typed password simply becomes the stored one (no lockout any more).
+  // Strict authentication: a wrong password is refused, clearly.
   const reopened = await loginVisitorAccount({ pseudo: "Chef", password: "mauvais-mot-de-passe" }, store);
-  assert.equal(reopened.ok, true);
-  assert.equal(reopened.account.pseudo, "Chef");
+  assert.deepEqual(reopened, { ok: false, reason: "password" });
+  // And the case-insensitive match still needs the exact password.
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "CHEF", password: "correct-horse-battery" }, store).then((value) => value.ok),
+    true,
+  );
 });
 
 test("a snapshot write failure never blocks the login (signed session fallback)", async () => {
@@ -185,10 +188,12 @@ test("a snapshot write failure never blocks the login (signed session fallback)"
   const tamperedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
   assert.equal(await getVisitorAccountFromSession(`${prefix}.${payload}.${tamperedSignature}`, store), null);
 
-  // An unknown pseudo is now created on the spot, never refused.
-  const fresh = await loginVisitorAccount({ pseudo: "CompteInconnu", password: "correct-horse-battery" }, store);
-  assert.equal(fresh.ok, true);
-  assert.equal(fresh.account.pseudo, "CompteInconnu");
+  // A login never creates an account: the pseudo must exist first.
+  const unknown = await loginVisitorAccount({ pseudo: "CompteInconnu", password: "correct-horse-battery" }, store);
+  assert.deepEqual(unknown, { ok: false, reason: "not_found" });
+  const created2 = await registerVisitorAccount({ pseudo: "CompteInconnu", password: "correct-horse-battery" }, store);
+  assert.equal(created2.ok, true);
+  assert.equal(created2.account.pseudo, "CompteInconnu");
   assert.equal(await clearVisitorAccountSession(login.sessionToken, store), true);
 
   const sent = await addAccountReply(login.sessionToken, {
@@ -199,37 +204,66 @@ test("a snapshot write failure never blocks the login (signed session fallback)"
   assert.equal(sent.message.pseudo, "MembreQuota");
 });
 
-test("the owner account always opens with its name alone and gets the admin profile", async () => {
+test("the owner pseudo is claimed once by registering it, then needs its password", async () => {
   const store = new MemoryBlobStore();
+  // Nothing opens by name alone any more, whatever the spelling.
   for (const pseudo of ["Gionny", "  GIONNY  ", "7gionny", "@7gionny", "@7GIONNY"]) {
     const login = await loginVisitorAccount({ pseudo, password: "nimporte-quoi" }, store);
-    assert.equal(login.ok, true, `login refused for ${pseudo}`);
-    assert.equal(login.account.pseudo, "Gionny");
-    assert.equal(login.account.role, "host");
-    assert.equal(login.account.isHost, true);
-    assert.equal(login.account.isAdmin, true);
-    assert.equal(login.account.verified, true);
-    assert.ok(login.account.badges.includes("verified"));
-    assert.equal(await isAdminRequest(credentials(login.sessionToken), store), true);
-    assert.equal((await getHostAccountIdentityFromSession(login.sessionToken, store))?.pseudo, "Gionny");
+    assert.deepEqual(login, { ok: false, reason: "not_found" }, `login opened for ${pseudo}`);
   }
-  // The admin panel entry is a session, not a password.
-  assert.equal((await loginVisitorAccount({ pseudo: "Gionny", password: "" }, store)).ok, true);
+
+  // The first registration on the owner pseudo claims it and receives the crown.
+  const claimed = await registerVisitorAccount({ pseudo: "Gionny", password: "correct-horse-battery" }, store);
+  assert.equal(claimed.ok, true);
+  assert.equal(claimed.account.pseudo, "Gionny");
+  assert.equal(claimed.account.role, "host");
+  assert.equal(claimed.account.isHost, true);
+  assert.equal(claimed.account.isAdmin, true);
+  assert.ok(claimed.account.badges.includes("verified"));
+  assert.equal(await isAdminRequest(credentials(claimed.sessionToken), store), true);
+  assert.equal((await getHostAccountIdentityFromSession(claimed.sessionToken, store))?.pseudo, "Gionny");
+
+  // It cannot be claimed twice.
+  const second = await registerVisitorAccount({ pseudo: "7gionny", password: "another-correct-passphrase" }, store);
+  assert.deepEqual(second, { ok: false, reason: "exists" });
+
+  // The exact password works (any spelling of the name), a wrong one is refused.
+  for (const pseudo of ["Gionny", "  GIONNY  ", "7gionny", "@7gionny"]) {
+    const login = await loginVisitorAccount({ pseudo, password: "correct-horse-battery" }, store);
+    assert.equal(login.ok, true, `login refused for ${pseudo}`);
+    assert.equal(login.account.role, "host");
+  }
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "Gionny", password: "mauvais-mot-de-passe" }, store),
+    { ok: false, reason: "password" },
+  );
 });
 
-test("an unknown pseudo is created on the spot, never 'identifiants incorrects'", async () => {
+test("an unknown pseudo is refused on login and only created by registering", async () => {
   const store = new MemoryBlobStore();
-  const first = await loginVisitorAccount({ pseudo: "NouveauVenu", password: "un-mot-de-passe" }, store);
-  assert.equal(first.ok, true);
-  assert.equal(first.account.pseudo, "NouveauVenu");
-  assert.equal(first.account.role, "member");
-  assert.equal(first.account.isAdmin, undefined);
-  assert.equal(await isAdminRequest(credentials(first.sessionToken), store), false);
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "NouveauVenu", password: "un-mot-de-passe" }, store),
+    { ok: false, reason: "not_found" },
+  );
 
-  // Reconnecting with the same name never fails either.
-  const again = await loginVisitorAccount({ pseudo: "  nouveauvenu  ", password: "un-autre-mot-de-passe" }, store);
-  assert.equal(again.ok, true);
-  assert.equal(again.account.pseudo, "NouveauVenu");
+  const created = await registerVisitorAccount({ pseudo: "NouveauVenu", password: "un-mot-de-passe" }, store);
+  assert.equal(created.ok, true);
+  assert.equal(created.account.pseudo, "NouveauVenu");
+  assert.equal(created.account.role, "member");
+  assert.equal(created.account.isAdmin, undefined);
+  assert.equal(await isAdminRequest(credentials(created.sessionToken), store), false);
+
+  // Registering the same name again is refused, logging in with the right
+  // password works, and a wrong password says "Mot de passe incorrect".
+  assert.deepEqual(
+    await registerVisitorAccount({ pseudo: "nouveauvenu", password: "un-mot-de-passe" }, store),
+    { ok: false, reason: "exists" },
+  );
+  assert.equal((await loginVisitorAccount({ pseudo: "  nouveauvenu  ", password: "un-mot-de-passe" }, store)).ok, true);
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "NouveauVenu", password: "un-autre-mot-de-passe" }, store),
+    { ok: false, reason: "password" },
+  );
   assert.equal((await listVisitorAccounts("", store)).members.some((member) => member.pseudo === "NouveauVenu"), true);
 });
 
@@ -305,9 +339,11 @@ test("stateless sessions are renewed after pseudo or password changes", async ()
   assert.match(passwordChanged.sessionToken, /^qg2\./u);
   assert.equal(await getVisitorAccountFromSession(renamed.sessionToken, store), null);
   assert.equal((await getVisitorAccountFromSession(passwordChanged.sessionToken, store))?.pseudo, "ProfilRenomme");
-  // The old password no longer matches the stored hash, but a login is never
-  // refused: it simply adopts the typed password.
-  assert.equal((await loginVisitorAccount({ pseudo: "ProfilRenomme", password: "correct-horse-battery" }, store)).ok, true);
+  // Only the new password opens the account: the old one is refused.
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "ProfilRenomme", password: "correct-horse-battery" }, store),
+    { ok: false, reason: "password" },
+  );
   assert.equal((await loginVisitorAccount({ pseudo: "ProfilRenomme", password: "another-correct-passphrase" }, store)).ok, true);
 });
 
@@ -321,8 +357,12 @@ test("registration trims the pseudo and refuses names that cannot work", async (
     ok: false,
     reason: "pseudo",
   });
-  // A short password is no longer a dead end: the account opens anyway.
-  const trimmed = await registerVisitorAccount({ pseudo: "  MembreValide  ", password: "short" }, store);
+  // The password rule is enforced at registration: 8 characters minimum.
+  assert.deepEqual(await registerVisitorAccount({ pseudo: "  MembreValide  ", password: "short" }, store), {
+    ok: false,
+    reason: "password_invalid",
+  });
+  const trimmed = await registerVisitorAccount({ pseudo: "  MembreValide  ", password: "un-mot-de-passe" }, store);
   assert.equal(trimmed.ok, true);
   assert.equal(trimmed.account.pseudo, "MembreValide");
 });

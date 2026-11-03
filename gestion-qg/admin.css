@@ -3598,3 +3598,28 @@ body.admin-body {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+/* --------------------------------------------------------------------------
+   Rôles interrupteurs : on voit d'un coup d'œil ce qui est actif
+   -------------------------------------------------------------------------- */
+.member-action-button--role,
+.member-action-button--verified {
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+
+.member-action-button--role.is-on {
+  border-color: rgba(251, 191, 36, 0.45);
+  background: rgba(251, 191, 36, 0.14);
+  color: #fde3a1;
+}
+
+.member-action-button--verified.is-on {
+  border-color: rgba(29, 155, 240, 0.5);
+  background: rgba(29, 155, 240, 0.16);
+  color: #cfe9ff;
+}
+
+.member-action-button--role.is-on:hover:not(:disabled),
+.member-action-button--verified.is-on:hover:not(:disabled) {
+  filter: brightness(1.12);
+}

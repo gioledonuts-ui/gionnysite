@@ -847,7 +847,6 @@
   }
 
   const contactLauncher = document.querySelector("[data-open-contact]");
-  const contactScrim = document.querySelector("[data-contact-scrim]");
   const contactWidget = document.querySelector("[data-contact-widget]");
   const contactHeaderSubject = document.querySelector("[data-contact-header-subject]");
   const minimizeContactButton = document.querySelector("[data-minimize-contact]");
@@ -1210,7 +1209,7 @@
     if (contactAuth) contactAuth.hidden = true;
     contactNewView.hidden = true;
     contactThread.hidden = false;
-    contactThreadPseudo.textContent = visitorConversation.pseudo || visitorAccount?.pseudo || "Ta discussion privée";
+    if (contactThreadPseudo) contactThreadPseudo.textContent = visitorConversation.pseudo || visitorAccount?.pseudo || "Ta discussion privée";
     const currentSubject = visitorConversation.subject || "Discussion";
     renderSubjectLabel(contactThreadSubject, currentSubject);
     renderSubjectLabel(contactHeaderSubject, currentSubject);
@@ -1370,13 +1369,18 @@
     }
   };
 
+  // The last password typed by the signed-in member, kept in memory only while
+  // the tab lives: it is what the browser copy needs to replay a cold start.
+  let lastKnownPassword = "";
+
   const writeBrowserSync = () => {
     try {
-      if (!visitorAccount?.pseudo || visitorAccount.isAdmin) return;
+      if (!visitorAccount?.pseudo) return;
+      if (!lastKnownPassword) return;
       localStorage.setItem(QB_SYNC_KEY, JSON.stringify({
         version: 1,
         pseudo: visitorAccount.pseudo,
-        password: String(authForm?.elements.namedItem("password")?.value || ""),
+        password: lastKnownPassword,
         conversationId: visitorConversation?.id || "",
         messages: visitorConversationMessages
           .filter((message) => !message.pending)
@@ -1482,11 +1486,19 @@
     lastContactTrigger = trigger || contactLauncher;
     contactWidget.dataset.openContext = opensAtHero ? "top" : "launcher";
     window.clearTimeout(contactCloseTimer);
-    contactWidget.classList.remove("is-closing");
+    // Restart the entrance transition even when the window was just closing.
+    contactWidget.classList.remove("is-closing", "is-open");
     contactWidget.hidden = false;
-    if (contactScrim) contactScrim.hidden = false;
-    document.body.classList.add("contact-page-open");
-    lockBackgroundScroll("contact-widget");
+    // No scrim, no blur, no page lock: the site stays sharp, bright and
+    // scrollable behind the conversation (the launcher stays clickable too).
+    if (contactWidget.dataset.mounted !== "true") {
+      // First paint: it appears directly, no pointless entrance from nowhere.
+      contactWidget.dataset.mounted = "true";
+      contactWidget.classList.add("is-open");
+    } else {
+      void contactWidget.offsetWidth;
+      contactWidget.classList.add("is-open");
+    }
     contactLauncher?.setAttribute("aria-expanded", "true");
     memberLoginButton?.setAttribute("aria-expanded", String(trigger === memberLoginButton));
     memberRegisterButton?.setAttribute("aria-expanded", String(trigger === memberRegisterButton));
@@ -1504,27 +1516,25 @@
 
   // The window slides down before disappearing: no instant vanish, and the
   // chevron never rotates (it keeps pointing down).
-  const CONTACT_CLOSE_MS = 250;
+  const CONTACT_CLOSE_MS = 280;
   let contactCloseTimer = null;
 
   const finishContactClose = () => {
     if (!contactWidget) return;
     contactWidget.hidden = true;
-    contactWidget.classList.remove("is-closing");
+    contactWidget.classList.remove("is-closing", "is-open");
     delete contactWidget.dataset.openContext;
-    if (contactScrim) contactScrim.hidden = true;
-    document.body.classList.remove("contact-page-open");
-    unlockBackgroundScroll("contact-widget");
+    contactLauncher?.setAttribute("aria-expanded", "false");
     const trigger = lastContactTrigger && !lastContactTrigger.closest("[hidden]") ? lastContactTrigger : contactLauncher;
     trigger?.focus({ preventScroll: true });
     lastContactTrigger = null;
   };
 
   const minimizeContactWidget = () => {
-    if (!contactWidget || contactWidget.hidden) return;
+    if (!contactWidget || contactWidget.hidden || contactWidget.classList.contains("is-closing")) return;
     voiceControlStates.forEach((state) => state.cancel());
+    contactWidget.classList.remove("is-open");
     contactWidget.classList.add("is-closing");
-    if (contactScrim) contactScrim.hidden = true;
     contactLauncher?.setAttribute("aria-expanded", "false");
     memberLoginButton?.setAttribute("aria-expanded", "false");
     memberRegisterButton?.setAttribute("aria-expanded", "false");
@@ -1788,6 +1798,7 @@
     visitorAccount = null;
     visitorConversation = null;
     visitorConversationMessages = [];
+    lastKnownPassword = "";
     clearBrowserSync();
     newConversationMode = false;
     renderContactState();
@@ -2018,6 +2029,8 @@
       visitorConversation = data.conversation || null;
       visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
       newConversationMode = false;
+      // Remembered before the form is cleared: the browser copy replays it.
+      lastKnownPassword = password;
       writeBrowserSync();
       authForm.reset();
       setStatusNode(authStatus, "");
@@ -2300,12 +2313,16 @@
 
   if (contactLauncher && contactWidget) {
     contactLauncher.addEventListener("click", () => {
-      if (contactWidget.hidden) openContactWidget({ context: "launcher", trigger: contactLauncher });
-      else minimizeContactWidget();
+      // The round launcher stays visible and active while the window is open:
+      // clicking it again folds the conversation back down.
+      if (contactWidget.hidden || contactWidget.classList.contains("is-closing")) {
+        openContactWidget({ context: "launcher", trigger: contactLauncher });
+      } else {
+        minimizeContactWidget();
+      }
     });
     minimizeContactButton?.addEventListener("click", minimizeContactWidget);
 
-    contactScrim?.addEventListener("click", minimizeContactWidget);
     document.addEventListener("keydown", (event) => {
       if (contactWidget.hidden || document.querySelector("dialog[open]")) return;
       if (event.key === "Escape") {

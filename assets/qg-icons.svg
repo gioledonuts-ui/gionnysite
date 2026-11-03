@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true">
   <defs>
     <linearGradient id="qg-crown-gold" x1="3" y1="3" x2="21" y2="22" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FBBF24" />
-      <stop offset="1" stop-color="#D97706" />
+      <stop offset="0" stop-color="#FDCF4A" />
+      <stop offset="0.55" stop-color="#F4B123" />
+      <stop offset="1" stop-color="#D08A05" />
     </linearGradient>
   </defs>
   <symbol id="icon-crown" viewBox="0 0 24 24">
-    <path d="m3 7 4.2 3.2L12 4l4.8 6.2L21 7l-1.7 10H4.7L3 7Z" fill="url(#qg-crown-gold)" stroke="#D97706" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" />
-    <path d="M5 20h14" fill="none" stroke="#D97706" stroke-linecap="round" stroke-width="2" />
-    <circle cx="3" cy="6.5" r="1.3" fill="#FBBF24" />
-    <circle cx="12" cy="3.7" r="1.3" fill="#FBBF24" />
-    <circle cx="21" cy="6.5" r="1.3" fill="#FBBF24" />
+    <path d="m3 7.6 4.3 3.1L12 4.2l4.7 6.5L21 7.6l-1.6 9.9H4.6L3 7.6Z" fill="url(#qg-crown-gold)" stroke="#C98A08" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.15" />
+    <path d="M5.4 20.1h13.2" fill="none" stroke="#C98A08" stroke-linecap="round" stroke-width="1.7" />
+    <circle cx="3" cy="7.1" r="1.15" fill="#FDD96B" />
+    <circle cx="12" cy="3.9" r="1.15" fill="#FDD96B" />
+    <circle cx="21" cy="7.1" r="1.15" fill="#FDD96B" />
   </symbol>
   <symbol id="icon-verified" viewBox="0 0 24 24">
-    <path d="m12 1.5 2.7 1.8 3.2-.2 1.2 3 2.7 1.8-.8 3.1 1.2 3-2.4 2.1-.5 3.2-3.1.8L14 22.7l-3.1-.8-3.1.8-1.6-2.8-3.1-.8-.5-3.2-2.4-2.1 1.2-3-.8-3.1 2.7-1.8 1.2-3 3.2.2L12 1.5Z" fill="#1D9BF0" />
-    <path d="m7.4 12.2 3 3 6.3-6.5" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" />
+    <path d="m12 1.6 2.6 1.72 3.14-.19 1.14 2.93 2.62 1.76-.79 3.05 1.14 2.93-2.33 2.06-.5 3.12-3.02.78L12 22.4l-3.02-.78-3.02-.78-.5-3.12-2.33-2.06 1.14-2.93-.79-3.05 2.62-1.76 1.14-2.93 3.14.19L12 1.6Z" fill="#1D9BF0" />
+    <path d="M7.9 12.05 10.75 14.9 16.2 8.9" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.15" />
   </symbol>
   <symbol id="icon-user" viewBox="0 0 24 24">
     <circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2" />
