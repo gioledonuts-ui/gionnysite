@@ -13,7 +13,6 @@ Tout ce qui commence par `gionny/` :
 | `gionny/visitor-accounts/` | les comptes (pseudo, mot de passe haché + sel) |
 | `gionny/visitor-sessions/` | les sessions ouvertes |
 | `gionny/visitor-host.json` | le membre promu « Hôte » |
-| `gionny/owner-recovery.json` | l’empreinte du code de récupération du propriétaire |
 | `gionny/conversations/`, `gionny/conversation-messages/` | les discussions |
 | `gionny/conversation-audio/`, `gionny/conversation-images/` | les pièces jointes |
 | `gionny/site-config.json` | les réglages du site |
@@ -66,22 +65,24 @@ curl -s https://qg2gionny.vercel.app/api/contact \
 
 ## 5. Compte propriétaire
 
-Le compte `Gionny` n’est **jamais** accessible avec le seul pseudo.
+Il n’y a **aucun compte spécial** : le propriétaire est un membre comme les
+autres, qui s’est vu attribuer le rôle « Hôte ».
 
-- Il se protège avec **son** mot de passe (défini par
-  `GIONNY_OWNER_PASSWORD`, ou par le formulaire de récupération).
-- Le retour après une bascule passe par le **code de récupération** :
-  16 caractères générés par le serveur, stockés hachés dans
-  `gionny/owner-recovery.json`.
+1. Sur le site, « Créer un compte rapide » : ton pseudo (celui que tu veux) +
+   ton mot de passe. Le compte est un compte membre normal.
+2. Le panneau d’administration s’ouvre avec le **code à 4 caractères**
+   (`GIONNY_ADMIN_PIN`) — il ne dépend d’aucun compte.
+3. Onglet **Membres** → ton compte → **« Nommer Hôte »**.
+4. C’est fini : ce compte est le propriétaire. Il garde son mot de passe, son
+   pseudo, et ouvre le panneau avec le même code. Aucun autre compte ne peut
+   être Hôte à la fois (nommer quelqu’un d’autre remplace l’ancien).
 
-Procédure :
+Points utiles :
 
-1. Vercel → Settings → Environment Variables → ajouter `GIONNY_OWNER_PASSWORD`
-   (le mot de passe choisi, 8 caractères minimum), *Production*, puis redéployer.
-2. Se connecter une fois avec le pseudo `Gionny` et ce mot de passe.
-3. Ouvrir `/api/owner-recovery` avec `{ "action": "issue-code", "password": "…" }`
-   depuis le site (bouton « Mot de passe oublié ? » → émettre le code), puis
-   **conserver le code affiché** (format `XXXX-XXXX-XXXX-XXXX`).
-4. En cas d’oubli : même bouton, saisir le code + un nouveau mot de passe.
-5. Le code ne peut être changé que par son porteur : la route est limitée à
-   5 essais / 15 minutes.
+- Le rôle est stocké dans `gionny/visitor-host.json` : il survit aux
+  redémarrages et il suffit de recopier ce fichier pendant la bascule.
+- Un compte Hôte ne peut être ni banni ni supprimé tant qu’il a le rôle
+  (« Retirer Hôte » d’abord).
+- Perte du mot de passe : seul le code du panneau peut te dépanner —
+  connecte-toi avec le code, va dans Membres, et si besoin recrée un compte
+  puis nomme-le Hôte.

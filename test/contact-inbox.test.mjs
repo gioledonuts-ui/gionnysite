@@ -25,10 +25,6 @@ import {
   getHostAccountIdentityFromSession,
   getVisitorAccountFromSession,
   clearVisitorAccountSession,
-  hasOwnerRecoveryCode,
-  isOwnerRecoveryAvailable,
-  issueOwnerRecoveryCode,
-  recoverOwnerAccount,
   readAccountSessionCookie,
   saveAccountSessionCookie,
   listVisitorAccounts,
@@ -210,149 +206,84 @@ test("Blob session-write quota preserves only password-verified login through a 
   assert.equal(sent.message.pseudo, "MembreQuota");
 });
 
-test("the owner account is password protected and the name is reserved", async () => {
+test("no pseudo is reserved: the owner registers like everybody else", async () => {
   const store = new MemoryBlobStore();
-  process.env.GIONNY_OWNER_PASSWORD = "mot-de-passe-du-patron";
-  try {
-    // Knowing the pseudo grants nothing: without the password, nothing is
-    // created and nothing is written.
-    assert.deepEqual(await loginVisitorAccount({ pseudo: "Gionny", password: "nimporte-quoi" }, store), {
-      ok: false,
-      reason: "invalid_credentials",
-    });
-    assert.deepEqual(
-      [...store.objects.keys()].filter((path) => path.includes("visitor-accounts")),
-      [],
-    );
-    assert.deepEqual(await loginVisitorAccount({ pseudo: "@7gionny", password: "" }, store), {
-      ok: false,
-      reason: "invalid_credentials",
-    });
+  // "Gionny" is a normal name now: it creates a normal member account.
+  const created = await registerVisitorAccount({ pseudo: "Gionny", password: "mon-vrai-mot-de-passe" }, store);
+  assert.equal(created.ok, true);
+  assert.equal(created.account.pseudo, "Gionny");
+  assert.equal(created.account.role, "member");
+  assert.equal(created.account.isAdmin, undefined);
+  assert.equal(await isAdminRequest(credentials(created.sessionToken), store), false);
 
-    // The configured owner password opens the host admin profile.
-    for (const pseudo of ["Gionny", "  GIONNY  ", "7gionny", "@7gionny"]) {
-      const login = await loginVisitorAccount({ pseudo, password: "mot-de-passe-du-patron" }, store);
-      assert.equal(login.ok, true, `login refused for ${pseudo}`);
-      assert.equal(login.account.pseudo, "Gionny");
-      assert.equal(login.account.role, "host");
-      assert.equal(login.account.isHost, true);
-      assert.equal(login.account.isAdmin, true);
-      assert.equal(await isAdminRequest(credentials(login.sessionToken), store), true);
-      assert.equal((await getHostAccountIdentityFromSession(login.sessionToken, store))?.isHost, true);
-    }
-
-    // Nobody can register the owner name.
-    assert.deepEqual(await registerVisitorAccount({ pseudo: "7gionny", password: "un-mot-de-passe" }, store), {
-      ok: false,
-      reason: "exists",
-    });
-  } finally {
-    delete process.env.GIONNY_OWNER_PASSWORD;
-  }
+  // Same name, wrong password: refused. Knowing the pseudo opens nothing.
+  assert.deepEqual(
+    await loginVisitorAccount({ pseudo: "gionny", password: "autre-chose" }, store),
+    { ok: false, reason: "invalid_credentials" },
+  );
+  // And the name is taken, so nobody can shadow the account.
+  assert.deepEqual(await registerVisitorAccount({ pseudo: "GIONNY", password: "un-autre-mot-de-passe" }, store), {
+    ok: false,
+    reason: "exists",
+  });
 });
 
-test("without the owner secret, nobody can claim the account by typing its name", async () => {
+test("the owner is the account promoted to Hôte from the admin panel", async () => {
   const store = new MemoryBlobStore();
-  assert.equal((await loginVisitorAccount({ pseudo: "GIONNY", password: "mon-vrai-mot-de-passe" }, store)).ok, false);
-  assert.equal((await loginVisitorAccount({ pseudo: "Gionny", password: "autre-chose" }, store)).ok, false);
-  assert.equal((await loginVisitorAccount({ pseudo: "Gionny", password: "" }, store)).ok, false);
+  const created = await createAccount(store, "Gionny");
+  assert.equal(await isAdminRequest(credentials(created.sessionToken), store), false);
+
+  const host = await assignHost(store, created);
+  assert.equal(host.member.role, "host");
+
+  // The very same account, same password, is now the Hôte everywhere.
+  const login = await loginVisitorAccount({ pseudo: "GIONNY", password: "correct-horse-battery" }, store);
+  assert.equal(login.ok, true);
+  assert.equal(login.account.role, "host");
+  assert.equal(login.account.isHost, true);
+  assert.equal(login.account.isAdmin, true);
+  assert.equal(await isAdminRequest(credentials(login.sessionToken), store), true);
+  assert.deepEqual(await getHostAccountIdentityFromSession(login.sessionToken, store), {
+    accountId: host.member.id,
+    pseudo: "Gionny",
+    isHost: true,
+  });
+
+  // The promotion does not change the password: the old one still works.
+  assert.equal((await loginVisitorAccount({ pseudo: "Gionny", password: "correct-horse-battery" }, store)).ok, true);
+  // And a wrong password is still refused on a Hôte account.
   assert.deepEqual(
-    [...store.objects.keys()].filter((path) => path.includes("visitor-accounts")),
-    [],
+    await loginVisitorAccount({ pseudo: "Gionny", password: "mauvais-mot-de-passe" }, store),
+    { ok: false, reason: "invalid_credentials" },
   );
 });
 
-test("the owner recovery code is the only way back to the account", async () => {
+test("a promoted Hôte stays Hôte after a cold restart, and a member drops back", async () => {
   const store = new MemoryBlobStore();
-  process.env.GIONNY_OWNER_RECOVERY_CODE = "code-de-recuperation-tres-long-1234";
-  try {
-    assert.equal(isOwnerRecoveryAvailable(), true);
-
-    assert.deepEqual(
-      await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: "faux-code" }, store),
-      { ok: false, reason: "recovery_code" },
-    );
-    assert.deepEqual(
-      await recoverOwnerAccount({ pseudo: "Membre", password: "nouveau-mot-de-passe", recoveryCode: "code-de-recuperation-tres-long-1234" }, store),
-      { ok: false, reason: "not_owner" },
-    );
-
-    const recovered = await recoverOwnerAccount({
-      pseudo: "@7gionny",
-      password: "nouveau-mot-de-passe",
-      recoveryCode: "code-de-recuperation-tres-long-1234",
-    }, store);
-    assert.equal(recovered.ok, true);
-    assert.equal(recovered.account.pseudo, "Gionny");
-    assert.equal(recovered.account.isAdmin, true);
-    assert.equal(await isAdminRequest(credentials(recovered.sessionToken), store), true);
-    assert.equal((await loginVisitorAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe" }, store)).ok, true);
-
-    assert.deepEqual(
-      await recoverOwnerAccount({ pseudo: "Gionny", password: "court", recoveryCode: "code-de-recuperation-tres-long-1234" }, store),
-      { ok: false, reason: "password" },
-    );
-  } finally {
-    delete process.env.GIONNY_OWNER_RECOVERY_CODE;
-  }
-});
-
-test("the generated recovery code is the key, even without any secret", async () => {
-  const store = new MemoryBlobStore();
-  assert.equal(isOwnerRecoveryAvailable(), false);
-  // Nothing issued yet: no code can open the account.
-  assert.deepEqual(
-    await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: "AAAA-BBBB-CCCC-DDDD" }, store),
-    { ok: false, reason: "recovery_code" },
-  );
-
-  const code = await issueOwnerRecoveryCode(store);
-  assert.match(code, /^[A-Z0-9]{4}(?:-[A-Z0-9]{4}){3}$/u);
-  assert.equal(await hasOwnerRecoveryCode(store), true);
-  // Wrong code is refused, the right one is accepted (lower case and spaces too).
-  assert.deepEqual(
-    await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: "AAAA-BBBB-CCCC-DDDD" }, store),
-    { ok: false, reason: "recovery_code" },
-  );
-  const spaced = code.toLowerCase().replace(/-/gu, " ");
-  const stored = await recoverOwnerAccount({ pseudo: "Gionny", password: "nouveau-mot-de-passe", recoveryCode: spaced }, store);
-  assert.equal(stored.ok, true);
-  assert.equal(stored.account.isAdmin, true);
-});
-
-test("a cold restart keeps the owner reachable and re-reads members from the Blob", async () => {
-  const store = new MemoryBlobStore();
-  assert.equal((await createAccount(store, "MembreFroid")).ok, true);
-  // "Chef" is a regular member promoted to Hôte by the server assignment.
-  const host = await assignHost(store, await createAccount(store, "Chef"));
+  const created = await createAccount(store, "Patron");
 
   // Cold start: a brand-new instance, same persisted Blob objects, empty RAM.
   const coldStore = new MemoryBlobStore();
   coldStore.objects = store.objects;
 
-  process.env.GIONNY_OWNER_PASSWORD = "mot-de-passe-du-patron";
-  const hostLogin = await loginVisitorAccount({ pseudo: "GIONNY", password: "mot-de-passe-du-patron" }, coldStore);
-  delete process.env.GIONNY_OWNER_PASSWORD;
-  assert.equal(hostLogin.ok, true);
-  assert.equal(hostLogin.account.role, "host");
-  assert.equal(await isAdminRequest(credentials(hostLogin.sessionToken), coldStore), true);
-  assert.deepEqual(
-    { pseudo: (await getHostAccountIdentityFromSession(hostLogin.sessionToken, coldStore))?.pseudo, isHost: true },
-    { pseudo: "Gionny", isHost: true },
-  );
+  // Before promotion, the fresh instance refuses admin access.
+  const beforePromotion = await loginVisitorAccount({ pseudo: "Patron", password: "correct-horse-battery" }, coldStore);
+  assert.equal(beforePromotion.ok, true);
+  assert.equal(beforePromotion.account.role, "member");
+  assert.equal(await isAdminRequest(credentials(beforePromotion.sessionToken), coldStore), false);
 
-  const memberLogin = await loginVisitorAccount({ pseudo: "MembreFroid", password: "correct-horse-battery" }, coldStore);
-  assert.equal(memberLogin.ok, true);
-  assert.equal(memberLogin.account.pseudo, "MembreFroid");
-  assert.equal(memberLogin.account.role, "member");
+  const host = await assignHost(coldStore, created);
+  const afterPromotion = await loginVisitorAccount({ pseudo: "Patron", password: "correct-horse-battery" }, coldStore);
+  assert.equal(afterPromotion.account.role, "host");
+  assert.equal(await isAdminRequest(credentials(afterPromotion.sessionToken), coldStore), true);
 
-  // A wrong password is still rejected once the account exists again.
-  assert.deepEqual(
-    await loginVisitorAccount({ pseudo: "MembreFroid", password: "mauvais-mot-de-passe" }, coldStore),
-    { ok: false, reason: "invalid_credentials" },
-  );
+  // Demoting takes effect immediately: the role is read from the Blob.
+  assert.equal((await setVisitorAccountRole(host.member.id, "member", coldStore)).ok, true);
+  assert.equal(await isAdminRequest(credentials(afterPromotion.sessionToken), coldStore), false);
+  assert.equal((await loginVisitorAccount({ pseudo: "Patron", password: "correct-horse-battery" }, coldStore)).account.role, "member");
 
   // The assigned Hôte account cannot be deleted while it holds the role.
+  assert.equal((await setVisitorAccountRole(host.member.id, "host", coldStore)).ok, true);
   assert.deepEqual(await deleteVisitorAccount(host.member.id, coldStore), { ok: false, reason: "host" });
 });
 

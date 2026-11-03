@@ -715,24 +715,6 @@
               <input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="8 caractères minimum" required />
             </label>
             <p class="contact-privacy">Aucun e-mail demandé. Garde ton pseudo et ton mot de passe pour retrouver ta discussion.</p>
-            <button class="contact-owner-recovery-toggle" type="button" data-owner-recovery-open hidden>Mot de passe oublié ?</button>
-            <div class="contact-owner-recovery" data-owner-recovery hidden>
-              <p class="contact-owner-recovery-copy">Compte propriétaire uniquement. Saisis ton code de récupération (16 caractères) et choisis un nouveau mot de passe : cela crée le compte s’il n’existe pas encore, sinon il est récupéré.</p>
-              <label class="contact-field">
-                <span>Code de récupération</span>
-                <input name="recoveryCode" type="text" autocomplete="one-time-code" maxlength="64" placeholder="XXXX-XXXX-XXXX-XXXX" data-owner-recovery-code />
-              </label>
-              <label class="contact-field">
-                <span>Nouveau mot de passe</span>
-                <input name="recoveryPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" placeholder="8 caractères minimum" data-owner-recovery-password />
-              </label>
-              <p class="contact-status" data-owner-recovery-status role="status" aria-live="polite"></p>
-              <div class="contact-owner-recovery-actions">
-                <button class="contact-send" type="button" data-owner-recovery-submit>Enregistrer mon mot de passe</button>
-                <button class="contact-owner-recovery-cancel" type="button" data-owner-recovery-cancel>Annuler</button>
-              </div>
-              <button class="contact-owner-recovery-toggle" type="button" data-owner-recovery-issue>Je n’ai pas encore de code : en générer un</button>
-            </div>
             <p class="contact-status" data-auth-status role="status" aria-live="polite"></p>
             <button class="contact-send" type="submit" data-auth-submit>
               <span data-auth-submit-label>Créer mon compte</span>

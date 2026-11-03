@@ -8,7 +8,6 @@ import {
   CONVERSATION_SUBJECTS,
   getAccountConversation,
   isConversationSubject,
-  isHostPseudoName,
   loginVisitorAccount,
   markAccountConversationRead,
   readAccountSessionCookie,
@@ -133,22 +132,19 @@ async function handleAuthentication(request, response, body, action) {
   const retryAfter = isRateLimited(`auth:${getClientKey(request)}`);
   if (setRateLimitResponse(response, retryAfter)) return;
 
-  const pseudo = typeof body.pseudo === "string" ? body.pseudo.trim() : "";
-  const password = typeof body.password === "string" ? body.password : "";
-  const credentials = {
-    pseudo,
-    password,
-    legacyCookieValue: readVisitorConversationCookie(request),
-  };
-
-  // The owner account is password protected like any other account. It simply
-  // also works when the Blob store is unavailable, because it lives in RAM.
-  const ownerAttempt = isHostPseudoName(pseudo);
-  if (!isBlobStorageConfigured() && !ownerAttempt) {
+  if (!isBlobStorageConfigured()) {
     response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
     return;
   }
 
+  const credentials = {
+    pseudo: typeof body.pseudo === "string" ? body.pseudo.trim() : "",
+    password: typeof body.password === "string" ? body.password : "",
+    legacyCookieValue: readVisitorConversationCookie(request),
+  };
+
+  // Everyone goes through the same door: a pseudo and a password. There is no
+  // reserved name, no special account and no shortcut.
   const result = action === "register"
     ? await registerVisitorAccount(credentials)
     : await loginVisitorAccount(credentials);
@@ -163,14 +159,6 @@ async function handleAuthentication(request, response, body, action) {
       return;
     }
     if (result.reason === "exists") {
-      // The owner name is reserved: it is never handed to a visitor.
-      if (ownerAttempt) {
-        response.status(409).json({
-          error: "Ce compte est réservé au propriétaire du site. Connecte-toi avec son mot de passe.",
-          ownerReserved: true,
-        });
-        return;
-      }
       response.status(409).json({ error: "Ce pseudo a déjà un compte. Essaie de te connecter." });
       return;
     }
@@ -178,12 +166,7 @@ async function handleAuthentication(request, response, body, action) {
       response.status(403).json({ error: "Ce compte a été désactivé par l’administration." });
       return;
     }
-    response.status(401).json({
-      error: ownerAttempt
-        ? "Mot de passe incorrect. Le compte Gionny est protégé par un mot de passe."
-        : "Pseudo ou mot de passe incorrect.",
-      ...(ownerAttempt ? { ownerProtected: true } : {}),
-    });
+    response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
     return;
   }
 
