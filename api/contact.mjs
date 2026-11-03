@@ -7,10 +7,8 @@ import {
   clearVisitorAccountSession,
   CONVERSATION_SUBJECTS,
   getAccountConversation,
-  getVisitorAccountFromSession,
   isConversationSubject,
   isHostPseudoName,
-  loginHostAccount,
   loginVisitorAccount,
   markAccountConversationRead,
   readAccountSessionCookie,
@@ -143,40 +141,17 @@ async function handleAuthentication(request, response, body, action) {
     legacyCookieValue: readVisitorConversationCookie(request),
   };
 
-  if (!isBlobStorageConfigured()) {
-    // Without a Blob store only the owner account can be authenticated: it
-    // lives in RAM, so a cold start or a quota outage never locks it out.
-    if (!isHostPseudoName(pseudo)) {
-      response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
-      return;
-    }
-    const hostResult = await loginHostAccount({ password, legacyCookieValue: credentials.legacyCookieValue });
-    if (!hostResult?.ok) {
-      response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
-      return;
-    }
-    saveAccountSessionCookie(request, response, hostResult.sessionToken);
-    response.status(200).json({
-      ok: true,
-      account: hostResult.account,
-      conversation: null,
-      messages: [],
-      subjects: CONVERSATION_SUBJECTS,
-    });
+  // The owner account is password protected like any other account. It simply
+  // also works when the Blob store is unavailable, because it lives in RAM.
+  const ownerAttempt = isHostPseudoName(pseudo);
+  if (!isBlobStorageConfigured() && !ownerAttempt) {
+    response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
     return;
   }
 
-  let result;
-  try {
-    result = action === "register"
-      ? await registerVisitorAccount(credentials)
-      : await loginVisitorAccount(credentials);
-  } catch (error) {
-    // The owner must never stay locked out, even if the account layer throws.
-    if (!isHostPseudoName(pseudo)) throw error;
-    result = await loginHostAccount({ password, legacyCookieValue: credentials.legacyCookieValue }).catch(() => null);
-    if (!result) throw error;
-  }
+  const result = action === "register"
+    ? await registerVisitorAccount(credentials)
+    : await loginVisitorAccount(credentials);
 
   if (!result.ok) {
     if (result.reason === "pseudo") {
@@ -188,6 +163,14 @@ async function handleAuthentication(request, response, body, action) {
       return;
     }
     if (result.reason === "exists") {
+      // The owner name is reserved: it is never handed to a visitor.
+      if (ownerAttempt) {
+        response.status(409).json({
+          error: "Ce compte est réservé au propriétaire du site. Connecte-toi avec son mot de passe.",
+          ownerReserved: true,
+        });
+        return;
+      }
       response.status(409).json({ error: "Ce pseudo a déjà un compte. Essaie de te connecter." });
       return;
     }
@@ -195,7 +178,12 @@ async function handleAuthentication(request, response, body, action) {
       response.status(403).json({ error: "Ce compte a été désactivé par l’administration." });
       return;
     }
-    response.status(401).json({ error: "Pseudo ou mot de passe incorrect." });
+    response.status(401).json({
+      error: ownerAttempt
+        ? "Mot de passe incorrect. Le compte Gionny est protégé par un mot de passe."
+        : "Pseudo ou mot de passe incorrect.",
+      ...(ownerAttempt ? { ownerProtected: true } : {}),
+    });
     return;
   }
 
@@ -212,7 +200,6 @@ async function handleAuthentication(request, response, body, action) {
     conversation: state?.conversation || null,
     messages: state?.messages || [],
     subjects: CONVERSATION_SUBJECTS,
-    ...(result.recovered ? { recovered: true, notice: "Ton compte a été restauré sur ce serveur. Tu es connecté." } : {}),
   });
 }
 
@@ -224,16 +211,12 @@ async function handleProfile(request, response, body, sessionToken) {
     return response.status(503).json({ error: "La discussion est momentanément indisponible. Réessaie plus tard." });
   }
 
-  const sessionAccount = await getVisitorAccountFromSession(sessionToken).catch(() => null);
-  const viewerIsHost = sessionAccount?.role === "host";
   const result = await updateVisitorAccountProfile(sessionToken, {
     pseudo: Object.hasOwn(body, "pseudo") ? body.pseudo : undefined,
-    // The owner can always set a new password, even after the RAM state (and
-    // therefore the previous password) was lost.
+    // The current password is always required, the owner included.
     currentPassword: typeof body.currentPassword === "string" ? body.currentPassword : "",
     newPassword: Object.hasOwn(body, "newPassword") ? body.newPassword : "",
     avatarData: Object.hasOwn(body, "avatarData") ? body.avatarData : undefined,
-    ...(viewerIsHost ? { hostOverride: true } : {}),
   });
   if (!result.ok) {
     if (result.reason === "unauthorized") return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });

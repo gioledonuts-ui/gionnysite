@@ -856,6 +856,13 @@
   const authSubmit = document.querySelector("[data-auth-submit]");
   const authSubmitLabel = document.querySelector("[data-auth-submit-label]");
   const authStatus = document.querySelector("[data-auth-status]");
+  const ownerRecoveryToggle = document.querySelector("[data-owner-recovery-open]");
+  const ownerRecoveryPanel = document.querySelector("[data-owner-recovery]");
+  const ownerRecoveryCode = document.querySelector("[data-owner-recovery-code]");
+  const ownerRecoveryPassword = document.querySelector("[data-owner-recovery-password]");
+  const ownerRecoveryStatus = document.querySelector("[data-owner-recovery-status]");
+  const ownerRecoverySubmit = document.querySelector("[data-owner-recovery-submit]");
+  const ownerRecoveryCancel = document.querySelector("[data-owner-recovery-cancel]");
   const authTabs = [...document.querySelectorAll("[data-auth-tab]")];
   const memberAccessBar = document.querySelector("[data-member-access]");
   const memberVisitorIdentity = document.querySelector("[data-member-visitor]");
@@ -1876,18 +1883,14 @@
     if (!authSubmit || authSubmit.disabled) return;
     const pseudoInput = authForm.elements.namedItem("pseudo");
     const passwordInput = authForm.elements.namedItem("password");
-    const rawPseudo = String(pseudoInput?.value || "").trim();
-    const pseudo = rawPseudo.replace(/^@+/u, "");
+    const pseudo = String(pseudoInput?.value || "").trim().replace(/^@+/u, "");
     const password = String(passwordInput?.value || "");
     if (pseudoInput) pseudoInput.value = pseudo;
-    // The owner account ("Gionny", "7gionny", "@7gionny") is always let through:
-    // the server recognises it and re-creates it if the RAM state was lost.
-    const isOwnerPseudo = /^@?7?gionny$/iu.test(rawPseudo);
     if (!pseudo || !password) {
       setStatusNode(authStatus, "Saisis ton pseudo et ton mot de passe.", "error");
       return;
     }
-    if (authMode === "register" && !isOwnerPseudo && (pseudo.length < 3 || pseudo.length > 16)) {
+    if (authMode === "register" && (pseudo.length < 3 || pseudo.length > 16)) {
       setStatusNode(authStatus, "Le pseudo doit contenir entre 3 et 16 caractères après suppression des espaces au début et à la fin.", "error");
       return;
     }
@@ -1926,12 +1929,7 @@
       visitorConversationMessages = Array.isArray(data.messages) ? data.messages : [];
       newConversationMode = false;
       authForm.reset();
-      // A restored account (server lost its RAM) is announced explicitly.
-      setStatusNode(
-        authStatus,
-        data.recovered ? (data.notice || "Ton compte a été restauré sur ce serveur. Tu es connecté.") : "",
-        data.recovered ? "success" : undefined
-      );
+      setStatusNode(authStatus, "");
       renderContactState();
       if (visitorConversation) markVisitorThreadSeen();
       if (closeAfterAuthentication) {
@@ -1958,6 +1956,83 @@
       authSubmit.disabled = false;
     }
   });
+
+  // -------------------------------------------------------------------------
+  // Compte propriétaire : mot de passe obligatoire, récupération par code
+  // -------------------------------------------------------------------------
+  // The owner account is not special at login time: it needs its password.
+  // When the owner has forgotten it, the only way back is the recovery code
+  // stored on the server. The entry point is deliberately discreet.
+  const OWNER_PSEUDO_PATTERN = /^@?7?gionny$/iu;
+
+  const setOwnerRecoveryVisible = (visible) => {
+    if (!ownerRecoveryPanel) return;
+    ownerRecoveryPanel.hidden = !visible;
+    if (ownerRecoveryToggle) ownerRecoveryToggle.setAttribute("aria-expanded", String(visible));
+    if (visible) ownerRecoveryCode?.focus({ preventScroll: true });
+  };
+
+  const submitOwnerRecovery = async () => {
+    if (!ownerRecoverySubmit || ownerRecoverySubmit.disabled) return;
+    const pseudo = String(authForm?.elements.namedItem("pseudo")?.value || "").trim().replace(/^@+/u, "");
+    const recoveryCode = String(ownerRecoveryCode?.value || "").trim();
+    const password = String(ownerRecoveryPassword?.value || "");
+    if (!OWNER_PSEUDO_PATTERN.test(pseudo)) {
+      setStatusNode(ownerRecoveryStatus, "Saisis d’abord le pseudo du compte propriétaire (Gionny).", "error");
+      return;
+    }
+    if (!recoveryCode || password.length < 8) {
+      setStatusNode(ownerRecoveryStatus, "Le code de récupération et un mot de passe de 8 caractères minimum sont requis.", "error");
+      return;
+    }
+    ownerRecoverySubmit.disabled = true;
+    setStatusNode(ownerRecoveryStatus, "Réinitialisation…");
+    try {
+      const response = await fetch("/api/owner-recovery", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "recover", pseudo, password, recoveryCode }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true) {
+        setStatusNode(ownerRecoveryStatus, data.error || "La réinitialisation a échoué.", "error");
+        return;
+      }
+      visitorAccount = data.account || null;
+      if (authForm) authForm.reset();
+      setOwnerRecoveryVisible(false);
+      setStatusNode(ownerRecoveryStatus, "");
+      setStatusNode(authStatus, data.notice || "Mot de passe mis à jour. Tu es connecté.", "success");
+      renderContactState();
+      if (contactWidget && !contactWidget.hidden) void loadVisitorConversation({ quiet: true });
+    } catch {
+      setStatusNode(ownerRecoveryStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      ownerRecoverySubmit.disabled = false;
+    }
+  };
+
+  ownerRecoveryToggle?.addEventListener("click", () => {
+    setOwnerRecoveryVisible(ownerRecoveryPanel?.hidden !== false);
+  });
+  ownerRecoveryCancel?.addEventListener("click", () => {
+    setOwnerRecoveryVisible(false);
+    setStatusNode(ownerRecoveryStatus, "");
+  });
+  ownerRecoverySubmit?.addEventListener("click", () => void submitOwnerRecovery());
+
+  // The entry point only appears when the typed pseudo is the owner account.
+  const syncOwnerRecoveryToggle = () => {
+    if (!ownerRecoveryToggle) return;
+    const typed = String(authForm?.elements.namedItem("pseudo")?.value || "").trim().replace(/^@+/u, "");
+    const isOwner = OWNER_PSEUDO_PATTERN.test(typed);
+    ownerRecoveryToggle.hidden = !isOwner;
+    if (!isOwner) setOwnerRecoveryVisible(false);
+  };
+  authForm?.elements.namedItem("pseudo")?.addEventListener("input", syncOwnerRecoveryToggle);
+  syncOwnerRecoveryToggle();
 
   logoutButtons.forEach((button) => button.addEventListener("click", () => void logoutVisitor()));
 
