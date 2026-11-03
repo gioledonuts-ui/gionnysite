@@ -3536,3 +3536,65 @@ body.admin-body {
   line-height: 1.5;
   text-align: center;
 }
+
+
+/* -------------------------------------------------------------------------
+   Bottom-anchored composer: the writing bar and the recording pill always
+   stay at the very bottom of the thread, at normal (100%) scale.
+   ------------------------------------------------------------------------- */
+.admin-body .conversation-detail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-body .conversation-content {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-body .conversation-toolbar {
+  flex: 0 0 auto;
+}
+
+.admin-body .conversation-history {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.admin-body .conversation-reply-form.admin-chat-composer {
+  flex: 0 0 auto;
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+}
+
+.admin-body .conversation-reply-form .x-chat-compose-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The recording state line sits just above the red pill, centred. */
+.admin-body .admin-voice-status {
+  margin: 0 0 6px;
+  color: #fb7185;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.admin-body .thread-message-date {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}

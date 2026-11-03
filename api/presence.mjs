@@ -1,6 +1,5 @@
 import { randomBytes, createHash } from "node:crypto";
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
-import { isBlobStorageConfigured } from "../lib/blob-store.mjs";
 import { PRESENCE_WINDOW_MS, recordPresence } from "../lib/presence.mjs";
 
 const COOKIE_NAME = "qg_presence";
@@ -61,7 +60,6 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: "Méthode non autorisée." });
   }
   if (!isSameOriginRequest(request)) return response.status(403).json({ error: "Requête refusée." });
-  if (!isBlobStorageConfigured()) return response.status(503).json({ error: "Le compteur de présence est momentanément indisponible." });
   const retryAfter = isRateLimited(getClientKey(request));
   if (retryAfter) {
     response.setHeader("Retry-After", String(retryAfter));
@@ -71,12 +69,15 @@ export default async function handler(request, response) {
   const suppliedSession = getCookie(request);
   const sessionId = SESSION_PATTERN.test(suppliedSession) ? suppliedSession : randomBytes(24).toString("base64url");
   try {
+    // Pure RAM: globalThis.__qgPresence, zero Blob read/write.
     const activeSessions = await recordPresence(sessionId);
     if (sessionId !== suppliedSession) {
       const secure = isSecureRequest(request) ? "; Secure" : "";
       response.setHeader("Set-Cookie", `${COOKIE_NAME}=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.ceil(PRESENCE_WINDOW_MS / 1000) + 120}${secure}`);
     }
-    const privileged = await isAdminRequest(request);
+    // Hide tiny counts (1-2) from visitors; hosts always see the real number.
+    const hostRequest = request.headers?.cookie?.includes("gionny_admin_session") || request.headers?.cookie?.includes("gionny_account_session");
+    const privileged = hostRequest ? await isAdminRequest(request).catch(() => false) : false;
     return response.status(200).json({ activeSessions: privileged || activeSessions >= 3 ? activeSessions : null });
   } catch (error) {
     console.error("[presence] heartbeat failed", {

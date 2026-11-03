@@ -25,6 +25,8 @@
     />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/ui-refresh.css" />
+    <link rel="stylesheet" href="/display-fixes.css" />
+    <link rel="stylesheet" href="/chat-x.css" />
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -158,9 +160,9 @@
                 aria-haspopup="dialog"
                 aria-expanded="false"
                 aria-controls="profile-dialog"
-              ><svg class="qg-icon host-crown-icon member-profile-crown" data-member-profile-crown aria-hidden="true" hidden><use href="/assets/qg-icons.svg#icon-crown"></use></svg>Mon Profil</button>
-              <a class="member-access-button member-access-button--admin" href="/gestion-qg/" data-host-admin-link hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Admin</a>
-              <button class="member-access-button member-access-button--logout" type="button" data-contact-logout>Déconnexion</button>
+              ><svg class="qg-icon host-crown-icon member-profile-crown" data-member-profile-crown aria-hidden="true" hidden><use href="/assets/qg-icons.svg#icon-crown"></use></svg><span>Mon Profil</span></button>
+              <a class="member-access-button member-access-button--admin" href="/gestion-qg/" data-host-admin-link hidden><svg class="qg-icon member-admin-shield" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg><span>Admin</span></a>
+              <button class="member-access-button member-access-button--logout" type="button" data-contact-logout><span>Déconnexion</span></button>
             </div>
             <span class="site-presence" data-site-presence hidden aria-live="polite">
               <span class="site-presence-dot" aria-hidden="true"></span>
@@ -667,8 +669,7 @@
       title="M’écrire"
     >
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M4.5 5.5h15v11h-9l-4.5 3v-14Z" />
-        <path d="M8 9.5h8M8 13h5" />
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z" />
       </svg>
       <span class="contact-launcher-label">Écris-moi</span>
       <span class="contact-launcher-badge" data-contact-badge hidden aria-hidden="true"></span>

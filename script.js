@@ -1889,6 +1889,8 @@
       return;
     }
     const closeAfterAuthentication = lastContactTrigger === memberLoginButton || lastContactTrigger === memberRegisterButton;
+    const resumeComposer = document.activeElement === passwordInput ? passwordInput : null;
+    const resumeLength = resumeComposer ? resumeComposer.value.length : 0;
     authSubmit.disabled = true;
     setStatusNode(authStatus, authMode === "register" ? "Création de ton compte…" : "Connexion…");
     try {
@@ -1917,7 +1919,20 @@
       renderContactState();
       if (visitorConversation) markVisitorThreadSeen();
       if (closeAfterAuthentication) {
+        // Logging in from the top bar only closes the modal, as requested. The
+        // caret goes back to the password field and the keyboard state is kept.
         minimizeContactWidget();
+        if (resumeComposer) {
+          window.setTimeout(() => {
+            if (!resumeComposer.isConnected) return;
+            resumeComposer.focus({ preventScroll: true });
+            try {
+              resumeComposer.setSelectionRange(resumeLength, resumeLength);
+            } catch {
+              /* password inputs may refuse setSelectionRange */
+            }
+          }, 60);
+        }
       } else if (!visitorConversation) {
         contactForm?.elements.namedItem("message")?.focus({ preventScroll: true });
       }
@@ -2101,7 +2116,8 @@
       }
       removePendingMessage();
       updateConversationFromResponse(data);
-      messageField.value = "";
+      // Nothing was typed while the message was in flight? Do not wipe the draft.
+      if (String(messageField?.value || "").trim() === message) messageField.value = "";
       messageField.style.height = "auto";
       clearChatAttachment(contactReplyForm);
       setContactThreadStatus("");

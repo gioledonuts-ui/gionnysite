@@ -1,0 +1,674 @@
+/* ==========================================================================
+   Chat, bulles vocales et composeur — vrai rendu X (Twitter)
+   --------------------------------------------------------------------------
+   Règles clés :
+     • la pilule vocale bleue EST la bulle (plus de cadre sombre autour) ;
+     • l'avatar de l'expéditeur reste à l'extérieur de la bulle reçue ;
+     • les horaires sont en sans-serif (jamais monospace) ;
+     • le composeur et l'enregistrement restent collés en bas de la fenêtre.
+   ========================================================================== */
+
+:is(.contact-widget, .contact-chat-message, .contact-thread, .thread-message, .admin-body .conversation-detail) {
+  --qg-x-blue: #1d9bf0;
+  --qg-x-text: #e7ecf3;
+  --qg-x-subtle: #8b98a5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   6.a Typographie du chat
+   -------------------------------------------------------------------------- */
+
+.contact-chat-text,
+.thread-message-text,
+.contact-chat-sender,
+.thread-message-sender,
+.contact-chat-date,
+.thread-message-date,
+.contact-chat-meta,
+.thread-message-meta,
+.qg-voice-player-time,
+.contact-voice-timer,
+.admin-voice-timer,
+.contact-thread-heading p,
+.contact-thread-subject,
+.chat-read-receipt {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-chat-date,
+.thread-message-date {
+  color: #8b98a5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-align: right;
+}
+
+.contact-chat-text,
+.thread-message-text {
+  color: var(--qg-x-text);
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+.contact-chat-sender,
+.thread-message-sender {
+  color: #eaf1f8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.contact-chat-host-crown,
+.thread-message-host-crown {
+  color: #fbbf24;
+  width: 13px;
+  height: 13px;
+}
+
+.contact-chat-host-crown svg,
+.thread-message-host-crown svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   6.b Bulles de texte — style X
+   -------------------------------------------------------------------------- */
+
+.contact-chat-message {
+  width: fit-content;
+  max-width: min(88%, 100%);
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 18px 18px 18px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--qg-x-text);
+  box-shadow: none;
+}
+
+.contact-chat-message--gionny {
+  border: 0;
+  border-radius: 18px 18px 4px 18px;
+  background: var(--qg-x-blue);
+}
+
+.contact-chat-message--gionny .contact-chat-text,
+.contact-chat-message--gionny .contact-chat-sender {
+  color: #fff;
+}
+
+.contact-chat-message--gionny .contact-chat-date {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.contact-chat-message--gionny .contact-chat-avatar {
+  display: none;
+}
+
+.contact-chat-message--gionny .contact-chat-identity {
+  display: none;
+}
+
+.contact-chat-meta {
+  min-height: 0;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 1px;
+}
+
+.contact-chat-message:not(.contact-chat-message--audio) .contact-chat-meta,
+.thread-message:not(.thread-message--audio) .thread-message-meta {
+  display: inline-flex;
+  width: 100%;
+}
+
+.chat-read-receipt {
+  display: inline-flex;
+  align-items: center;
+  color: #8b98a5;
+}
+
+.chat-read-receipt[data-state="read"] {
+  color: #38bdf8;
+}
+
+.chat-read-receipt .qg-icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   6.c Bulle vocale : la pilule bleue EST la bulle
+   -------------------------------------------------------------------------- */
+
+.contact-chat-message.contact-chat-message--audio,
+.thread-message.thread-message--audio {
+  width: min(100%, 320px);
+  max-width: min(92%, 340px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: 4px;
+}
+
+.contact-chat-message--audio .contact-chat-audio,
+.thread-message--audio .thread-message-audio {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+/* Avatar outside the bubble, aligned with its top. */
+.contact-chat-message--audio .contact-chat-identity,
+.thread-message--audio .thread-message-identity {
+  order: 2;
+  min-width: 0;
+  margin: 2px 2px 0;
+}
+
+.contact-chat-message--audio .contact-chat-sender,
+.thread-message--audio .thread-message-sender {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b98a5;
+}
+
+.contact-chat-message--audio .contact-chat-meta,
+.thread-message--audio .thread-message-meta {
+  min-height: 0;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-inline: 4px;
+}
+
+/* Sent voice notes are painted like X: outer row = avatar slot + pill. */
+.contact-chat-message.contact-chat-message--audio,
+.contact-chat-message.contact-chat-message--audio.contact-chat-message--gionny {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  background: transparent;
+  border: 0;
+}
+
+.contact-chat-message--audio .qg-voice-player--message,
+.thread-message--audio .qg-voice-player--message {
+  width: min(240px, 100%);
+  max-width: 100%;
+  min-height: 40px;
+  grid-template-columns: 36px minmax(40px, 1fr) auto !important;
+  gap: 9px;
+  padding: 6px 12px 6px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--qg-x-blue);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+@media (min-width: 640px) {
+  .contact-chat-message--audio .qg-voice-player--message,
+  .thread-message--audio .qg-voice-player--message {
+    width: min(270px, 100%);
+  }
+}
+
+/* Round white play button: solid, no grey square around it. */
+.contact-chat-message--audio .qg-voice-player--message .qg-voice-player-play,
+.thread-message--audio .qg-voice-player--message .qg-voice-player-play,
+.contact-chat-message .qg-voice-player--message .qg-voice-player-play,
+.thread-message .qg-voice-player--message .qg-voice-player-play {
+  display: inline-flex;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--qg-x-blue);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-play:hover,
+.thread-message .qg-voice-player--message .qg-voice-player-play:hover {
+  transform: scale(1.05);
+  filter: brightness(1.02);
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-play .qg-icon,
+.thread-message .qg-voice-player--message .qg-voice-player-play .qg-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+/* Transparent waveform: thin white bars only. */
+.contact-chat-message .qg-voice-player--message .qg-voice-player-wave,
+.thread-message .qg-voice-player--message .qg-voice-player-wave {
+  min-width: 0;
+  height: 26px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-bar,
+.thread-message .qg-voice-player--message .qg-voice-player-bar {
+  width: 2px;
+  max-width: 2px;
+  flex: 1 1 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-bar.is-played,
+.thread-message .qg-voice-player--message .qg-voice-player-bar.is-played {
+  background: #fff !important;
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-time,
+.thread-message .qg-voice-player--message .qg-voice-player-time {
+  min-width: 30px;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Received voice notes: same pill, but tinted neutral like an incoming bubble. */
+.contact-chat-message:not(.contact-chat-message--gionny) .qg-voice-player--message,
+.thread-message--visitor .qg-voice-player--message {
+  background: #202b39;
+}
+
+.contact-chat-message:not(.contact-chat-message--gionny) .qg-voice-player--message .qg-voice-player-play,
+.thread-message--visitor .qg-voice-player--message .qg-voice-player-play {
+  background: #fff;
+  color: #0f1720;
+}
+
+/* --------------------------------------------------------------------------
+   6.d Fenêtre de chat : en-tête / messages / pied de saisie
+   -------------------------------------------------------------------------- */
+
+.contact-widget .contact-dialog-card,
+.contact-widget[data-open-context="top"] .contact-dialog-card {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.contact-widget .contact-dialog-topline {
+  flex: 0 0 auto;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 13, 25, 0.6);
+}
+
+.contact-widget .contact-thread {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.contact-widget .contact-thread-messages,
+.contact-widget .conversation-history {
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: 10px;
+  padding: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.contact-widget .contact-thread-messages {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-widget .contact-reply-form.contact-chat-composer,
+.contact-widget .contact-form.contact-chat-composer,
+.admin-body .conversation-reply-form.admin-chat-composer {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin-top: auto;
+  padding: 10px 14px max(12px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #080d19;
+}
+
+/* Compose row: breathing room, never glued to the window edges. */
+.x-chat-compose-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-plus-button.x-chat-plus,
+.admin-chat-plus.x-chat-plus {
+  display: inline-flex;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e7ecf3;
+}
+
+.chat-input-surface.x-chat-input-pill,
+.admin-chat-input-wrap.x-chat-input-pill {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px 6px 4px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.chat-input-surface.x-chat-input-pill textarea,
+.admin-chat-input-wrap.x-chat-input-pill textarea {
+  min-height: 34px;
+  max-height: 120px;
+  flex: 1 1 auto;
+  padding: 7px 0;
+  border: 0;
+  background: transparent;
+  color: var(--qg-x-text);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+}
+
+.chat-input-surface.x-chat-input-pill textarea::placeholder,
+.admin-chat-input-wrap.x-chat-input-pill textarea::placeholder {
+  color: #7c8895;
+}
+
+.contact-voice-record.x-chat-action,
+.admin-chat-voice-record.x-chat-action {
+  display: inline-flex;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--qg-x-blue);
+  color: #fff;
+}
+
+.contact-voice-record.x-chat-action .qg-icon,
+.admin-chat-voice-record.x-chat-action .qg-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+/* Recording status: small red line ABOVE the red pill, never in the middle. */
+.contact-widget .contact-voice-status[data-voice-status],
+.admin-body .admin-voice-status {
+  order: -1;
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 6px;
+  color: #fb7185;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.contact-widget .contact-voice-status[data-voice-status]:empty,
+.admin-body .admin-voice-status:empty {
+  display: none;
+}
+
+.contact-voice.x-voice-panel,
+.admin-voice-panel.x-voice-panel {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+}
+
+.contact-voice-recorder.x-voice-pill,
+.admin-voice-pill.x-voice-pill {
+  display: flex;
+  min-width: 0;
+  min-height: 40px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  border-radius: 999px;
+  background: linear-gradient(125deg, #3b1620, #6b1f2c 58%, #8a2735);
+}
+
+.contact-voice-timer.x-voice-timer,
+.admin-voice-timer {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.contact-voice-wave.x-voice-wave,
+.admin-voice-wave {
+  min-width: 20px;
+  height: 26px;
+  flex: 1 1 auto;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Chat headers (member + admin) keep the same X typography. */
+.contact-widget .contact-dialog-topline strong,
+.contact-widget .contact-header-identity strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f4f8ff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.contact-widget .contact-dialog-topline strong .qg-icon {
+  width: 14px;
+  height: 14px;
+  color: #fbbf24;
+}
+
+/* --------------------------------------------------------------------------
+   6.e Bouton flottant : position verrouillée + icône SVG centrée
+   -------------------------------------------------------------------------- */
+
+.contact-launcher {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  left: auto;
+  top: auto;
+  z-index: 80;
+  display: inline-flex;
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border: 1px solid rgba(219, 239, 255, 0.35);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #63c6ff, #3f7bf0 72%);
+  box-shadow: 0 12px 30px rgba(5, 12, 27, 0.45), 0 0 0 5px rgba(79, 131, 244, 0.12);
+  color: #07111f;
+  transform: none !important;
+  transition: filter 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-launcher:hover,
+.contact-launcher:focus-visible,
+.contact-launcher[aria-expanded="true"] {
+  right: 20px;
+  bottom: 20px;
+  transform: none !important;
+  filter: brightness(1.06);
+  box-shadow: 0 14px 34px rgba(5, 12, 27, 0.5), 0 0 0 6px rgba(79, 131, 244, 0.18);
+}
+
+.contact-launcher svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.contact-launcher .contact-launcher-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.contact-launcher[data-has-messages="true"] {
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.contact-launcher[data-has-messages="true"] .contact-launcher-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 520px) {
+  .contact-widget {
+    right: 10px;
+    bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    left: 10px;
+    width: auto;
+    border-radius: 20px;
+  }
+
+  .contact-launcher {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .contact-launcher:hover,
+  .contact-launcher:focus-visible,
+  .contact-launcher[aria-expanded="true"] {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Admin : la discussion occupe la hauteur libre, le composeur reste visible
+   -------------------------------------------------------------------------- */
+
+.admin-body .conversation-detail {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-body .conversation-content {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-body .conversation-toolbar {
+  flex: 0 0 auto;
+}
+
+.admin-body .conversation-history {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.admin-body .conversation-reply-form.admin-chat-composer {
+  flex: 0 0 auto;
+}
+
+.admin-body .thread-message-date {
+  color: #8b98a5;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.admin-body .thread-message-text {
+  font-size: 13px;
+  line-height: 1.45;
+}
