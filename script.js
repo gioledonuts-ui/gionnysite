@@ -863,6 +863,7 @@
   const ownerRecoveryStatus = document.querySelector("[data-owner-recovery-status]");
   const ownerRecoverySubmit = document.querySelector("[data-owner-recovery-submit]");
   const ownerRecoveryCancel = document.querySelector("[data-owner-recovery-cancel]");
+  const ownerRecoveryIssue = document.querySelector("[data-owner-recovery-issue]");
   const authTabs = [...document.querySelectorAll("[data-auth-tab]")];
   const memberAccessBar = document.querySelector("[data-member-access]");
   const memberVisitorIdentity = document.querySelector("[data-member-visitor]");
@@ -2014,6 +2015,49 @@
     }
   };
 
+  // First-time setup: the owner proves the password he just typed, and the
+  // server hands him the one and only recovery code. It is shown once.
+  const issueOwnerRecoveryCode = async () => {
+    if (!ownerRecoveryIssue || ownerRecoveryIssue.disabled) return;
+    const pseudo = String(authForm?.elements.namedItem("pseudo")?.value || "").trim().replace(/^@+/u, "");
+    const password = String(authForm?.elements.namedItem("password")?.value || "");
+    if (!OWNER_PSEUDO_PATTERN.test(pseudo)) {
+      setStatusNode(ownerRecoveryStatus, "Saisis d’abord le pseudo du compte propriétaire (Gionny).", "error");
+      return;
+    }
+    if (!password) {
+      setStatusNode(ownerRecoveryStatus, "Saisis ton mot de passe actuel dans le formulaire pour prouver que c’est bien toi.", "error");
+      return;
+    }
+    ownerRecoveryIssue.disabled = true;
+    setStatusNode(ownerRecoveryStatus, "Génération du code…");
+    try {
+      const response = await fetch("/api/owner-recovery", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "issue-code", password }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok !== true || !data.recoveryCode) {
+        setStatusNode(ownerRecoveryStatus, data.error || "Impossible de générer le code.", "error");
+        return;
+      }
+      if (ownerRecoveryCode) ownerRecoveryCode.value = data.recoveryCode;
+      setStatusNode(
+        ownerRecoveryStatus,
+        `Ton code : ${data.recoveryCode} — note-le maintenant, il ne sera plus jamais affiché.`,
+        "success"
+      );
+    } catch {
+      setStatusNode(ownerRecoveryStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      ownerRecoveryIssue.disabled = false;
+    }
+  };
+
+  ownerRecoveryIssue?.addEventListener("click", () => void issueOwnerRecoveryCode());
   ownerRecoveryToggle?.addEventListener("click", () => {
     setOwnerRecoveryVisible(ownerRecoveryPanel?.hidden !== false);
   });
