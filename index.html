@@ -214,8 +214,8 @@
                   data-profile-image
                   alt=""
                 />
-                <span class="profile-tooltip" aria-hidden="true">Qui suis-je ?</span>
               </span>
+              <span class="profile-tooltip" aria-hidden="true">Qui suis-je ?</span>
               <span class="creator-handle">@7gionny</span>
             </button>
             <div class="welcome-intro">
@@ -424,18 +424,13 @@
                 </li>
               </ul>
               <div class="schedule-countdown" data-next-live-countdown aria-live="off">
-                <span class="schedule-countdown-label" data-next-live-prefix>
-                  <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg>
-                  <span>PROCHAIN LIVE DANS</span>
-                </span>
-                <div class="schedule-countdown-value" data-next-live-value role="timer" aria-label="Temps avant le prochain live">
-                  <span class="schedule-countdown-unit" data-countdown-hours>--H</span>
-                  <span class="schedule-countdown-separator" aria-hidden="true">:</span>
-                  <span class="schedule-countdown-unit" data-countdown-minutes>--M</span>
-                  <span class="schedule-countdown-separator" aria-hidden="true">:</span>
-                  <span class="schedule-countdown-unit" data-countdown-seconds>--S</span>
+                <span class="schedule-countdown-label" data-next-live-prefix>Prochain live dans</span>
+                <span class="schedule-countdown-value" data-next-live-value role="timer" aria-label="Temps avant le prochain live">
+                  <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-hours>--</span><span class="schedule-countdown-suffix" aria-hidden="true">h</span></span>
+                  <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-minutes>--</span><span class="schedule-countdown-suffix" aria-hidden="true">m</span></span>
+                  <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-seconds>--</span><span class="schedule-countdown-suffix" aria-hidden="true">s</span></span>
                   <span class="schedule-countdown-empty" data-countdown-empty hidden>Aucun live programmé</span>
-                </div>
+                </span>
               </div>
               <p class="schedule-countdown-live" data-current-live role="status" hidden><span class="creator-live-dot" aria-hidden="true"></span> EN DIRECT ACTUELLEMENT</p>
             </section>
@@ -762,20 +757,9 @@
             </div>
             <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <div class="chat-compose-row x-chat-compose-row">
-              <button class="chat-plus-button x-chat-plus" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
+              <button class="chat-plus-button x-chat-plus" type="button" data-chat-attach aria-label="Joindre une image" title="Joindre une image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
               <button class="x-chat-cancel-button" type="button" data-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
               <div class="chat-input-surface x-chat-input-pill" data-chat-input-surface>
-                <div class="chat-attachment-menu" data-chat-menu hidden>
-                  <button type="button" class="chat-menu-option" data-chat-image-option><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg> Joindre une image</button>
-                  <button type="button" class="chat-menu-option" data-chat-subject-toggle aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-tag"></use></svg> Changer le sujet</button>
-                  <div class="chat-subject-options" data-chat-subject-options hidden>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Passer en live"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Passer en live</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Idée vidéo / React"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-bulb"></use></svg> Idée vidéo / React</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Histoire / Anecdote"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-book"></use></svg> Histoire / Anecdote</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Question"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-help"></use></svg> Question</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Discussion"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussion</button>
-                  </div>
-                </div>
                 <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ton message" data-chat-message></textarea>
                 <button class="contact-voice-record x-chat-action" type="button" data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
                   <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="#qg-mic-symbol"></use></svg>
@@ -821,20 +805,9 @@
             </div>
             <p class="contact-voice-status" data-voice-status role="status" aria-live="polite" hidden></p>
             <div class="chat-compose-row x-chat-compose-row">
-              <button class="chat-plus-button x-chat-plus" type="button" data-chat-menu-toggle aria-label="Ajouter une image ou choisir un sujet" aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
+              <button class="chat-plus-button x-chat-plus" type="button" data-chat-attach aria-label="Joindre une image" title="Joindre une image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
               <button class="x-chat-cancel-button" type="button" data-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
               <div class="chat-input-surface x-chat-input-pill" data-chat-input-surface>
-                <div class="chat-attachment-menu" data-chat-menu hidden>
-                  <button type="button" class="chat-menu-option" data-chat-image-option><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg> Joindre une image</button>
-                  <button type="button" class="chat-menu-option" data-chat-subject-toggle aria-expanded="false"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-tag"></use></svg> Changer le sujet</button>
-                  <div class="chat-subject-options" data-chat-subject-options hidden>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Passer en live"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Passer en live</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Idée vidéo / React"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-bulb"></use></svg> Idée vidéo / React</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Histoire / Anecdote"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-book"></use></svg> Histoire / Anecdote</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Question"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-help"></use></svg> Question</button>
-                    <button type="button" class="chat-subject-option" data-chat-subject-value="Discussion"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussion</button>
-                  </div>
-                </div>
                 <textarea name="message" rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse" data-chat-message></textarea>
                 <button class="contact-voice-record x-chat-action" type="button" data-compose-action aria-label="Enregistrer un message vocal" title="Message vocal">
                   <svg class="qg-icon" data-compose-mic aria-hidden="true"><use href="#qg-mic-symbol"></use></svg>

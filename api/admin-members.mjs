@@ -8,6 +8,7 @@ import {
   setVisitorAccountRole,
   ensureOwnerAccountSeeded,
 } from "../lib/contact-inbox.mjs";
+import { restoreAdminStateReplica, snapshotAdminState, writeAdminStateReplica } from "../lib/blob-store.mjs";
 
 const MAX_BODY_BYTES = 4000;
 
@@ -71,6 +72,8 @@ export default async function handler(request, response) {
   if (!isSameOriginRequest(request)) return response.status(403).json({ error: "Requête refusée." });
   if (!(await isAdminRequest(request))) return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
   try {
+    // Bring the member records back if the instance just restarted.
+    await restoreAdminStateReplica().catch(() => {});
     if (request.method === "GET") {
       const cursor = queryValue(request, "cursor");
       if (cursor.length > 2048) return response.status(400).json({ error: "La demande de membres est invalide." });
@@ -98,6 +101,9 @@ export default async function handler(request, response) {
         const failure = memberError(result.reason);
         return response.status(failure.status).json({ error: failure.error });
       }
+      // Roles and badges are admin state: they go in the crash-proof replica so
+      // a cold start does not lose them.
+      await writeAdminStateReplica(snapshotAdminState()).catch(() => {});
       return response.status(200).json(result);
     }
 

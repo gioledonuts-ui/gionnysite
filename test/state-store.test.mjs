@@ -7,7 +7,9 @@ import path from "node:path";
 // The autonomous store must be pointed at a throwaway file before the module
 // graph is loaded (the path is read at import time).
 const STATE_FILE = path.join(os.tmpdir(), `qg-state-test-${process.pid}.json`);
+const ADMIN_STATE_FILE = path.join(os.tmpdir(), `qg-admin-state-test-${process.pid}.json`);
 process.env.QG_STATE_FILE = STATE_FILE;
+process.env.QG_ADMIN_STATE_FILE = ADMIN_STATE_FILE;
 delete process.env.BLOB_READ_WRITE_TOKEN;
 delete process.env.BLOB_STORE_ID;
 
@@ -18,10 +20,12 @@ const { isAdminRequest } = await import("../lib/admin-security.mjs");
 const credentials = (token) => ({ headers: { cookie: `gionny_account_session=${token}` } });
 
 test.after(() => {
-  try {
-    fs.rmSync(STATE_FILE, { force: true });
-  } catch {
-    // ignore
+  for (const file of [STATE_FILE, ADMIN_STATE_FILE]) {
+    try {
+      fs.rmSync(file, { force: true });
+    } catch {
+      // ignore
+    }
   }
 });
 
@@ -202,4 +206,54 @@ test("a login after a cold start re-attaches the existing thread instead of spli
   assert.equal(thread.conversation.id, login.body?.conversation?.id || thread.conversation.id);
   assert.equal(thread.messages.length, 1);
   assert.equal(thread.messages[0].text, "Un message qui doit rester");
+});
+
+test("the planning and the member roles survive a restart through their own mirror", async () => {
+  const { makeDefaultSiteConfig } = await import("../lib/site-config.mjs");
+  store.resetState({ keepAdminSnapshot: false });
+
+  const host = await inbox.registerVisitorAccount({ pseudo: "Gionny", password: "couronne123" });
+  assert.equal(host.ok, true);
+  assert.equal(host.account.role, "host");
+
+  const config = makeDefaultSiteConfig();
+  config.schedule.tuesday = { enabled: true, time: "20:30" };
+  config.schedule.friday = { enabled: true, time: "21:00" };
+  config.socialInfo.twitch = "Live tous les mardis";
+  await store.writeSharedSiteConfig(config);
+
+  // The admin mirror exists next to the main snapshot.
+  assert.equal(fs.existsSync(ADMIN_STATE_FILE), true);
+
+  // Cold start: RAM and the main snapshot are gone, the mirror is not.
+  store.resetState();
+  assert.equal(fs.existsSync(ADMIN_STATE_FILE), true);
+  fs.rmSync(STATE_FILE, { force: true });
+  delete globalThis[Symbol.for("__qgState")];
+
+  const restored = await store.readSharedSiteConfig();
+  assert.equal(restored.config.schedule.tuesday.time, "20:30");
+  assert.equal(restored.config.schedule.friday.enabled, true);
+  assert.equal(restored.config.socialInfo.twitch, "Live tous les mardis");
+  assert.equal(typeof restored.updatedAt, "string");
+
+  const members = await inbox.listVisitorAccounts("");
+  assert.deepEqual(members.members.map((member) => `${member.pseudo}:${member.role}`), ["Gionny:host"]);
+});
+
+test("a newer online config always wins over the mirror", async () => {
+  const { makeDefaultSiteConfig } = await import("../lib/site-config.mjs");
+  store.resetState({ keepAdminSnapshot: false });
+
+  const older = makeDefaultSiteConfig();
+  older.schedule.tuesday = { enabled: true, time: "20:30" };
+  await store.writeSharedSiteConfig(older);
+
+  const newer = makeDefaultSiteConfig();
+  newer.schedule.saturday = { enabled: true, time: "19:45" };
+  await store.writeSharedSiteConfig(newer);
+
+  const current = await store.readSharedSiteConfig();
+  assert.equal(current.config.schedule.saturday.time, "19:45");
+  assert.equal(current.config.schedule.tuesday.time, "22:00");
 });

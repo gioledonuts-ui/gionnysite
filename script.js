@@ -671,11 +671,33 @@
     const countdownMinutes = countdownValue?.querySelector("[data-countdown-minutes]");
     const countdownSeconds = countdownValue?.querySelector("[data-countdown-seconds]");
     const countdownEmpty = countdownValue?.querySelector("[data-countdown-empty]");
+    const countdownChunks = countdownValue ? [...countdownValue.querySelectorAll(".schedule-countdown-chunk")] : [];
     const liveStatus = document.querySelector("[data-current-live]");
     if (
       !countdown || !countdownPrefix || !countdownValue ||
       !countdownHours || !countdownMinutes || !countdownSeconds || !countdownEmpty || !liveStatus
     ) return;
+
+    // Modern counter: the old number slides out, the new one slides in, the
+    // unit (h / m / s) never moves.
+    const setCountdownDigits = (node, value) => {
+      if (!node || node.textContent === value) return;
+      const previous = node.textContent;
+      const slot = node.parentElement;
+      node.textContent = value;
+      if (!slot) return;
+      let ghost = slot.querySelector(".schedule-countdown-ghost");
+      if (!ghost) {
+        ghost = document.createElement("span");
+        ghost.className = "schedule-countdown-ghost";
+        ghost.setAttribute("aria-hidden", "true");
+        slot.insertBefore(ghost, node);
+      }
+      ghost.textContent = previous;
+      node.classList.remove("is-ticking");
+      void node.offsetWidth;
+      node.classList.add("is-ticking");
+    };
 
     if (currentTwitchIsLive) {
       countdown.hidden = true;
@@ -696,9 +718,7 @@
     if (!nextScheduledLiveAt) {
       countdownPrefix.hidden = true;
       countdownValue.dataset.empty = "true";
-      countdownHours.hidden = true;
-      countdownMinutes.hidden = true;
-      countdownSeconds.hidden = true;
+      countdownChunks.forEach((chunk) => { chunk.hidden = true; });
       countdownEmpty.hidden = false;
       countdownEmpty.textContent = "Aucun live programmé";
       countdownValue.setAttribute("aria-label", "Aucun live programmé");
@@ -708,19 +728,14 @@
     countdownPrefix.hidden = false;
     delete countdownValue.dataset.empty;
     countdownEmpty.hidden = true;
-    countdownHours.hidden = false;
-    countdownMinutes.hidden = false;
-    countdownSeconds.hidden = false;
+    countdownChunks.forEach((chunk) => { chunk.hidden = false; });
     const remainingSeconds = Math.max(0, Math.floor((nextScheduledLiveAt - Date.now()) / 1000));
     const hours = Math.floor(remainingSeconds / 3600);
     const minutes = Math.floor((remainingSeconds % 3600) / 60);
     const seconds = remainingSeconds % 60;
-    const formattedHours = String(hours).padStart(2, "0");
-    const formattedMinutes = String(minutes).padStart(2, "0");
-    const formattedSeconds = String(seconds).padStart(2, "0");
-    countdownHours.textContent = `${formattedHours}H`;
-    countdownMinutes.textContent = `${formattedMinutes}M`;
-    countdownSeconds.textContent = `${formattedSeconds}S`;
+    setCountdownDigits(countdownHours, String(hours).padStart(2, "0"));
+    setCountdownDigits(countdownMinutes, String(minutes).padStart(2, "0"));
+    setCountdownDigits(countdownSeconds, String(seconds).padStart(2, "0"));
     countdownValue.setAttribute("aria-label", `Prochain live dans ${hours} heures, ${minutes} minutes et ${seconds} secondes`);
   };
 
@@ -1572,21 +1587,12 @@
     state.voice?.syncAvailability();
   };
 
-  const closeChatMenu = (state) => {
-    state.menu.hidden = true;
-    state.menuToggle.setAttribute("aria-expanded", "false");
-    state.subjectOptions.hidden = true;
-    state.subjectToggle?.setAttribute("aria-expanded", "false");
-  };
-
   const setupVisitorChatComposer = (form) => {
     if (!form || chatComposerStates.has(form)) return;
     const messageInput = form.querySelector("[data-chat-message]");
     const fileInput = form.querySelector("[data-chat-image-input]");
-    const menu = form.querySelector("[data-chat-menu]");
-    const menuToggle = form.querySelector("[data-chat-menu-toggle]");
-    const subjectToggle = form.querySelector("[data-chat-subject-toggle]");
-    const subjectOptions = form.querySelector("[data-chat-subject-options]");
+    // The `+` opens the file picker directly: no menu, no chevron, no subject list.
+    const attachButton = form.querySelector("[data-chat-attach]");
     const imagePreview = form.querySelector("[data-chat-image-preview]");
     const previewImage = form.querySelector("[data-chat-image-preview-img]");
     const removeImage = form.querySelector("[data-chat-image-remove]");
@@ -1603,8 +1609,8 @@
     const voiceTimer = form.querySelector("[data-voice-timer]");
     const voiceStatus = form.querySelector("[data-voice-status]");
     const inputPill = form.querySelector("[data-chat-input-surface]");
-    if (!messageInput || !fileInput || !menu || !menuToggle || !subjectOptions || !imagePreview || !previewImage || !removeImage || !recordButton || !micIcon || !sendIcon || !voicePanel || !voiceCancel || !voiceStop || !voiceSend || !voicePreview || !voiceLive || !voiceWave || !voiceTimer || !voiceStatus || !inputPill) return;
-    const state = { form, messageInput, fileInput, menu, menuToggle, subjectToggle, subjectOptions, preview: imagePreview, previewImage, removeImage, recordButton, micIcon, sendIcon, imageBlob: null, imageFile: null, previewUrl: "", voice: null };
+    if (!messageInput || !fileInput || !attachButton || !imagePreview || !previewImage || !removeImage || !recordButton || !micIcon || !sendIcon || !voicePanel || !voiceCancel || !voiceStop || !voiceSend || !voicePreview || !voiceLive || !voiceWave || !voiceTimer || !voiceStatus || !inputPill) return;
+    const state = { form, messageInput, fileInput, attachButton, preview: imagePreview, previewImage, removeImage, recordButton, micIcon, sendIcon, imageBlob: null, imageFile: null, previewUrl: "", voice: null };
     chatComposerStates.set(form, state);
     if (typeof window.createQGVoiceComposer === "function") {
       const isReply = form === contactReplyForm;
@@ -1619,7 +1625,7 @@
         sendButton: voiceSend,
         preview: voicePreview,
         composeButton: recordButton,
-        plusButton: menuToggle,
+        plusButton: attachButton,
         status: voiceStatus,
         label: "message vocal",
         canRecord: () => Boolean(visitorAccount) && !state.imageBlob && !String(messageInput.value || "").trim() && (!isReply || visitorConversation?.status === "open"),
@@ -1630,69 +1636,14 @@
       if (state.voice) voiceControlStates.push(state.voice);
     }
 
-    menuToggle.addEventListener("click", () => {
-      menu.hidden = !menu.hidden;
-      menuToggle.setAttribute("aria-expanded", String(!menu.hidden));
-    });
-    subjectToggle?.addEventListener("click", () => {
-      subjectOptions.hidden = !subjectOptions.hidden;
-      subjectToggle.setAttribute("aria-expanded", String(!subjectOptions.hidden));
-      if (!subjectOptions.hidden) {
-        const selectedSubject = form.elements.namedItem("subject")?.value || visitorConversation?.subject || "Discussion";
-        subjectOptions.querySelectorAll("[data-chat-subject-value]").forEach((option) => {
-          option.setAttribute("aria-pressed", String(option.dataset.chatSubjectValue === selectedSubject));
-        });
-      }
-    });
-    form.querySelector("[data-chat-image-option]")?.addEventListener("click", () => {
-      closeChatMenu(state);
+    attachButton.addEventListener("click", () => {
+      if (attachButton.disabled) return;
       fileInput.click();
     });
     removeImage.addEventListener("click", () => {
       clearChatAttachment(form);
       messageInput.focus({ preventScroll: true });
     });
-    form.querySelectorAll("[data-chat-subject-value]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const subject = button.dataset.chatSubjectValue;
-        if (!CHAT_SUBJECTS.includes(subject)) return;
-        closeChatMenu(state);
-        const subjectInput = form.elements.namedItem("subject");
-        if (form === contactReplyForm && visitorConversation) {
-          button.disabled = true;
-          setContactThreadStatus("Mise à jour du sujet…");
-          try {
-            const response = await fetch("/api/contact", {
-              method: "POST",
-              headers: { Accept: "application/json", "Content-Type": "application/json" },
-              credentials: "same-origin",
-              cache: "no-store",
-              body: JSON.stringify({ action: "subject", subject }),
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || data.ok !== true) {
-              setContactThreadStatus(data.error || "Le sujet n’a pas pu être modifié.", "error");
-              return;
-            }
-            updateConversationFromResponse(data);
-            if (subjectInput) subjectInput.value = subject;
-            renderContactState();
-            setContactThreadStatus("Sujet mis à jour.", "success");
-          } catch {
-            setContactThreadStatus("Impossible de modifier le sujet.", "error");
-          } finally {
-            button.disabled = false;
-          }
-          return;
-        }
-        if (subjectInput) subjectInput.value = subject;
-        renderSubjectLabel(contactHeaderSubject, subject);
-        state.subjectOptions.querySelectorAll("[data-chat-subject-value]").forEach((option) => {
-          option.setAttribute("aria-pressed", String(option.dataset.chatSubjectValue === subject));
-        });
-      });
-    });
-
     fileInput.addEventListener("change", async () => {
       const file = fileInput.files?.[0];
       if (!file) return;
@@ -1726,8 +1677,9 @@
     });
 
     messageInput.addEventListener("input", () => {
-      messageInput.style.height = "auto";
-      messageInput.style.height = `${Math.min(messageInput.scrollHeight, 112)}px`;
+      // The write box is a fixed 20 px line inside a 44 px pill: no inline
+      // height, otherwise the browser would stretch it back to 112 px.
+      messageInput.style.height = "";
       updateChatComposerAction(form);
     });
     messageInput.addEventListener("keydown", (event) => {
@@ -1741,7 +1693,6 @@
       if (state.voice?.sending) return;
       if (String(messageInput.value || "").trim() || state.imageBlob) return;
       event.preventDefault();
-      closeChatMenu(state);
       void state.voice?.start();
     });
     form.addEventListener("click", (event) => {
@@ -1754,12 +1705,9 @@
       const submitButton = form.querySelector("button[type=submit]");
       if (submitButton && !submitButton.disabled) form.requestSubmit(submitButton);
     }, true);
-    document.addEventListener("click", (event) => {
-      if (!form.contains(event.target) && !menu.hidden) closeChatMenu(state);
-    });
     form.addEventListener("reset", () => window.setTimeout(() => {
       clearChatAttachment(form);
-      messageInput.style.height = "auto";
+      messageInput.style.height = "";
       updateChatComposerAction(form);
     }, 0));
     updateChatComposerAction(form);
@@ -2599,6 +2547,49 @@
     }
   };
 
+  // Point 5: the visitor browser keeps the last configuration it saw, so a
+  // server that restarted on its defaults gets Gionny's planning back without
+  // him opening the admin panel first.
+  const SITE_CONFIG_CACHE_KEY = "qg_persisted_admin_state";
+
+  const readCachedSiteConfig = () => {
+    try {
+      const raw = localStorage.getItem(SITE_CONFIG_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return isValidSiteConfig(parsed?.config) ? parsed.config : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeCachedSiteConfig = (config) => {
+    if (!isValidSiteConfig(config)) return;
+    try {
+      localStorage.setItem(SITE_CONFIG_CACHE_KEY, JSON.stringify({
+        version: 1,
+        savedAt: new Date().toISOString(),
+        config,
+      }));
+    } catch {
+      // Ignored: the server copy stays authoritative.
+    }
+  };
+
+  const restoreCachedSiteConfig = async (cached) => {
+    try {
+      await fetch("/api/site-config", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ restore: true, config: cached }),
+      });
+    } catch {
+      // Nothing to do: the local copy is already applied below.
+    }
+  };
+
   const refreshSiteConfig = async () => {
     try {
       const response = await fetch("/api/site-config", {
@@ -2607,7 +2598,14 @@
       });
       if (!response.ok) return;
       const data = await response.json();
-      applySiteConfig(data?.config);
+      const cached = readCachedSiteConfig();
+      if (cached && data?.updatedAt == null) {
+        // The server is back on its defaults: push the saved planning back.
+        applySiteConfig(cached);
+        void restoreCachedSiteConfig(cached);
+        return;
+      }
+      if (applySiteConfig(data?.config) && data?.updatedAt) writeCachedSiteConfig(data.config);
     } catch {
       // Keep the static links and planning if the shared settings service is unavailable.
     }

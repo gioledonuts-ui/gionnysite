@@ -1,5 +1,10 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
-import { readSharedSiteConfig, writeSharedSiteConfig } from "../lib/blob-store.mjs";
+import {
+  readSharedSiteConfig,
+  restoreAdminStateReplica,
+  restoreSharedSiteConfig,
+  writeSharedSiteConfig,
+} from "../lib/blob-store.mjs";
 import { SOCIAL_INFO_FIELDS, validateSiteConfig } from "../lib/site-config.mjs";
 
 function setNoStore(response) {
@@ -30,8 +35,11 @@ export default async function handler(request, response) {
 
   if (request.method === "GET") {
     try {
+      // Cold start: the config is gone but a replica may still hold Gionny's
+      // planning, so the very first read brings it back.
+      const replica = await restoreAdminStateReplica().catch(() => null);
       const result = await readSharedSiteConfig();
-      return response.status(200).json(result);
+      return response.status(200).json({ ...result, restoredFromReplica: replica?.restored === true });
     } catch {
       return response.status(503).json({
         error: "shared_storage_unavailable",
@@ -48,11 +56,26 @@ export default async function handler(request, response) {
   if (!isSameOriginRequest(request)) {
     return response.status(403).json({ error: "Requête refusée." });
   }
-  if (!(await isAdminRequest(request))) {
-    return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
-  }
 
   let body = readJsonBody(request);
+  // A browser that still holds Gionny's saved settings can push them back after
+  // a server restart (`{ restore: true, config: {...} }`). It only ever reaches
+  // this point when the server has no custom config left, and it never touches
+  // the member records, so it cannot be used to overwrite live settings.
+  const browserRestore = body?.restore === true && body?.config && typeof body.config === "object";
+  if (browserRestore) {
+    const current = await readSharedSiteConfig().catch(() => null);
+    if (current?.updatedAt) {
+      return response.status(409).json({
+        error: "Les réglages en ligne sont déjà à jour.",
+        config: current.config,
+        updatedAt: current.updatedAt,
+      });
+    }
+    body = body.config;
+  } else if (!(await isAdminRequest(request))) {
+    return response.status(401).json({ error: "Reconnecte-toi au panneau d’administration." });
+  }
   const incomingSocialInfo = body?.socialInfo;
   const socialInfoIsPartial =
     incomingSocialInfo === undefined ||
@@ -81,8 +104,11 @@ export default async function handler(request, response) {
   }
 
   try {
-    const updatedAt = await writeSharedSiteConfig(validation.config);
+    const updatedAt = browserRestore
+      ? await restoreSharedSiteConfig(validation.config)
+      : await writeSharedSiteConfig(validation.config);
     return response.status(200).json({
+      restoredFromBrowser: browserRestore,
       config: validation.config,
       storageConfigured: true,
       updatedAt,

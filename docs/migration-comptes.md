@@ -59,6 +59,35 @@ des dépendances.
 - Au démarrage, l’instance relit le snapshot, sinon elle repart d’un état vide
   **avec le compte propriétaire déjà créé**.
 
+### La configuration admin a son propre miroir
+
+Le planning, les horaires, les liens/sous-titres des réseaux et les rôles
+(`Hôte`, `Validé`) ne doivent jamais revenir à zéro. Ils sont donc écrits deux
+fois :
+
+1. `/tmp/qg-admin-state.json` — petit fichier dédié
+   (`QG_ADMIN_STATE_FILE` pour le déplacer), réécrit à chaque
+   `POST /api/site-config` et à chaque changement de rôle (`PATCH
+   /api/admin-members`) ;
+2. `localStorage["qg_persisted_admin_state"]` — la copie du navigateur de Gionny
+   ou du dernier visiteur qui a vu la config.
+
+À la lecture, le miroir ne remplit **que** ce qui manque : une configuration en
+ligne plus récente n’est jamais écrasée.
+
+### Restauration automatique après un redémarrage
+
+| Déclencheur | Qui répare | Comment |
+| --- | --- | --- |
+| `GET /api/site-config` après un redémarrage | le serveur | `readState()` fusionne le miroir : planning, liens et rôles sont déjà là |
+| Le site public détecte `updatedAt: null` | le navigateur | `POST /api/site-config {restore:true, config}` renvoie la copie locale |
+| Le panneau admin charge ses réglages et reçoit les valeurs par défaut | le navigateur | même appel `restore`, l’admin reprend la copie locale |
+
+Le chemin `restore` n’est accepté que si le serveur n’a **aucune** configuration
+personnalisée (`updatedAt` absent) : sinon il répond `409` et n’écrit rien. Il ne
+touche jamais aux comptes ni aux conversations. Un enregistrement normal
+(`POST` sans `restore`) exige toujours le cookie admin.
+
 ## 4. Rien ne se perd (auto-sync navigateur)
 
 Si `/tmp` est vidé par un redémarrage à froid, le navigateur renvoie le profil et
@@ -76,3 +105,7 @@ les derniers messages qu’il garde dans `localStorage` (`qg.member.sync.v1`) :
 simultanées (ni garanti après un redéploiement). C’est le prix du 100 % gratuit :
 en cas de trafic sur plusieurs instances, deux visiteurs peuvent voir deux états
 différents tant que le navigateur n’a pas relancé sa synchro.
+
+La configuration admin, elle, est protégée trois fois (miroir `/tmp` dédié,
+copie `localStorage`, restauration automatique) : un redémarrage à froid ne peut
+plus faire revenir le planning aux valeurs par défaut.

@@ -12,6 +12,10 @@
   const SOCIAL_INFO = ["twitch", "tiktok", "youtube", "x", "instagram"];
   const CHAT_SUBJECTS = ["Passer en live", "Idée vidéo / React", "Histoire / Anecdote", "Question", "Discussion"];
   const ADMIN_MAX_VOICE_BYTES = 200_000;
+  // Point 5: every admin change is also kept in the browser, so a server cold
+  // start can be repaired from localStorage instead of resetting the planning.
+  const PERSIST_KEY = "qg_persisted_admin_state";
+  const PERSIST_VERSION = 1;
   const loginPanel = document.querySelector("[data-login-panel]");
   const adminPanel = document.querySelector("[data-admin-panel]");
   const adminTabs = [...document.querySelectorAll("[data-admin-tab]")];
@@ -74,14 +78,11 @@
   const replySendButton = document.querySelector("[data-reply-send]");
   const replyStatus = document.querySelector("[data-reply-status]");
   const adminChatImageInput = document.querySelector("[data-admin-chat-image-input]");
-  const adminChatMenu = document.querySelector("[data-admin-chat-menu]");
-  const adminChatMenuToggle = document.querySelector("[data-admin-chat-menu-toggle]");
-  const adminChatSubjectToggle = document.querySelector("[data-admin-chat-subject-toggle]");
-  const adminChatSubjectOptions = document.querySelector("[data-admin-chat-subject-options]");
+  // The `+` opens the file picker directly, exactly like on the member side.
+  const adminChatAttach = document.querySelector("[data-admin-chat-attach]");
   const adminImagePreview = document.querySelector("[data-admin-image-preview]");
   const adminImagePreviewImg = document.querySelector("[data-admin-image-preview-img]");
   const adminImageRemove = document.querySelector("[data-admin-image-remove]");
-  const adminImageOption = document.querySelector("[data-admin-chat-image-option]");
   const adminComposeAction = document.querySelector("[data-admin-compose-action]");
   const adminComposeMic = adminComposeAction?.querySelector("[data-admin-compose-mic]");
   const adminComposeSend = adminComposeAction?.querySelector("[data-admin-compose-send]");
@@ -251,6 +252,48 @@
       : "Stockage en ligne actif. Les réglages seront partagés après le premier enregistrement.";
   };
 
+  const readPersistedAdminState = () => {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== PERSIST_VERSION || !parsed.config) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
+  const writePersistedAdminState = (config, extra = {}) => {
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify({
+        version: PERSIST_VERSION,
+        savedAt: new Date().toISOString(),
+        config,
+        ...extra,
+      }));
+    } catch {
+      // A full or disabled localStorage only loses the client-side safety net.
+    }
+  };
+
+  // The server answers with the built-in defaults once its /tmp snapshot is
+  // gone. If the browser holds something else, the browser wins and the custom
+  // planning goes back to the server automatically.
+  const serverIsDefault = (data) => data?.updatedAt == null;
+
+  const pushPersistedConfig = async (persisted) => {
+    const response = await fetch("/api/site-config", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify({ restore: true, config: persisted.config }),
+    });
+    const data = await readJson(response);
+    return { response, data };
+  };
+
   const loadSettings = async () => {
     setStatus(saveStatus, "Chargement des réglages…");
     saveButton.disabled = true;
@@ -269,9 +312,28 @@
         return;
       }
 
-      populateForm(data.config);
-      updateStorageNotice(data);
-      setStatus(saveStatus, data.updatedAt ? "Réglages partagés chargés." : "Prêt à configurer.");
+      let payload = data;
+      const persisted = readPersistedAdminState();
+      if (persisted && serverIsDefault(data)) {
+        // Cold start on the server: the browser restores its own settings.
+        setStatus(saveStatus, "Restauration de tes réglages enregistrés…");
+        try {
+          const restored = await pushPersistedConfig(persisted);
+          if (restored.response.ok) payload = restored.data;
+        } catch {
+          // The form still gets the local copy below.
+        }
+        populateForm(payload?.config || persisted.config);
+        writePersistedAdminState(payload?.config || persisted.config);
+        updateStorageNotice(payload);
+        setStatus(saveStatus, "Réglages restaurés depuis ce navigateur.", "success");
+        return;
+      }
+
+      populateForm(payload.config);
+      if (payload.updatedAt || !persisted) writePersistedAdminState(payload.config);
+      updateStorageNotice(payload);
+      setStatus(saveStatus, payload.updatedAt ? "Réglages partagés chargés." : "Prêt à configurer.");
     } catch {
       storageNotice.dataset.state = "error";
       storageNotice.textContent = "Impossible de joindre le serveur. Vérifie ta connexion et réessaie.";
@@ -1304,7 +1366,7 @@
     const voiceActive = Boolean(adminVoiceState && (adminVoiceState.mode !== "idle" || adminVoiceState.sending));
     adminVoiceState?.syncAvailability();
     if (replySendButton) replySendButton.disabled = !isOpen || voiceActive;
-    if (adminChatMenuToggle) adminChatMenuToggle.disabled = !hostSessionActive || !isOpen || voiceActive;
+    if (adminChatAttach) adminChatAttach.disabled = !hostSessionActive || !isOpen || voiceActive;
     threadClosedNote.hidden = isOpen;
     threadClosedNote.textContent = conversation.status === "blocked"
       ? "Cette discussion est bloquée. Débloque-la pour pouvoir répondre à nouveau."
@@ -1695,13 +1757,6 @@
   let adminImageBlob = null;
   let adminImagePreviewUrl = "";
 
-  const closeAdminChatMenu = () => {
-    if (adminChatMenu) adminChatMenu.hidden = true;
-    adminChatMenuToggle?.setAttribute("aria-expanded", "false");
-    if (adminChatSubjectOptions) adminChatSubjectOptions.hidden = true;
-    adminChatSubjectToggle?.setAttribute("aria-expanded", "false");
-  };
-
   const clearAdminImage = () => {
     if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
     adminImagePreviewUrl = "";
@@ -1712,56 +1767,14 @@
     adminVoiceState?.syncAvailability();
   };
 
-  adminChatMenuToggle?.addEventListener("click", () => {
-    if (!adminChatMenu) return;
-    adminChatMenu.hidden = !adminChatMenu.hidden;
-    adminChatMenuToggle.setAttribute("aria-expanded", String(!adminChatMenu.hidden));
-  });
-  adminChatSubjectToggle?.addEventListener("click", () => {
-    if (!adminChatSubjectOptions) return;
-    adminChatSubjectOptions.hidden = !adminChatSubjectOptions.hidden;
-    adminChatSubjectToggle.setAttribute("aria-expanded", String(!adminChatSubjectOptions.hidden));
-    if (!adminChatSubjectOptions.hidden) {
-      const selectedSubject = normalizeSubject(conversationRecords.get(currentConversationId)?.subject);
-      adminChatSubjectOptions.querySelectorAll("[data-admin-chat-subject-value]").forEach((option) => {
-        option.setAttribute("aria-pressed", String(option.dataset.adminChatSubjectValue === selectedSubject));
-      });
-    }
-  });
-  adminImageOption?.addEventListener("click", () => {
-    closeAdminChatMenu();
+  adminChatAttach?.addEventListener("click", () => {
+    if (adminChatAttach.disabled) return;
     adminChatImageInput?.click();
   });
   adminImageRemove?.addEventListener("click", () => {
     clearAdminImage();
     updateAdminComposeAction();
     replyInput?.focus({ preventScroll: true });
-  });
-  adminChatSubjectOptions?.querySelectorAll("[data-admin-chat-subject-value]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const subject = button.dataset.adminChatSubjectValue;
-      const conversationId = currentConversationId;
-      if (!conversationId || !CHAT_SUBJECTS.includes(subject)) return;
-      closeAdminChatMenu();
-      const currentSubject = conversationRecords.get(conversationId)?.subject;
-      if (currentSubject === subject) return;
-      button.disabled = true;
-      setStatus(replyStatus, "Mise à jour du sujet…");
-      try {
-        const result = await patchConversationMetadata({ conversationId, subject });
-        if (!result?.conversation) return;
-        adminChatSubjectOptions.querySelectorAll("[data-admin-chat-subject-value]").forEach((option) => {
-          option.setAttribute("aria-pressed", String(option.dataset.adminChatSubjectValue === subject));
-        });
-        setStatus(replyStatus, "Sujet mis à jour.");
-        await Promise.all([
-          loadSelectedConversation({ quiet: true }),
-          loadConversations({ reset: true, quiet: true, skipSelected: true }),
-        ]);
-      } finally {
-        button.disabled = false;
-      }
-    });
   });
   adminChatImageInput?.addEventListener("change", async () => {
     const file = adminChatImageInput.files?.[0];
@@ -1891,7 +1904,7 @@
       sendButton: adminVoiceSendButton,
       preview: adminVoicePreview,
       composeButton: adminComposeAction,
-      plusButton: adminChatMenuToggle,
+      plusButton: adminChatAttach,
       status: adminVoiceStatus,
       label: "réponse vocale",
       canRecord: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open" && !adminImageBlob && !String(replyInput?.value || "").trim()),
@@ -1904,7 +1917,6 @@
   adminComposeAction?.addEventListener("click", (event) => {
     if (String(replyInput?.value || "").trim() || adminImageBlob) return;
     event.preventDefault();
-    closeAdminChatMenu();
     void adminVoiceState?.start();
   });
   replyForm?.addEventListener("click", (event) => {
@@ -1920,8 +1932,8 @@
   updateAdminComposeAction();
 
   replyInput?.addEventListener("input", () => {
-    replyInput.style.height = "auto";
-    replyInput.style.height = `${Math.min(replyInput.scrollHeight, 112)}px`;
+    // Single-line pill: the textarea keeps its 20 px line, no inline height.
+    replyInput.style.height = "";
     updateAdminComposeAction();
   });
   replyInput?.addEventListener("keydown", (event) => {
@@ -1930,10 +1942,6 @@
     if (!replyInput.value.trim() && !adminImageBlob) return;
     if (replySendButton && !replySendButton.disabled) replyForm.requestSubmit(replySendButton);
   });
-  document.addEventListener("click", (event) => {
-    if (replyForm && !replyForm.contains(event.target) && adminChatMenu && !adminChatMenu.hidden) closeAdminChatMenu();
-  });
-
   mailFilterButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const filter = button.dataset.mailFilter;
@@ -2225,6 +2233,7 @@
       }
 
       populateForm(data.config);
+      writePersistedAdminState(data.config);
       updateStorageNotice(data);
       const savedTime = formatSavedTime(data.updatedAt);
       setStatus(

@@ -691,3 +691,119 @@
   font-size: 13px;
   line-height: 1.45;
 }
+
+/* --------------------------------------------------------------------------
+   Bas du composer façon X (côté Admin)
+   --------------------------------------------------------------------------
+   Le panneau `/gestion-qg/` ne charge pas `layout-2026.css` : le même système
+   visuel est donc posé ici, avec des valeurs identiques (aucune bordure,
+   surface pleine, +20 % de luminosité au survol).
+   -------------------------------------------------------------------------- */
+.admin-body .conversation-reply-form.admin-chat-composer {
+  gap: 8px;
+  padding: 14px 16px max(14px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+}
+
+.admin-body .conversation-reply-form .x-chat-compose-row {
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-body .admin-chat-plus.x-chat-plus {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1b273d;
+  color: #e8f1ff;
+  transform: none;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.admin-body .admin-chat-plus.x-chat-plus:hover,
+.admin-body .admin-chat-plus.x-chat-plus:focus-visible {
+  border: 0;
+  background: #2a3c5c;
+  color: #fff;
+  transform: none;
+}
+
+.admin-body .admin-chat-plus.x-chat-plus[aria-expanded="true"] {
+  transform: none;
+}
+
+.admin-body .admin-chat-plus.x-chat-plus > .qg-icon {
+  width: 20px;
+  height: 20px;
+  transform: none;
+}
+
+.admin-body .admin-chat-input-wrap.x-chat-input-pill {
+  display: flex;
+  height: 44px;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #1b273d;
+  box-shadow: none;
+  transition: background-color 150ms ease;
+}
+
+.admin-body .admin-chat-input-wrap.x-chat-input-pill:hover,
+.admin-body .admin-chat-input-wrap.x-chat-input-pill:focus-within {
+  border: 0;
+  background: #2a3c5c;
+  box-shadow: none;
+  outline: none;
+}
+
+.admin-body .admin-chat-input-wrap.x-chat-input-pill textarea {
+  min-height: 20px;
+  max-height: 20px;
+  align-self: center;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #f2f7ff;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13.5px;
+  line-height: 20px;
+}
+
+.admin-body .admin-chat-voice-record.x-chat-action {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  flex: 0 0 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #243452;
+  color: #fff;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.admin-body .admin-chat-voice-record.x-chat-action:hover,
+.admin-body .admin-chat-voice-record.x-chat-action:focus-visible {
+  border: 0;
+  background: #32476e;
+  color: #fff;
+  transform: none;
+}
