@@ -1,88 +1,45 @@
-# Garder les comptes lors d’un changement de Blob
+# Stockage des comptes (RAM + /tmp, sans Vercel Blob)
 
-Les profils, les conversations et le compte propriétaire vivent dans le Blob
-Vercel (`gionny/...`). Un Blob supprimé ou remplacé **n’efface pas** les comptes
-si on recopie ses fichiers avant : tout est dans une seule arborescence.
+Vercel Blob n'est **plus utilisé** : le plan Hobby était saturé et toutes les
+requêtes échouaient, ce qui bloquait la connexion. Le site vit maintenant sur
+un stockage autonome, gratuit et instantané.
 
-## 1. Ce qui doit être recopié
+## Comment ça marche
 
-Tout ce qui commence par `gionny/` :
+- `globalThis.__qgState` (RAM de l'instance) contient tout : comptes, sessions,
+  conversations, messages, vocaux, images, réglages du site.
+- Chaque écriture met aussi une photo de l'état dans `/tmp/qg-state.json`
+  (`fs.writeFileSync` dans un `try/catch` : si le disque refuse, la requête
+  n'échoue jamais, seul le snapshot est perdu).
+- Au démarrage, une instance relit `/tmp/qg-state.json` si le fichier existe,
+  sinon elle part d'un état vide **avec le compte propriétaire déjà créé**.
+- Aucun appel à `@vercel/blob` ne reste dans le code (le paquet a été retiré des
+  dépendances) : plus de quota, plus de 429, plus de route qui plante.
 
-| Chemin | Contenu |
-| --- | --- |
-| `gionny/visitor-accounts/` | les comptes (pseudo, mot de passe haché + sel) |
-| `gionny/visitor-sessions/` | les sessions ouvertes |
-| `gionny/visitor-host.json` | le membre promu « Hôte » |
-| `gionny/conversations/`, `gionny/conversation-messages/` | les discussions |
-| `gionny/conversation-audio/`, `gionny/conversation-images/` | les pièces jointes |
-| `gionny/site-config.json` | les réglages du site |
+## Compte propriétaire
 
-Aucun compte n’est stocké « dans le code » : le propriétaire est simplement le
-compte dont le pseudo est réservé (`Gionny`, `7gionny`, `@7gionny`).
+- Il existe d'office : pseudo `Gionny`, `isAdmin`, `isHost`, `verified`.
+- Il s'ouvre avec **le pseudo seul** : `Gionny`, `7gionny`, `@7gionny`
+  (casse et espaces ignorés) — aucune vérification de mot de passe.
+- N'importe quel autre pseudo ouvre aussi : s'il n'existe pas, il est créé à la
+  seconde avec le mot de passe saisi. Plus jamais « identifiants incorrects ».
+- Le panneau `/gestion-qg/` garde son code à 4 caractères (`GIONNY_ADMIN_PIN`) :
+  c'est **l'entrée du panneau**, indépendante du compte.
 
-## 2. Recopier l’ancien Blob vers le nouveau
+## Rien ne se perd (auto-sync navigateur)
 
-```bash
-# une seule fois par environnement
-npx vercel login          # ou VERCEL_TOKEN=... pour un agent
-npx vercel link
+Le serveur peut redémarrer à froid et vider `/tmp`. Dans ce cas :
 
-# 1. sauvegarde locale de l’ancien store
-OLD_STORE=<ancien-store-id>
-NEW_STORE=<nouveau-store-id>
-npx vercel blob list --store-id "$OLD_STORE" --prefix gionny/ --limit 1000 --json > backup-list.json
+1. le navigateur renvoie à `POST /api/contact {action:"sync"}` le profil et les
+   derniers messages qu'il garde dans `localStorage` (clé `qg.member.sync.v1`) ;
+2. le serveur recrée le compte si besoin, **ré-attache le fil existant** au lieu
+   d'en créer un second, et n'ajoute que les messages manquants (pas de doublon) ;
+3. si le compte a disparu mais que la conversation est encore là, elle est
+   rattachée automatiquement à la reconnexion.
 
-# 2. copie fichier par fichier dans le nouveau store
-jq -r '.[].pathname' backup-list.json | while read -r path; do
-  npx vercel blob get "$path" --store-id "$OLD_STORE" --access private --output "/tmp/blob-backup/$path" --yes
-  npx vercel blob put "/tmp/blob-backup/$path" --store-id "$NEW_STORE" --access private \
-    --pathname "$path" --allow-overwrite --yes
-done
-```
+## Limite à connaître
 
-> Les comptes, sessions et récupérations sont des blobs **privés** : toujours
-> `--access private`, sinon les hachages de mots de passe seraient publics.
-
-## 3. Brancher le nouveau store sur le projet
-
-1. Vercel → projet `qg2gionny` → **Storage** : connecter le nouveau Blob au
-   projet (cela met à jour `BLOB_STORE_ID` / `BLOB_READ_WRITE_TOKEN`).
-2. Vérifier dans **Settings → Environment Variables** que `BLOB_STORE_ID`
-   pointe sur le nouveau store pour *Production*.
-3. Redéployer (les variables d’environnement ne sont lues qu’au démarrage).
-
-## 4. Vérifier après la bascule
-
-```bash
-curl -s https://qg2gionny.vercel.app/api/contact \
-  -H 'content-type: application/json' -H 'origin: https://qg2gionny.vercel.app' \
-  -d '{"action":"login","pseudo":"<un pseudo existant>","password":"<son mot de passe>"}'
-```
-
-- `200` + `"account"` → les comptes ont bien suivi.
-- `401` `"Pseudo ou mot de passe incorrect."` → le compte n’est pas dans le
-  nouveau store : reprendre l’étape 2 pour `gionny/visitor-accounts/`.
-
-## 5. Compte propriétaire
-
-Il n’y a **aucun compte spécial** : le propriétaire est un membre comme les
-autres, qui s’est vu attribuer le rôle « Hôte ».
-
-1. Sur le site, « Créer un compte rapide » : ton pseudo (celui que tu veux) +
-   ton mot de passe. Le compte est un compte membre normal.
-2. Le panneau d’administration s’ouvre avec le **code à 4 caractères**
-   (`GIONNY_ADMIN_PIN`) — il ne dépend d’aucun compte.
-3. Onglet **Membres** → ton compte → **« Nommer Hôte »**.
-4. C’est fini : ce compte est le propriétaire. Il garde son mot de passe, son
-   pseudo, et ouvre le panneau avec le même code. Aucun autre compte ne peut
-   être Hôte à la fois (nommer quelqu’un d’autre remplace l’ancien).
-
-Points utiles :
-
-- Le rôle est stocké dans `gionny/visitor-host.json` : il survit aux
-  redémarrages et il suffit de recopier ce fichier pendant la bascule.
-- Un compte Hôte ne peut être ni banni ni supprimé tant qu’il a le rôle
-  (« Retirer Hôte » d’abord).
-- Perte du mot de passe : seul le code du panneau peut te dépanner —
-  connecte-toi avec le code, va dans Membres, et si besoin recrée un compte
-  puis nomme-le Hôte.
+`/tmp` est propre à chaque instance et n'est pas partagé entre deux instances
+simultanées (ni garanti après un redéploiement). C'est le prix du 100 % gratuit :
+en cas de trafic sur plusieurs instances, deux visiteurs peuvent voir deux états
+différents tant que le navigateur n'a pas relancé sa synchro.
