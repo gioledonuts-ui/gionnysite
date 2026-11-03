@@ -23,6 +23,10 @@ import {
   markAccountConversationRead,
   markConversationReadByAdmin,
   getHostAccountIdentityFromSession,
+  getVisitorAccountFromSession,
+  clearVisitorAccountSession,
+  readAccountSessionCookie,
+  saveAccountSessionCookie,
   listVisitorAccounts,
   registerVisitorAccount,
   setVisitorAccountRole,
@@ -68,6 +72,18 @@ class MemoryBlobStore {
 
   async del(paths) {
     for (const pathname of Array.isArray(paths) ? paths : [paths]) this.objects.delete(pathname);
+  }
+}
+
+class SessionWriteQuotaBlobStore extends MemoryBlobStore {
+  async put(pathname, body, options = {}) {
+    if (pathname.startsWith("gionny/visitor-sessions/")) {
+      this.calls.put += 1;
+      const error = new Error("Blob storage quota reached");
+      error.code = "BLOB_STORE_FULL";
+      throw error;
+    }
+    return super.put(pathname, body, options);
   }
 }
 
@@ -121,6 +137,100 @@ test("trimmed case-insensitive login reconnects to the server-assigned Gionny H�
   assert.equal(reconnect.ok, true);
   assert.notEqual(reconnect.sessionToken, firstLogin.sessionToken);
   assert.equal((await getHostAccountIdentityFromSession(reconnect.sessionToken, store))?.pseudo, "Gionny");
+});
+
+test("Blob session-write quota preserves only password-verified login through a short-lived signed cookie", async () => {
+  const store = new SessionWriteQuotaBlobStore();
+  const created = await registerVisitorAccount({
+    pseudo: "MembreQuota",
+    password: "correct-horse-battery",
+  }, store);
+  assert.equal(created.ok, true);
+  assert.match(created.sessionToken, /^qg2\./u);
+  assert.equal((await getVisitorAccountFromSession(created.sessionToken, store))?.pseudo, "MembreQuota");
+
+  const login = await loginVisitorAccount({
+    pseudo: "  membrequota  ",
+    password: "correct-horse-battery",
+  }, store);
+  assert.equal(login.ok, true);
+  assert.match(login.sessionToken, /^qg2\./u);
+  assert.notEqual(login.sessionToken, created.sessionToken);
+  assert.equal(readAccountSessionCookie(credentials(login.sessionToken)), login.sessionToken);
+
+  const response = { headers: {}, setHeader(name, value) { this.headers[name] = value; } };
+  saveAccountSessionCookie({ headers: { "x-forwarded-proto": "https" } }, response, login.sessionToken);
+  assert.match(response.headers["Set-Cookie"], /HttpOnly; SameSite=Strict; Max-Age=604800; Secure/u);
+
+  const [prefix, payload, signature] = login.sessionToken.split(".");
+  const tamperedSignature = `${signature[0] === "A" ? "B" : "A"}${signature.slice(1)}`;
+  assert.equal(await getVisitorAccountFromSession(`${prefix}.${payload}.${tamperedSignature}`, store), null);
+
+  const wrongPassword = await loginVisitorAccount({
+    pseudo: "MembreQuota",
+    password: "mauvais-mot-de-passe",
+  }, store);
+  assert.deepEqual(wrongPassword, { ok: false, reason: "invalid_credentials" });
+  const unknownAccount = await loginVisitorAccount({
+    pseudo: "CompteInconnu",
+    password: "correct-horse-battery",
+  }, store);
+  assert.deepEqual(unknownAccount, { ok: false, reason: "invalid_credentials" });
+  assert.deepEqual((await listVisitorAccounts("", store)).members.map((member) => member.pseudo), ["MembreQuota"]);
+  assert.equal(await clearVisitorAccountSession(login.sessionToken, store), true);
+
+  const sent = await addAccountReply(login.sessionToken, {
+    subject: "Discussion",
+    message: "La session signée retrouve bien le compte persistant.",
+  }, store);
+  assert.equal(sent.ok, true);
+  assert.equal(sent.message.pseudo, "MembreQuota");
+});
+
+test("a Blob-quota fallback still requires the saved password and server-assigned Hôte role", async () => {
+  const store = new SessionWriteQuotaBlobStore();
+  const host = await assignHost(store, await createAccount(store, "Gionny"));
+
+  const login = await loginVisitorAccount({ pseudo: "gionny", password: "correct-horse-battery" }, store);
+  assert.equal(login.ok, true);
+  assert.equal(login.account.pseudo, "Gionny");
+  assert.equal(login.account.role, "host");
+  assert.equal(await isAdminRequest(credentials(login.sessionToken), store), true);
+  assert.deepEqual(await getHostAccountIdentityFromSession(login.sessionToken, store), {
+    accountId: host.member.id,
+    pseudo: "Gionny",
+    isHost: true,
+  });
+
+  const wrongPassword = await loginVisitorAccount({ pseudo: "Gionny", password: "incorrect" }, store);
+  assert.deepEqual(wrongPassword, { ok: false, reason: "invalid_credentials" });
+  assert.equal(await isAdminRequest(credentials(wrongPassword.sessionToken || ""), store), false);
+});
+
+test("stateless sessions are renewed after pseudo or password changes", async () => {
+  const store = new SessionWriteQuotaBlobStore();
+  const member = await createAccount(store, "ProfilQuota");
+  const oldToken = member.sessionToken;
+
+  const renamed = await updateVisitorAccountProfile(oldToken, { pseudo: "ProfilRenomme" }, store);
+  assert.equal(renamed.ok, true);
+  assert.match(renamed.sessionToken, /^qg2\./u);
+  assert.equal(await getVisitorAccountFromSession(oldToken, store), null);
+  assert.equal((await getVisitorAccountFromSession(renamed.sessionToken, store))?.pseudo, "ProfilRenomme");
+
+  const passwordChanged = await updateVisitorAccountProfile(renamed.sessionToken, {
+    currentPassword: "correct-horse-battery",
+    newPassword: "another-correct-passphrase",
+  }, store);
+  assert.equal(passwordChanged.ok, true);
+  assert.match(passwordChanged.sessionToken, /^qg2\./u);
+  assert.equal(await getVisitorAccountFromSession(renamed.sessionToken, store), null);
+  assert.equal((await getVisitorAccountFromSession(passwordChanged.sessionToken, store))?.pseudo, "ProfilRenomme");
+  assert.deepEqual(await loginVisitorAccount({ pseudo: "ProfilRenomme", password: "correct-horse-battery" }, store), {
+    ok: false,
+    reason: "invalid_credentials",
+  });
+  assert.equal((await loginVisitorAccount({ pseudo: "ProfilRenomme", password: "another-correct-passphrase" }, store)).ok, true);
 });
 
 test("registration still enforces pseudo and password rules after trimming outer spaces", async () => {

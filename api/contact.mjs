@@ -209,7 +209,9 @@ async function handleProfile(request, response, body, sessionToken) {
     return response.status(400).json({ error: "Le profil n’a pas pu être modifié." });
   }
 
-  const state = await getAccountConversation(sessionToken);
+  const activeSessionToken = result.sessionToken || sessionToken;
+  if (result.sessionToken) saveAccountSessionCookie(request, response, result.sessionToken);
+  const state = await getAccountConversation(activeSessionToken);
   if (!state) {
     clearAccountSessionCookie(request, response);
     return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });

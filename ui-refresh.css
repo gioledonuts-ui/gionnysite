@@ -2329,3 +2329,367 @@ body {
     animation: none;
   }
 }
+
+/* Desktop home: full-width vertical sections, with the Hero itself kept two-column. */
+@media (min-width: 941px) {
+  .site-shell {
+    width: min(var(--shell-width), calc(100% - clamp(32px, 5vw, 72px)));
+    min-height: 100svh;
+  }
+
+  .site-header {
+    min-height: 42px;
+    padding-block: 0;
+    gap: 10px;
+  }
+
+  .hub-layout {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: stretch;
+    gap: clamp(6px, 0.9vh, 10px);
+    padding-block: clamp(4px, 0.8vh, 8px);
+  }
+
+  .welcome-panel {
+    width: 100%;
+    height: auto;
+    max-width: none;
+    min-height: clamp(320px, 42svh, 360px);
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(12px, 1.6vw, 22px);
+    padding: 44px clamp(16px, 2vw, 26px) 12px;
+  }
+
+  .welcome-account-bar {
+    position: absolute;
+    top: 7px;
+    right: 12px;
+    bottom: auto;
+    left: auto;
+    z-index: 6;
+    display: flex !important;
+    width: max-content;
+    height: auto;
+    max-width: calc(100% - 24px);
+    min-height: 30px;
+    grid-column: auto;
+    grid-row: auto;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 2px 5px 2px 8px;
+  }
+
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: clamp(84px, 8.4vw, 116px) minmax(0, 1fr);
+    gap: clamp(10px, 1.4vw, 18px);
+  }
+
+  .profile-frame {
+    width: clamp(84px, 8.4vw, 116px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.85rem, 3vw, 3.05rem);
+    line-height: 1.02;
+  }
+
+  .welcome-actions {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 6px;
+  }
+
+  .creator-carousel {
+    height: clamp(194px, 23vh, 210px);
+  }
+
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 0;
+    padding: 12px 52px 38px 14px;
+  }
+
+  .creator-carousel .discord-content {
+    min-height: 0;
+    gap: 5px;
+  }
+
+  .creator-carousel .discord-copy {
+    gap: 2px;
+  }
+
+  .creator-carousel .discord-overline {
+    font-size: 7px;
+    line-height: 1.2;
+  }
+
+  .creator-carousel .discord-copy strong {
+    gap: 6px;
+    font-size: clamp(20px, 2.4vw, 27px);
+    line-height: 1.05;
+  }
+
+  .creator-carousel .creator-title-mark {
+    width: 20px;
+    height: 20px;
+  }
+
+  .creator-carousel .discord-detail {
+    font-size: 9px;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .creator-carousel .discord-action-default,
+  .creator-carousel .discord-action .visited-badge {
+    min-height: 27px;
+    padding-inline: 8px;
+    font-size: 7px;
+  }
+
+  .creator-carousel .discord-community-meta {
+    padding-right: 0;
+  }
+
+  .creator-carousel-next {
+    right: 9px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .creator-carousel-dots {
+    right: 10px;
+    bottom: 9px;
+    gap: 5px;
+    padding: 4px 6px;
+  }
+
+  .creator-carousel-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .creator-carousel-dot[aria-current="true"] {
+    width: 16px;
+  }
+
+  .welcome-actions .schedule-card--refresh {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 15px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-topline {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-mark {
+    width: 29px;
+    height: 29px;
+    flex-basis: 29px;
+    border-radius: 9px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-copy h2 {
+    font-size: 11px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-copy p {
+    gap: 4px;
+    margin-top: 3px;
+    font-size: 8px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-time {
+    min-width: 62px;
+    min-height: 32px;
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-days {
+    gap: 5px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-days li,
+  .welcome-actions .schedule-card--refresh .schedule-days li[data-next-live] {
+    min-height: 44px;
+    gap: 3px;
+    padding: 5px 2px;
+    border-radius: 9px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-day-name {
+    font-size: 8px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-day-time {
+    font-size: 9px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown,
+  .welcome-actions .schedule-card--refresh .schedule-countdown-live {
+    gap: 6px;
+    margin-top: 7px;
+    padding-top: 7px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-label {
+    gap: 4px;
+    font-size: 7px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-label .qg-icon {
+    width: 11px;
+    height: 11px;
+    flex-basis: 11px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-value {
+    gap: 3px;
+    font-size: 10px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-unit {
+    min-width: 34px;
+    min-height: 25px;
+    padding-inline: 4px;
+    border-radius: 7px;
+    font-size: 9px;
+  }
+
+  .networks-panel {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 9px 12px;
+    border-radius: 18px;
+  }
+
+  .networks-panel .networks-heading h2 {
+    margin: 0;
+    font-size: clamp(1rem, 1.4vw, 1.35rem);
+    line-height: 1.15;
+  }
+
+  .networks-panel .network-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .networks-panel .network-card {
+    min-height: 115px;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .networks-panel .network-item--instagram {
+    grid-column: span 2;
+  }
+
+  .site-footer {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding-block: 4px;
+  }
+}
+
+/* Small screens and tablets: two columns, with Instagram filling the final row. */
+@media (max-width: 940px) {
+  .welcome-account-bar {
+    display: flex !important;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .networks-panel .network-card {
+    min-height: 115px;
+  }
+
+  .networks-panel .network-item--instagram {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The 120px social-card target begins at the large-screen breakpoint. */
+@media (min-width: 1024px) {
+  .networks-panel .network-card {
+    min-height: 120px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .networks-panel .network-item--instagram {
+    grid-column: auto;
+  }
+}
+
+/* Discord badges are normal-flow flex items above the slide's overline. */
+.creator-carousel .creator-slide--discord .discord-badge-row {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  overflow: visible;
+  white-space: normal;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-row > .discord-community-pill,
+.creator-carousel .creator-slide--discord .discord-badge-row > .discord-online-badge,
+.creator-carousel .creator-slide--discord .discord-badge-row > .creator-visited-badge {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-row > .creator-visited-badge[hidden],
+.creator-carousel .creator-slide--discord .discord-badge-row > .discord-online-badge[hidden] {
+  display: none !important;
+}
