@@ -355,31 +355,56 @@
             </div>
             </div>
 
-            <section class="schedule-card" aria-labelledby="schedule-title">
+            <section class="schedule-card schedule-card--refresh" aria-labelledby="schedule-title">
               <div class="schedule-topline">
                 <div class="schedule-mark" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
-                    <rect x="3.5" y="5" width="17" height="16" rx="4" />
-                    <path d="M7.5 3.5v3M16.5 3.5v3M3.5 9.5h17" />
-                    <path d="m9 15 2 2 4-4" />
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M12 7v5l3.5 2" />
                   </svg>
                 </div>
                 <div class="schedule-copy">
-                  <h2 id="schedule-title">Les prochains lives</h2>
-                  <p>À partir de · heure française</p>
+                  <h2 id="schedule-title">LES PROCHAINS LIVES</h2>
+                  <p><span class="schedule-live-indicator" aria-hidden="true"></span>Rendez-vous fixe · Heure française</p>
                 </div>
-                <span class="schedule-time" data-schedule-time>22<span>h</span></span>
+                <span class="schedule-time" data-schedule-time aria-label="Horaire habituel : 22 heures">22H00</span>
               </div>
               <ul class="schedule-days" data-schedule-days aria-label="Jours de live">
-                <li>Mardi</li>
-                <li>Mercredi</li>
-                <li>Samedi</li>
-                <li>Dimanche</li>
+                <li data-schedule-day="tuesday">
+                  <span class="schedule-day-name">MARDI</span>
+                  <span class="schedule-day-time">22H</span>
+                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
+                </li>
+                <li data-schedule-day="wednesday">
+                  <span class="schedule-day-name">MERCREDI</span>
+                  <span class="schedule-day-time">22H</span>
+                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
+                </li>
+                <li data-schedule-day="saturday">
+                  <span class="schedule-day-name">SAMEDI</span>
+                  <span class="schedule-day-time">22H</span>
+                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
+                </li>
+                <li data-schedule-day="sunday">
+                  <span class="schedule-day-name">DIMANCHE</span>
+                  <span class="schedule-day-time">22H</span>
+                  <span class="schedule-day-next-label" hidden>PROCHAIN</span>
+                </li>
               </ul>
-              <p class="schedule-countdown" data-next-live-countdown aria-live="off">
-                <span data-next-live-prefix><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg> Prochain live dans :</span>
-                <strong class="schedule-countdown-value" data-next-live-value aria-label="Temps avant le prochain live">--:--:--</strong>
-              </p>
+              <div class="schedule-countdown" data-next-live-countdown aria-live="off">
+                <span class="schedule-countdown-label" data-next-live-prefix>
+                  <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg>
+                  <span>PROCHAIN LIVE DANS</span>
+                </span>
+                <div class="schedule-countdown-value" data-next-live-value role="timer" aria-label="Temps avant le prochain live">
+                  <span class="schedule-countdown-unit" data-countdown-hours>--H</span>
+                  <span class="schedule-countdown-separator" aria-hidden="true">:</span>
+                  <span class="schedule-countdown-unit" data-countdown-minutes>--M</span>
+                  <span class="schedule-countdown-separator" aria-hidden="true">:</span>
+                  <span class="schedule-countdown-unit" data-countdown-seconds>--S</span>
+                  <span class="schedule-countdown-empty" data-countdown-empty hidden>Aucun live programmé</span>
+                </div>
+              </div>
               <p class="schedule-countdown-live" data-current-live role="status" hidden><span class="creator-live-dot" aria-hidden="true"></span> EN DIRECT ACTUELLEMENT</p>
             </section>
           </div>
@@ -409,7 +434,7 @@
           <ul class="network-grid" aria-label="Réseaux sociaux">
             <li class="network-item">
               <a
-                class="network-card network-card--twitch network-card--wide"
+                class="network-card network-card--twitch"
                 href="https://www.twitch.tv/7gionny"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -418,18 +443,13 @@
                 data-config-link="twitch"
                 data-live="unknown"
               >
-                <span class="network-icon" aria-hidden="true">
+                <span class="network-head">
+                  <span class="network-icon" aria-hidden="true">
                   <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
                   </svg>
                 </span>
-                <span class="network-copy">
-                  <strong>TWITCH</strong>
-                  <span>@7gionny</span>
-                  <span class="network-info" data-social-info="twitch" hidden></span>
-                  <span class="stream-title" data-stream-title hidden></span>
-                </span>
-                <span class="network-side">
+                  <span class="network-side">
                   <span class="live-badge" data-stream-status role="status" aria-label="En direct" title="En direct" aria-live="polite" hidden>EN LIVE</span>
                   <span class="visited-badge" aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
@@ -437,6 +457,13 @@
                     </svg>
                     Déjà visité
                   </span>
+                </span>
+                </span>
+                <span class="network-copy">
+                  <strong>TWITCH</strong>
+                  <span>@7gionny</span>
+                  <span class="network-info" data-social-info="twitch" hidden></span>
+                  <span class="stream-title" data-stream-title hidden></span>
                 </span>
 
                 <span class="network-watermark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">
@@ -459,11 +486,13 @@
                       <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
                     </svg>
                   </span>
-                  <span class="visited-badge" aria-live="polite" hidden>
+                  <span class="network-side">
+                    <span class="visited-badge" aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
                       <path d="m3.5 8.2 3 3 6-6.2" />
                     </svg>
                     Déjà visité
+                  </span>
                   </span>
                 </span>
                 <span class="network-copy">
@@ -493,12 +522,14 @@
                       <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                     </svg>
                   </span>
-                  <span class="youtube-count-badge" data-youtube-count aria-live="polite" hidden>1</span>
+                  <span class="network-side">
+                    <span class="youtube-count-badge" data-youtube-count aria-live="polite" hidden>1</span>
                   <span class="visited-badge" data-youtube-visited aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
                       <path d="m3.5 8.2 3 3 6-6.2" />
                     </svg>
                     Déjà visité
+                  </span>
                   </span>
                 </span>
                 <span class="network-copy">
@@ -527,11 +558,13 @@
                       <path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" />
                     </svg>
                   </span>
-                  <span class="visited-badge" aria-live="polite" hidden>
+                  <span class="network-side">
+                    <span class="visited-badge" aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
                       <path d="m3.5 8.2 3 3 6-6.2" />
                     </svg>
                     Déjà visité
+                  </span>
                   </span>
                 </span>
                 <span class="network-copy">
@@ -562,11 +595,13 @@
                       <circle class="camera-dot" cx="17.7" cy="6.6" r="1" />
                     </svg>
                   </span>
-                  <span class="visited-badge" aria-live="polite" hidden>
+                  <span class="network-side">
+                    <span class="visited-badge" aria-live="polite" hidden>
                     <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
                       <path d="m3.5 8.2 3 3 6-6.2" />
                     </svg>
                     Déjà visité
+                  </span>
                   </span>
                 </span>
                 <span class="network-copy">

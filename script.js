@@ -124,6 +124,13 @@
     { key: "sunday", label: "Dimanche" },
   ];
   const DEFAULT_LIVE_DAYS = new Set(["tuesday", "wednesday", "saturday", "sunday"]);
+  const SCHEDULE_CARD_DAYS = [
+    { key: "tuesday", label: "MARDI" },
+    { key: "wednesday", label: "MERCREDI" },
+    { key: "saturday", label: "SAMEDI" },
+    { key: "sunday", label: "DIMANCHE" },
+  ];
+  const SCHEDULE_CARD_DAY_KEYS = new Set(SCHEDULE_CARD_DAYS.map(({ key }) => key));
   const PARIS_DAY_KEYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const parisDateFormatter = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Paris",
@@ -510,7 +517,12 @@
 
   const formatScheduleTime = (value) => {
     const [hour, minute] = value.split(":");
-    return `${Number(hour)}h${minute === "00" ? "" : minute}`;
+    return `${String(Number(hour)).padStart(2, "0")}H${minute === "00" ? "" : minute}`;
+  };
+
+  const formatScheduleTimeBadge = (value) => {
+    const [hour, minute] = value.split(":");
+    return `${String(Number(hour)).padStart(2, "0")}H${String(minute).padStart(2, "0")}`;
   };
 
   const readParisDateParts = (timestamp) => {
@@ -587,6 +599,7 @@
     for (let dayOffset = 0; dayOffset <= 7; dayOffset += 1) {
       const day = new Date(parisMidnightAsUtc + dayOffset * 86_400_000);
       const dayKey = PARIS_DAY_KEYS[day.getUTCDay()];
+      if (!SCHEDULE_CARD_DAY_KEYS.has(dayKey)) continue;
       const entry = schedule?.[dayKey];
       if (!entry?.enabled || typeof entry.time !== "string") continue;
       const [hour, minute] = entry.time.split(":").map(Number);
@@ -606,10 +619,24 @@
   };
 
   const getNextScheduledDayKey = () => {
+    const nowParis = readParisDateParts(Date.now());
+    const todayKey = PARIS_DAY_KEYS[
+      new Date(Date.UTC(nowParis.year, nowParis.month - 1, nowParis.day)).getUTCDay()
+    ];
+    const beforeEndOfScheduleDay = nowParis.hour < 23 || (nowParis.hour === 23 && nowParis.minute < 59);
+    if (
+      SCHEDULE_CARD_DAY_KEYS.has(todayKey) &&
+      currentSchedule?.[todayKey]?.enabled &&
+      beforeEndOfScheduleDay
+    ) {
+      return todayKey;
+    }
+
     if (!nextScheduledLiveAt) return "";
     const parisDate = readParisDateParts(nextScheduledLiveAt);
     const weekdayIndex = new Date(Date.UTC(parisDate.year, parisDate.month - 1, parisDate.day)).getUTCDay();
-    return PARIS_DAY_KEYS[weekdayIndex] || "";
+    const nextDayKey = PARIS_DAY_KEYS[weekdayIndex] || "";
+    return SCHEDULE_CARD_DAY_KEYS.has(nextDayKey) ? nextDayKey : "";
   };
 
   const updateHighlightedScheduleDay = () => {
@@ -633,8 +660,15 @@
     const countdown = document.querySelector("[data-next-live-countdown]");
     const countdownPrefix = document.querySelector("[data-next-live-prefix]");
     const countdownValue = document.querySelector("[data-next-live-value]");
+    const countdownHours = countdownValue?.querySelector("[data-countdown-hours]");
+    const countdownMinutes = countdownValue?.querySelector("[data-countdown-minutes]");
+    const countdownSeconds = countdownValue?.querySelector("[data-countdown-seconds]");
+    const countdownEmpty = countdownValue?.querySelector("[data-countdown-empty]");
     const liveStatus = document.querySelector("[data-current-live]");
-    if (!countdown || !countdownPrefix || !countdownValue || !liveStatus) return;
+    if (
+      !countdown || !countdownPrefix || !countdownValue ||
+      !countdownHours || !countdownMinutes || !countdownSeconds || !countdownEmpty || !liveStatus
+    ) return;
 
     if (currentTwitchIsLive) {
       countdown.hidden = true;
@@ -655,13 +689,21 @@
     if (!nextScheduledLiveAt) {
       countdownPrefix.hidden = true;
       countdownValue.dataset.empty = "true";
-      countdownValue.textContent = "Aucun live programmé";
+      countdownHours.hidden = true;
+      countdownMinutes.hidden = true;
+      countdownSeconds.hidden = true;
+      countdownEmpty.hidden = false;
+      countdownEmpty.textContent = "Aucun live programmé";
       countdownValue.setAttribute("aria-label", "Aucun live programmé");
       return;
     }
 
     countdownPrefix.hidden = false;
     delete countdownValue.dataset.empty;
+    countdownEmpty.hidden = true;
+    countdownHours.hidden = false;
+    countdownMinutes.hidden = false;
+    countdownSeconds.hidden = false;
     const remainingSeconds = Math.max(0, Math.floor((nextScheduledLiveAt - Date.now()) / 1000));
     const hours = Math.floor(remainingSeconds / 3600);
     const minutes = Math.floor((remainingSeconds % 3600) / 60);
@@ -669,7 +711,9 @@
     const formattedHours = String(hours).padStart(2, "0");
     const formattedMinutes = String(minutes).padStart(2, "0");
     const formattedSeconds = String(seconds).padStart(2, "0");
-    countdownValue.textContent = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    countdownHours.textContent = `${formattedHours}H`;
+    countdownMinutes.textContent = `${formattedMinutes}M`;
+    countdownSeconds.textContent = `${formattedSeconds}S`;
     countdownValue.setAttribute("aria-label", `Prochain live dans ${hours} heures, ${minutes} minutes et ${seconds} secondes`);
   };
 
@@ -682,7 +726,7 @@
     nextScheduledLiveAt = findNextScheduledLiveAt(schedule);
     updateScheduleCountdown();
 
-    const activeDays = WEEKDAYS.filter(({ key }) => schedule[key].enabled);
+    const activeDays = SCHEDULE_CARD_DAYS.filter(({ key }) => schedule[key]?.enabled);
     const uniqueTimes = new Set(activeDays.map(({ key }) => schedule[key].time));
     const sameTime = activeDays.length > 0 && uniqueTimes.size === 1;
     const layout = activeDays.length === 0 ? "empty" : sameTime ? "common" : "varied";
@@ -690,49 +734,36 @@
     daysList.dataset.layout = layout;
     daysList.replaceChildren();
 
-    const description = document.querySelector(".schedule-copy p");
-    if (description) {
-      description.textContent = layout === "common"
-        ? "Horaire commun · heure française"
-        : layout === "varied"
-          ? "Heure française"
-          : "Pas de live programmé";
-    }
-
     if (sameTime) {
-      const [hour, minute] = activeDays[0] ? schedule[activeDays[0].key].time.split(":") : ["22", "00"];
-      const hourLabel = document.createTextNode(String(Number(hour)));
-      const unit = document.createElement("span");
-      unit.textContent = "h";
-      timeDisplay.replaceChildren(hourLabel, unit);
-      if (minute !== "00") timeDisplay.append(document.createTextNode(minute));
+      const time = schedule[activeDays[0].key].time;
+      timeDisplay.textContent = formatScheduleTimeBadge(time);
+      timeDisplay.setAttribute("aria-label", `Horaire commun : ${formatScheduleTimeBadge(time)}`);
+    } else if (activeDays.length > 0) {
+      timeDisplay.textContent = "HORAIRES VARIÉS";
+      timeDisplay.setAttribute("aria-label", "Horaires variables selon le jour");
     } else {
-      timeDisplay.textContent = activeDays.length ? "Horaires\nvariés" : "—";
+      timeDisplay.textContent = "—";
+      timeDisplay.setAttribute("aria-label", "Aucun live programmé");
     }
 
-    if (activeDays.length === 0) {
-      const emptyItem = document.createElement("li");
-      emptyItem.className = "schedule-empty";
-      emptyItem.textContent = "Aucun live programmé";
-      daysList.append(emptyItem);
-      updateHighlightedScheduleDay();
-      return;
-    }
-
-    for (const { key, label } of activeDays) {
+    for (const { key, label } of SCHEDULE_CARD_DAYS) {
+      const daySchedule = schedule[key] || { enabled: false, time: "22:00" };
       const item = document.createElement("li");
       item.dataset.scheduleDay = key;
+      item.toggleAttribute("data-disabled", !daySchedule.enabled);
+
       const dayName = document.createElement("span");
       dayName.className = "schedule-day-name";
       dayName.textContent = label;
       item.append(dayName);
 
-      if (!sameTime) {
-        const hour = document.createElement("span");
-        hour.className = "schedule-day-time";
-        hour.textContent = formatScheduleTime(schedule[key].time);
-        item.append(hour);
-      }
+      const dayTime = document.createElement("span");
+      dayTime.className = "schedule-day-time";
+      dayTime.textContent = daySchedule.enabled && typeof daySchedule.time === "string"
+        ? formatScheduleTime(daySchedule.time)
+        : "—";
+      item.append(dayTime);
+
       const nextLabel = document.createElement("span");
       nextLabel.className = "schedule-day-next-label";
       nextLabel.textContent = "PROCHAIN";

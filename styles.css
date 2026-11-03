@@ -776,11 +776,6 @@ a:focus-visible {
   animation: card-enter 720ms cubic-bezier(0.2, 0.75, 0.25, 1) calc(300ms + var(--card-delay)) both;
 }
 
-.network-item:nth-child(1) {
-  grid-column: span 2;
-  --card-delay: 0ms;
-}
-
 .network-item:nth-child(2) {
   --card-delay: 75ms;
 }
@@ -791,10 +786,6 @@ a:focus-visible {
 
 .network-item:nth-child(4) {
   --card-delay: 205ms;
-}
-
-.network-item:nth-child(5) {
-  --card-delay: 270ms;
 }
 
 .network-card {
@@ -1468,10 +1459,6 @@ a:focus-visible {
     margin-top: 15px;
   }
 
-  .network-item:first-child {
-    grid-column: auto;
-  }
-
   .network-card {
     min-height: 82px;
     flex-direction: row;
@@ -1660,10 +1647,6 @@ a:focus-visible {
   .network-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
-  }
-
-  .network-item:first-child {
-    grid-column: auto;
   }
 
   .network-card,
@@ -2082,10 +2065,6 @@ body {
   margin-top: 9px;
 }
 
-.network-item:first-child {
-  grid-column: auto;
-}
-
 .network-card,
 .network-card--wide {
   min-height: 78px;
@@ -2163,14 +2142,6 @@ body {
 .network-card .network-head .visited-badge svg {
   width: 10px;
   height: 10px;
-}
-
-.network-card--twitch .network-side {
-  position: absolute;
-  top: 4px;
-  right: 5px;
-  gap: 3px;
-  margin: 0;
 }
 
 .network-card--twitch .live-badge {
@@ -2431,12 +2402,6 @@ body {
     margin-top: 6px;
   }
 
-  .network-item:last-child:nth-child(odd) {
-    width: calc((100% - 5px) / 2);
-    grid-column: 1 / -1;
-    justify-self: center;
-  }
-
   .network-card,
   .network-card--wide {
     min-height: 68px;
@@ -2480,11 +2445,6 @@ body {
   .network-card .network-head .visited-badge svg {
     width: 9px;
     height: 9px;
-  }
-
-  .network-card--twitch .network-side {
-    top: 3px;
-    right: 3px;
   }
 
   .network-card--twitch .live-badge {
@@ -2778,12 +2738,6 @@ body {
     margin-top: 4px;
   }
 
-  .network-item:last-child:nth-child(odd) {
-    width: auto;
-    grid-column: auto;
-    justify-self: stretch;
-  }
-
   .network-card,
   .network-card--wide {
     min-height: 42px;
@@ -3003,11 +2957,6 @@ body {
     height: 11px;
   }
 
-  .network-card--twitch .network-side {
-    top: 6px;
-    right: 7px;
-  }
-
   .network-card--twitch .live-badge {
     min-height: 20px;
     padding-inline: 6px;
@@ -3184,10 +3133,6 @@ body {
     margin-top: 10px;
   }
 
-  .network-item:last-child:nth-child(odd) {
-    width: calc((100% - 8px) / 2);
-  }
-
   .network-card,
   .network-card--wide {
     min-height: 82px;
@@ -3226,11 +3171,6 @@ body {
     gap: 3px;
     padding-inline: 5px;
     font-size: 7px;
-  }
-
-  .network-card--twitch .network-side {
-    top: 6px;
-    right: 6px;
   }
 
   .network-card--twitch .live-badge {
@@ -3435,10 +3375,6 @@ body {
     margin-top: 7px;
   }
 
-  .network-item:last-child:nth-child(odd) {
-    width: calc((100% - 6px) / 2);
-  }
-
   .network-card,
   .network-card--wide {
     min-height: 64px;
@@ -3495,8 +3431,7 @@ body {
   color: #a3f2bf;
 }
 
-.network-card .network-head .visited-badge,
-.network-card--twitch .network-side .visited-badge {
+.network-card .network-head .visited-badge {
   min-width: 72px;
   min-height: 20px;
   justify-content: center;
@@ -3505,8 +3440,7 @@ body {
   font-size: 8px;
 }
 
-.network-card .network-head .visited-badge svg,
-.network-card--twitch .network-side .visited-badge svg {
+.network-card .network-head .visited-badge svg {
   width: 11px;
   height: 11px;
 }
@@ -3767,16 +3701,6 @@ body {
     font-size: 11px;
     letter-spacing: 0.045em;
   }
-
-  .network-item:last-child:nth-child(odd) {
-    width: 100%;
-    grid-column: 1 / -1;
-    justify-self: stretch;
-  }
-
-  .network-card--instagram {
-    justify-content: center;
-  }
 }
 
 @media (max-width: 680px) and (min-height: 681px) {
@@ -3890,8 +3814,7 @@ body {
     font-size: 11px;
   }
 
-  .network-card .network-head .visited-badge,
-  .network-card--twitch .network-side .visited-badge {
+  .network-card .network-head .visited-badge {
     min-width: 72px;
     min-height: 20px;
     padding-inline: 7px;
@@ -3956,14 +3879,6 @@ body {
   .network-copy > span,
   .network-card--wide .network-copy > span {
     font-size: 10px;
-  }
-}
-
-@media (pointer: coarse) and (orientation: landscape) and (max-height: 560px) {
-  .network-item:last-child:nth-child(odd) {
-    width: auto;
-    grid-column: auto;
-    justify-self: stretch;
   }
 }
 
@@ -4298,29 +4213,6 @@ body {
 }
 
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 560px) {
-  .network-item:last-child:nth-child(odd) {
-    width: 100%;
-    grid-column: 1 / -1;
-    justify-self: stretch;
-  }
-
-  .network-card:not(.network-card--instagram) {
-    min-height: 56px;
-  }
-
-  .network-card:not(.network-card--instagram) .network-copy {
-    transform: translateY(-8px);
-  }
-
-  .network-card:not(.network-card--instagram) .network-head .visited-badge {
-    top: auto;
-    bottom: 1px;
-  }
-
-  .network-card--twitch .network-side {
-    top: auto;
-    bottom: 1px;
-  }
 
   .network-card--twitch .stream-title {
     display: none !important;
@@ -4703,18 +4595,6 @@ body {
 
 /* On narrow cards, show live status as a compact red indicator, not a text pill. */
 @media (max-width: 680px) {
-  .network-card--twitch[data-live="true"] .network-copy {
-    padding-right: 23px;
-  }
-
-  .network-card--twitch[data-live="true"] .stream-title {
-    display: none !important;
-  }
-
-  .network-card--twitch .network-side {
-    top: 7px;
-    right: 7px;
-  }
 
   .network-card--twitch .live-badge {
     display: inline-flex;
@@ -6711,14 +6591,6 @@ body.contact-page-open {
   z-index: 1;
 }
 
-.network-card--twitch .network-side {
-  position: absolute;
-  z-index: 2;
-  top: 8px;
-  right: 8px;
-  bottom: auto;
-}
-
 .network-card--twitch .network-watermark {
   color: #b994ff;
   opacity: 0.15;
@@ -7002,15 +6874,6 @@ body.contact-page-open {
     margin-top: 12px;
   }
 
-  .network-item:first-child {
-    grid-column: auto;
-  }
-
-  .network-item:last-child {
-    width: auto;
-    grid-column: 1 / -1;
-  }
-
   .network-card,
   .network-card--wide {
     display: grid;
@@ -7046,19 +6909,6 @@ body.contact-page-open {
     transform: none;
   }
 
-  .network-card--twitch > .network-icon {
-    grid-column: 1;
-    grid-row: 2;
-    align-self: center;
-  }
-
-  .network-card--twitch > .network-copy {
-    grid-column: 2;
-    grid-row: 2;
-    align-self: center;
-    transform: none;
-  }
-
   .network-icon,
   .network-card--wide .network-icon {
     width: 35px;
@@ -7084,8 +6934,7 @@ body.contact-page-open {
     line-height: 1.35;
   }
 
-  .network-card .network-head .visited-badge,
-  .network-card--twitch .network-side .visited-badge {
+  .network-card .network-head .visited-badge {
     top: 8px;
     right: 8px;
     bottom: auto;
@@ -7098,8 +6947,7 @@ body.contact-page-open {
     line-height: 1;
   }
 
-  .network-card .network-head .visited-badge svg,
-  .network-card--twitch .network-side .visited-badge svg {
+  .network-card .network-head .visited-badge svg {
     width: 11px;
     height: 11px;
   }
@@ -7112,12 +6960,6 @@ body.contact-page-open {
     width: 20px;
     height: 20px;
     font-size: 10px;
-  }
-
-  .network-card--twitch .network-side {
-    top: 8px;
-    right: 8px;
-    bottom: auto;
   }
 
   .network-card--twitch .network-watermark {
@@ -7181,22 +7023,6 @@ body.contact-page-open {
     align-content: start;
     gap: 16px;
     padding-block: 16px 22px;
-  }
-
-  .network-card:not(.network-card--instagram) .network-copy {
-    transform: none;
-  }
-
-  .network-card:not(.network-card--instagram) .network-head .visited-badge {
-    top: 8px;
-    right: 8px;
-    bottom: auto;
-  }
-
-  .network-card--twitch .network-side {
-    top: 8px;
-    right: 8px;
-    bottom: auto;
   }
 }
 
@@ -8896,12 +8722,9 @@ h6,
 .network-item:nth-child(n) {
   animation: sequence-rise 540ms var(--entrance-ease) calc(745ms + var(--card-delay, 0ms)) both;
 }
-
-.network-item:nth-child(1) { --card-delay: 0ms; }
 .network-item:nth-child(2) { --card-delay: 60ms; }
 .network-item:nth-child(3) { --card-delay: 120ms; }
 .network-item:nth-child(4) { --card-delay: 180ms; }
-.network-item:nth-child(5) { --card-delay: 240ms; }
 
 .site-footer {
   animation: sequence-rise 560ms var(--entrance-ease) 1050ms both;
@@ -9157,9 +8980,7 @@ h6,
     margin-top: 0;
   }
 
-  .network-item,
-  .network-item:first-child,
-  .network-item:last-child {
+  .network-item {
     width: auto;
     grid-column: auto;
     justify-self: stretch;
@@ -9190,17 +9011,8 @@ h6,
     gap: 0;
   }
 
-  .network-card--twitch > .network-icon {
-    display: grid;
-    width: 38px;
-    height: 38px;
-    flex: 0 0 auto;
-    place-items: center;
-  }
-
-  .network-card--twitch > .network-copy,
   .network-card .network-copy,
-  .network-card--wide .network-copy {
+.network-card--wide .network-copy {
     display: grid;
     width: 100%;
     min-width: 0;
@@ -9237,8 +9049,7 @@ h6,
   }
 
   .network-card .network-head .visited-badge,
-  .network-card--twitch .network-side .visited-badge,
-  .network-card--youtube .youtube-count-badge {
+.network-card--youtube .youtube-count-badge {
     top: 8px;
     right: 8px;
     bottom: auto;
@@ -9247,42 +9058,11 @@ h6,
     font-size: 8px;
   }
 
-  .network-card--twitch .network-side {
-    top: 9px;
-    right: 9px;
-  }
-
   .network-watermark,
   .network-card--twitch .network-watermark {
     right: -8px;
     bottom: -12px;
     width: 82px;
-  }
-
-  .network-item:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .network-card--instagram {
-    min-height: 94px;
-    aspect-ratio: auto;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 13px;
-    padding: 13px 15px;
-  }
-
-  .network-card--instagram .network-head {
-    width: auto;
-    min-height: 0;
-    align-items: center;
-  }
-
-  .network-card--instagram .network-copy {
-    width: auto;
-    flex: 1 1 auto;
-    margin: 0;
   }
 
   .network-card--instagram .network-watermark {
@@ -9545,12 +9325,9 @@ h6,
 .network-item:nth-child(n) {
   animation: sequence-rise 420ms var(--entrance-ease) calc(350ms + var(--card-delay, 0ms)) backwards;
 }
-
-.network-item:nth-child(1) { --card-delay: 0ms; }
 .network-item:nth-child(2) { --card-delay: 60ms; }
 .network-item:nth-child(3) { --card-delay: 120ms; }
 .network-item:nth-child(4) { --card-delay: 180ms; }
-.network-item:nth-child(5) { --card-delay: 240ms; }
 
 .site-footer {
   animation: sequence-rise 500ms var(--entrance-ease) 600ms backwards;
