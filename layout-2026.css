@@ -2928,6 +2928,9 @@
 
 /* --------------------------------------------------------------------------
    15.6 Fenêtres peu hautes : on resserre le texte, jamais les cartes
+   --------------------------------------------------------------------------
+   On resserre le TEXTE (marges, interlignes, tailles), jamais la hauteur de
+   la carte : la carte réseau s'adapte à son contenu, rien n'est rogné.
    -------------------------------------------------------------------------- */
 @media (min-width: 941px) and (max-height: 880px) {
   .welcome-panel {
@@ -3254,6 +3257,14 @@
    1 366 × 768 tiennent encore sans faire défiler la page.
    -------------------------------------------------------------------------- */
 @media (min-width: 941px) and (max-height: 920px) {
+  .welcome-actions .creator-carousel {
+    max-height: clamp(240px, 29.2dvh, 430px);
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide] {
+    max-height: clamp(240px, 29.2dvh, 430px);
+  }
+
   .welcome-actions .schedule-card.schedule-card--refresh {
     gap: 10px;
     padding: 12px 16px 14px;
@@ -3300,7 +3311,10 @@
    -------------------------------------------------------------------------- */
 @media (max-width: 460px) {
   .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
-    padding-right: 12px;
+    /* Le lanceur du chat est fixé au coin bas-droit de la fenêtre : il peut
+       croiser la valeur du compteur quand la carte passe dessous. On réserve
+       cette bande pour que les secondes restent toujours lisibles. */
+    padding-right: 34px;
   }
 
   .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-value {
@@ -3316,5 +3330,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+/* Sous 400 px, la carte est plus étroite : on garde la réserve du lanceur mais
+   on la réduit, sinon le compteur n'a plus de place. */
+@media (max-width: 400px) {
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+    padding-right: 30px;
   }
 }
