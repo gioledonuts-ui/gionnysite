@@ -1,7 +1,20 @@
 {
   "rewrites": [
-    { "source": "/api/settings", "destination": "/api/profile?qg=settings" },
-    { "source": "/api/auth/discord", "destination": "/api/profile?qg=discord" },
-    { "source": "/api/auth/discord/callback", "destination": "/api/profile?qg=discord&callback=1" }
+    {
+      "source": "/api/messages",
+      "destination": "/api/profile?messages=1"
+    },
+    {
+      "source": "/api/settings",
+      "destination": "/api/profile?qg=settings"
+    },
+    {
+      "source": "/api/auth/discord",
+      "destination": "/api/profile?qg=discord"
+    },
+    {
+      "source": "/api/auth/discord/callback",
+      "destination": "/api/profile?qg=discord&callback=1"
+    }
   ]
 }

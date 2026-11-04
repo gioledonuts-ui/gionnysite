@@ -2167,7 +2167,7 @@
     const pseudo = button.dataset.unblock;
     button.disabled = true;
     try {
-      const response = await fetch("/api/profile", {
+      const response = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         credentials: "same-origin",

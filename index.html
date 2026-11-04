@@ -42,6 +42,7 @@
     <script src="/twemoji.js" defer></script>
     <script src="/script.js" defer></script>
     <script src="/x-app.js" defer></script>
+    <script src="/x-messages.js" defer></script>
   </head>
   <body>
   <svg class="qg-inline-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -87,6 +88,13 @@
         >
           <div class="ticker-track" data-ticker-track>
             <div class="ticker-set" data-ticker-set>
+              <span class="ticker-item ticker-item--news" data-ticker-news hidden>
+                <span class="ticker-copy">
+                  <strong class="ticker-eyebrow">ANNONCES</strong>
+                  <span class="ticker-message" data-ticker-announcements></span>
+                </span>
+              </span>
+
               <a
                 class="ticker-item ticker-item--live"
                 data-ticker-live
@@ -550,10 +558,10 @@
               </div>
               <div class="x-settings-row">
                 <div class="x-settings-row-copy">
-                  <p class="x-settings-row-title">Masquer l’activité des comptes non-validés</p>
+                  <p class="x-settings-row-title">Masquer les posts des comptes non-validés</p>
                   <p class="x-settings-row-sub">Le fil ne montre que Gionny et les membres Validés ✓.</p>
                 </div>
-                <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified" aria-label="Masquer l’activité des comptes non-validés"><span class="x-switch-knob"></span></button>
+                <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified" aria-label="Masquer les posts des comptes non-validés"><span class="x-switch-knob"></span></button>
               </div>
             </div>
 
@@ -660,10 +668,10 @@
               </div>
               <div class="x-settings-row">
                 <div class="x-settings-row-copy">
-                  <p class="x-settings-row-title">Masquer l’activité des comptes non-validés</p>
+                  <p class="x-settings-row-title">Masquer les posts des comptes non-validés</p>
                   <p class="x-settings-row-sub">Activé par défaut : uniquement l’officiel et les Validés ✓.</p>
                 </div>
-                <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified" aria-label="Masquer l’activité des comptes non-validés"><span class="x-switch-knob"></span></button>
+                <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified" aria-label="Masquer les posts des comptes non-validés"><span class="x-switch-knob"></span></button>
               </div>
               <div class="x-settings-blocked">
                 <p class="x-settings-row-title">Comptes bloqués</p>
@@ -703,31 +711,87 @@
         <section class="x-view" data-x-view="messages" aria-labelledby="x-messages-title" hidden>
           <header class="x-view-header">
             <h2 id="x-messages-title">Messages</h2>
-            <button class="x-icon-button x-new-thread-button" type="button" data-x-new-thread aria-label="Nouvelle conversation">
+            <button class="x-icon-button x-new-thread-button" type="button" data-x-new-thread aria-label="Nouveau message ou nouveau groupe">
               <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" /><path d="M17.6 4.6v5M15.1 7.1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
             </button>
           </header>
+
           <div class="x-guest-panel" data-x-guest-panel hidden>
             <svg class="x-guest-icon" viewBox="0 0 24 24" width="48" height="48" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
             <h3>Connecte-toi pour discuter</h3>
-            <p>Ta discussion privée avec Gionny et tes messages apparaissent ici.</p>
+            <p>Ta boîte de réception, tes groupes et tes demandes de messages apparaissent ici.</p>
             <div class="x-guest-actions">
               <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
               <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
             </div>
           </div>
-          <div class="x-dm" data-x-dm data-x-member-only>
-            <button class="x-dm-thread" type="button" data-x-dm-open>
-              <span class="x-rail-avatar x-dm-avatar" data-x-dm-profile="Gionny" aria-hidden="true" title="Voir le profil de Gionny">
-                <img src="/assets/gionny-profile.jpg" alt="" />
-              </span>
-              <span class="x-dm-copy">
-                <span class="x-dm-name">Gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></span>
-                <span class="x-dm-snippet" data-x-dm-snippet>Ta discussion privée avec Gionny</span>
-              </span>
-              <span class="x-dm-badge" data-x-dm-badge hidden>0</span>
-            </button>
-            <p class="x-dm-note">Le tiroir de discussion reste dispo en bas à droite sur ordinateur.</p>
+
+          <!-- Boîte de réception : la discussion officielle avec Gionny reste en tête. -->
+          <div class="x-dm" data-x-dm data-x-member-only hidden>
+            <div class="x-dm-tabs" role="tablist" aria-label="Boîte de messages">
+              <button class="x-dm-tab" type="button" role="tab" data-x-dm-tab="inbox" aria-selected="true">Boîte de réception</button>
+              <button class="x-dm-tab" type="button" role="tab" data-x-dm-tab="requests" aria-selected="false">
+                Demandes<span class="x-dm-tab-count" data-x-dm-requests-count hidden>0</span>
+              </button>
+            </div>
+            <p class="x-dm-status" data-x-dm-status role="status" aria-live="polite"></p>
+            <div class="x-dm-list" data-x-dm-list role="list"></div>
+            <p class="x-dm-empty" data-x-dm-empty hidden>Aucune discussion pour le moment.</p>
+            <p class="x-dm-note">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="4.4" y="10.2" width="15.2" height="10.4" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M7.8 10.2V7.6a4.2 4.2 0 0 1 8.4 0v2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              Les messages privés et les groupes sont réservés aux membres Validés ✓ (et à Gionny).
+            </p>
+          </div>
+
+          <!-- Nouvelle discussion : 1:1 ou groupe. -->
+          <div class="x-dm-compose" data-x-dm-compose hidden>
+            <div class="x-dm-compose-head">
+              <button class="x-back-button" type="button" data-x-dm-compose-close aria-label="Revenir à la boîte de réception">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4M10.5 5.5 4 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+              <h3>Nouveau message</h3>
+            </div>
+            <label class="x-dm-field">
+              <span>Nom du groupe <em>(facultatif)</em></span>
+              <input type="text" maxlength="60" placeholder="Ex. : Team QG" data-x-dm-group-title />
+            </label>
+            <label class="x-dm-search">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.4" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m16 16 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              <input type="search" placeholder="Chercher un membre Validé ✓" data-x-dm-search autocomplete="off" />
+            </label>
+            <p class="x-dm-help">Choisis une personne pour une discussion directe, ou plusieurs pour un groupe.</p>
+            <div class="x-dm-people" data-x-dm-people role="list"></div>
+            <p class="x-dm-status" data-x-dm-compose-status role="status" aria-live="polite"></p>
+            <button class="x-dm-compose-submit" type="button" data-x-dm-compose-submit disabled>Ouvrir la discussion</button>
+          </div>
+
+          <!-- Conversation ouverte. -->
+          <div class="x-dm-conversation" data-x-dm-conversation hidden>
+            <div class="x-dm-conversation-head">
+              <button class="x-back-button" type="button" data-x-dm-back aria-label="Revenir à la boîte de réception">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4M10.5 5.5 4 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+              <span class="x-dm-conversation-avatar" data-x-dm-conversation-avatar aria-hidden="true"></span>
+              <div class="x-dm-conversation-id">
+                <strong data-x-dm-conversation-title>Discussion</strong>
+                <span data-x-dm-conversation-subtitle></span>
+              </div>
+              <button class="x-icon-button" type="button" data-x-dm-conversation-profile aria-label="Voir le profil">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="8.2" r="4.1" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              </button>
+            </div>
+            <div class="x-dm-messages" data-x-dm-messages role="log" aria-live="polite"></div>
+            <p class="x-dm-status" data-x-dm-conversation-status role="status" aria-live="polite"></p>
+            <form class="x-dm-composer" data-x-dm-form>
+              <input type="file" accept="image/*" data-x-dm-image hidden />
+              <button class="x-dm-composer-plus" type="button" data-x-dm-attach aria-label="Joindre une image">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+              </button>
+              <textarea rows="1" maxlength="1500" placeholder="Message" aria-label="Ton message" data-x-dm-input></textarea>
+              <button class="x-dm-composer-send" type="submit" data-x-dm-send aria-label="Envoyer le message">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+            </form>
           </div>
         </section>
       </main>

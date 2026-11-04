@@ -51,6 +51,7 @@
             <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-users"></use></svg> Membres</button>
             <button class="admin-tab" id="admin-tab-reports" type="button" role="tab" aria-selected="false" aria-controls="reports-panel" data-admin-tab="reports" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Signalements<span class="admin-tab-unread-count" data-admin-reports-count hidden>0</span></button>
             <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-settings"></use></svg> Réglages</button>
+            <button class="admin-tab" id="admin-tab-planning" type="button" role="tab" aria-selected="false" aria-controls="planning-panel" data-admin-tab="planning" tabindex="-1" aria-label="Planning et à la une"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg> Planning &amp; à la une</button>
           </nav>
           <button class="quiet-button admin-sidebar-logout" type="button" data-logout hidden>Se déconnecter</button>
           <p class="admin-sidebar-footnote">Panneau de gestion sécurisé</p>
@@ -291,6 +292,38 @@
           </div>
           <p class="reports-status" data-reports-status role="status" aria-live="polite">Chargement des signalements…</p>
           <div class="reports-list" data-reports-list aria-live="polite"></div>
+        </section>
+
+        <section class="settings-section planning-section admin-tab-panel" id="planning-panel" role="tabpanel" aria-labelledby="planning-title" data-admin-tab-panel="planning" hidden>
+          <div class="section-heading planning-heading">
+            <span class="section-number">05</span>
+            <div>
+              <h3 id="planning-title">Planning &amp; à la une</h3>
+              <p>Les jours de live et les annonces du bandeau, enregistrés tout de suite.</p>
+            </div>
+            <button class="quiet-button planning-refresh" type="button" data-planning-refresh>Actualiser</button>
+          </div>
+          <p class="planning-status" data-planning-status role="status" aria-live="polite">Chargement du planning…</p>
+
+          <fieldset class="planning-fieldset">
+            <legend>Jours de live</legend>
+            <div class="planning-days" data-planning-days></div>
+          </fieldset>
+
+          <fieldset class="planning-fieldset">
+            <legend>Bandeau « À la une »</legend>
+            <p class="planning-help">Une annonce par ligne : elles défilent dans l’en-tête du site. Huit maximum, 120 caractères chacune.</p>
+            <div class="planning-announcements" data-planning-announcements></div>
+            <button class="quiet-button planning-add" type="button" data-planning-add>+ Ajouter une annonce</button>
+          </fieldset>
+
+          <div class="save-row">
+            <p class="save-status" data-planning-save-status role="status" aria-live="polite"></p>
+            <button class="primary-button planning-save" type="button" data-planning-save>
+              <span>Enregistrer le planning</span>
+              <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg>
+            </button>
+          </div>
         </section>
 
         <div class="admin-tab-panel" id="conversations-panel" role="tabpanel" aria-labelledby="admin-tab-conversations" data-admin-tab-panel="conversations" hidden>

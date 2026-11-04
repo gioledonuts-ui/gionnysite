@@ -11,6 +11,7 @@ import {
   writeAdminStateReplica,
 } from "../lib/blob-store.mjs";
 import {
+  deletePost,
   deleteReport,
   ensureEveryAccountFollowsHost,
   listReports,
@@ -26,6 +27,7 @@ import {
 //          • handled / reopen  → marque traité ou rouvert
 //          • unverify          → retire le badge Validé du compte signalé
 //          • ban / unban       → bannit ou réactive le compte signalé
+//          • remove-post       → supprime le post signalé (et clôt le signalement)
 // Réservé à l'Hôte (session admin + rôle Hôte côté serveur comme pour
 // /api/admin-members).
 
@@ -148,6 +150,15 @@ export default async function handler(request, response) {
       await writeAdminStateReplica(snapshotAdminState()).catch(() => {});
       await setReportStatus(body.id, "handled").catch(() => {});
       return persisted(response, 200, { ok: true, member: result.member, handled: true });
+    }
+    if (body.action === "remove-post") {
+      const reported = (await listReports()).find((entry) => entry.id === body.id);
+      const postId = reported?.targetMessageId || body.postId || "";
+      if (!postId) return response.status(400).json({ error: "Ce signalement ne vise pas un post." });
+      const removed = await deletePost({ pseudo: reported?.targetPseudo || body.pseudo, postId });
+      if (!removed?.ok) return response.status(404).json({ error: "Ce post n’existe déjà plus." });
+      await setReportStatus(body.id, "handled").catch(() => {});
+      return persisted(response, 200, { ok: true, removed: true, handled: true });
     }
     if (body.action === "ban" || body.action === "unban") {
       const result = await setVisitorAccountBanned(memberId, body.action === "ban");

@@ -603,7 +603,8 @@
       const label = document.createElement("span");
       label.className = "member-row-discord-copy";
       const handle = member.discordUsername ? `Discord : @${member.discordUsername}` : "Discord lié";
-      label.textContent = member.discordId ? `${handle} · ID: ${member.discordId}` : handle;
+      // « Discord : @pseudo · ID : 284759… » — l'ID reste traçable pour toujours.
+      label.textContent = member.discordId ? `${handle} · ID : ${member.discordId}` : handle;
       discord.append(mark, label);
       if (member.discordLinkedAt) discord.title = `Lié le ${formatMemberDate(member.discordLinkedAt)}`;
       copy.append(discord);
@@ -641,7 +642,7 @@
     badgeButton.type = "button";
     badgeButton.dataset.role = "verified";
     badgeButton.setAttribute("aria-pressed", String(hasVerifiedBadge));
-    badgeButton.textContent = hasVerifiedBadge ? "Retirer Validé" : "Donner Validé";
+    badgeButton.textContent = hasVerifiedBadge ? "[ ✓ VALIDÉ ]" : "[ VALIDER ]";
     badgeButton.title = hasVerifiedBadge
       ? `Retirer le badge Validé de ${member.pseudo || "ce membre"}`
       : `Donner le badge Validé à ${member.pseudo || "ce membre"}`;
@@ -654,7 +655,7 @@
     roleButton.type = "button";
     roleButton.dataset.role = "host";
     roleButton.setAttribute("aria-pressed", String(isHostRole));
-    roleButton.textContent = isHostRole ? "Retirer Hôte" : "Nommer Hôte";
+    roleButton.textContent = isHostRole ? "[ 👑 HÔTE ]" : "[ NOMMER HÔTE ]";
     roleButton.title = isHostRole
       ? `Retirer le rôle Hôte de ${member.pseudo || "ce membre"}`
       : `Nommer ${member.pseudo || "ce membre"} Hôte`;
@@ -925,7 +926,7 @@
         return;
       }
       if (data.report) reportsById.set(data.report.id, { ...reportsById.get(report.id), ...data.report });
-      else if (action === "ban" || action === "unverify") {
+      else if (action === "ban" || action === "unverify" || action === "remove-post") {
         reportsById.set(report.id, { ...report, status: "handled" });
       }
       setStatus(
@@ -934,8 +935,10 @@
           ? `@${report.targetPseudo} est banni${report.targetPseudo.endsWith("e") ? "e" : ""}.`
           : action === "unban"
             ? `@${report.targetPseudo} est réactivé.`
-            : action === "unverify"
-              ? `Badge Validé retiré à @${report.targetPseudo}.`
+            : action === "remove-post"
+              ? "Le post signalé a été supprimé."
+              : action === "unverify"
+                ? `Badge Validé retiré à @${report.targetPseudo}.`
               : action === "reopen"
                 ? "Signalement rouvert."
                 : "Signalement marqué comme traité."
@@ -1011,11 +1014,32 @@
     const actions = document.createElement("div");
     actions.className = "report-row-actions";
 
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.className = "member-action-button member-action-button--delete";
-    removeButton.textContent = "Supprimer le signalement";
-    removeButton.addEventListener("click", () => void removeReport(report, removeButton));
+    // Trois gestes demandés : Ignorer · Supprimer le post · Bannir l'utilisateur.
+    const handled = report.status === "handled";
+    const ignoreButton = document.createElement("button");
+    ignoreButton.type = "button";
+    ignoreButton.className = "member-action-button";
+    ignoreButton.textContent = handled ? "Rouvrir" : "Ignorer";
+    ignoreButton.title = handled ? "Remettre ce signalement dans la pile" : "Classer sans suite";
+    ignoreButton.addEventListener("click", () =>
+      void reportAction(report, handled ? "reopen" : "handled", ignoreButton)
+    );
+
+    const removePostButton = document.createElement("button");
+    removePostButton.type = "button";
+    removePostButton.className = "member-action-button member-action-button--delete";
+    removePostButton.textContent = "Supprimer le post";
+    removePostButton.disabled = !report.targetMessageId;
+    removePostButton.title = report.targetMessageId
+      ? "Supprime le post signalé et clôt le signalement"
+      : "Ce signalement ne vise pas un post";
+    removePostButton.addEventListener("click", () => void reportAction(report, "remove-post", removePostButton));
+
+    const banButton = document.createElement("button");
+    banButton.type = "button";
+    banButton.className = "member-action-button member-action-button--danger";
+    banButton.textContent = "Bannir l’utilisateur";
+    banButton.addEventListener("click", () => void reportAction(report, "ban", banButton));
 
     const unverifyButton = document.createElement("button");
     unverifyButton.type = "button";
@@ -1023,22 +1047,13 @@
     unverifyButton.textContent = "Retirer le badge Validé";
     unverifyButton.addEventListener("click", () => void reportAction(report, "unverify", unverifyButton));
 
-    const banButton = document.createElement("button");
-    banButton.type = "button";
-    banButton.className = "member-action-button member-action-button--danger";
-    banButton.textContent = "Bannir / suspendre";
-    banButton.addEventListener("click", () => void reportAction(report, "ban", banButton));
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "member-action-button member-action-button--ghost";
+    removeButton.textContent = "Supprimer le signalement";
+    removeButton.addEventListener("click", () => void removeReport(report, removeButton));
 
-    const stateButton = document.createElement("button");
-    stateButton.type = "button";
-    stateButton.className = "member-action-button";
-    const handled = report.status === "handled";
-    stateButton.textContent = handled ? "Rouvrir" : "Marquer traité";
-    stateButton.addEventListener("click", () =>
-      void reportAction(report, handled ? "reopen" : "handled", stateButton)
-    );
-
-    actions.append(stateButton, unverifyButton, banButton, removeButton);
+    actions.append(ignoreButton, removePostButton, banButton, unverifyButton, removeButton);
     row.append(head, reason, meta, details, actions);
     return row;
   };
@@ -1097,12 +1112,18 @@
   reportsRefreshButton?.addEventListener("click", () => void loadReports({ quiet: false }));
 
   const setAdminTab = (tabName, { focus = false, refresh = true } = {}) => {
-    const validTab = ["settings", "members", "conversations", "reports"].includes(tabName) ? tabName : "settings";
+    const validTab = ["settings", "members", "conversations", "reports", "planning"].includes(tabName) ? tabName : "settings";
     const previousTab = activeAdminTab;
     activeAdminTab = validTab;
     if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
     if (adminPanel) adminPanel.dataset.activeTab = validTab;
-    const tabTitles = { settings: "Tes réglages", members: "Membres", conversations: "Discussions", reports: "Signalements" };
+    const tabTitles = {
+      settings: "Tes réglages",
+      members: "Membres",
+      conversations: "Discussions",
+      reports: "Signalements",
+      planning: "Planning & à la une",
+    };
     adminTabs.forEach((tab) => {
       const selected = tab.dataset.adminTab === validTab;
       tab.setAttribute("aria-selected", String(selected));
@@ -1118,6 +1139,9 @@
     }
     if (validTab === "reports" && !adminPanel.hidden && !reportsLoaded) {
       void loadReports({ quiet: false });
+    }
+    if (validTab === "planning" && !adminPanel.hidden && !planningLoaded) {
+      void loadPlanning({ quiet: false });
     }
     if (validTab === "conversations" && !adminPanel.hidden && refresh &&
         (previousTab !== validTab || !conversationsList?.childElementCount)) {
@@ -2412,6 +2436,204 @@
     });
     updateDayInputState(day);
   }
+
+  // -------------------------------------------------------------------------
+  // ÉTAPE 7 · PLANNING & À LA UNE
+  // Édition en direct du planning (jours + heures) et des annonces du bandeau.
+  // Chaque clic sur « Enregistrer » écrit immédiatement dans Supabase.
+  // -------------------------------------------------------------------------
+
+  const planningDaysNode = document.querySelector("[data-planning-days]");
+  const planningAnnouncementsNode = document.querySelector("[data-planning-announcements]");
+  const planningStatus = document.querySelector("[data-planning-status]");
+  const planningSaveStatus = document.querySelector("[data-planning-save-status]");
+  const planningSaveButton = document.querySelector("[data-planning-save]");
+  const planningAddButton = document.querySelector("[data-planning-add]");
+  const planningRefreshButton = document.querySelector("[data-planning-refresh]");
+
+  const PLANNING_DAYS = [
+    ["monday", "Lundi"],
+    ["tuesday", "Mardi"],
+    ["wednesday", "Mercredi"],
+    ["thursday", "Jeudi"],
+    ["friday", "Vendredi"],
+    ["saturday", "Samedi"],
+    ["sunday", "Dimanche"],
+  ];
+  const MAX_ANNOUNCEMENTS = 8;
+  const MAX_ANNOUNCEMENT_LENGTH = 120;
+
+  let planningConfig = null;
+  let planningLoaded = false;
+  let planningSaving = false;
+
+  const createPlanningDayRow = (key, label, saved) => {
+    const row = document.createElement("div");
+    row.className = "planning-day-row";
+    row.dataset.planningDay = key;
+
+    const labelNode = document.createElement("label");
+    labelNode.className = "planning-day-label";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = saved?.enabled === true;
+    checkbox.dataset.planningDayEnabled = key;
+    const mark = document.createElement("span");
+    mark.className = "planning-day-mark";
+    mark.setAttribute("aria-hidden", "true");
+    const text = document.createElement("span");
+    text.textContent = label;
+    labelNode.append(checkbox, mark, text);
+
+    const time = document.createElement("input");
+    time.type = "time";
+    time.step = "60";
+    time.value = typeof saved?.time === "string" ? saved.time : "22:00";
+    time.dataset.planningDayTime = key;
+    time.setAttribute("aria-label", `Heure du ${label.toLowerCase()}`);
+    time.disabled = saved?.enabled !== true;
+    checkbox.addEventListener("change", () => {
+      time.disabled = !checkbox.checked;
+    });
+
+    row.append(labelNode, time);
+    return row;
+  };
+
+  const createAnnouncementField = (value) => {
+    const row = document.createElement("div");
+    row.className = "planning-announcement-row";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = MAX_ANNOUNCEMENT_LENGTH;
+    input.value = value || "";
+    input.placeholder = "Ex. : Live ce soir à 22:00 sur Twitch";
+    input.dataset.planningAnnouncement = "";
+    input.setAttribute("aria-label", "Texte de l’annonce");
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "quiet-button planning-announcement-remove";
+    remove.textContent = "Retirer";
+    remove.addEventListener("click", () => {
+      row.remove();
+    });
+    row.append(input, remove);
+    return row;
+  };
+
+  const paintPlanning = (config) => {
+    planningConfig = config || {};
+    const schedule = planningConfig.schedule || {};
+    if (planningDaysNode) {
+      planningDaysNode.replaceChildren(
+        ...PLANNING_DAYS.map(([key, label]) => createPlanningDayRow(key, label, schedule[key]))
+      );
+    }
+    if (planningAnnouncementsNode) {
+      const list = Array.isArray(planningConfig.announcements) ? planningConfig.announcements : [];
+      planningAnnouncementsNode.replaceChildren(...list.map(createAnnouncementField));
+      if (!list.length) planningAnnouncementsNode.append(createAnnouncementField(""));
+    }
+    if (planningAddButton) {
+      planningAddButton.disabled = listCount() >= MAX_ANNOUNCEMENTS;
+    }
+  };
+
+  const listCount = () => planningAnnouncementsNode?.querySelectorAll("[data-planning-announcement]").length || 0;
+
+  const collectPlanning = () => {
+    const schedule = {};
+    for (const [key] of PLANNING_DAYS) {
+      const enabled = planningDaysNode?.querySelector(`[data-planning-day-enabled="${key}"]`);
+      const time = planningDaysNode?.querySelector(`[data-planning-day-time="${key}"]`);
+      schedule[key] = {
+        enabled: enabled?.checked === true,
+        time: time?.value || "22:00",
+      };
+    }
+    const announcements = [...(planningAnnouncementsNode?.querySelectorAll("[data-planning-announcement]") || [])]
+      .map((input) => input.value.trim())
+      .filter(Boolean)
+      .slice(0, MAX_ANNOUNCEMENTS);
+    return {
+      version: 1,
+      socials: planningConfig?.socials || {},
+      socialInfo: planningConfig?.socialInfo || {},
+      schedule,
+      announcements,
+    };
+  };
+
+  const loadPlanning = async ({ quiet = false } = {}) => {
+    if (!planningDaysNode) return;
+    if (planningRefreshButton) planningRefreshButton.disabled = true;
+    if (!quiet) setStatus(planningStatus, "Chargement du planning…");
+    try {
+      const response = await fetch("/api/site-config", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(planningStatus, data.message || data.error || "Le planning n’a pas pu être chargé.", "error");
+        return;
+      }
+      planningLoaded = true;
+      paintPlanning(data.config);
+      setStatus(planningStatus, data.updatedAt ? "Planning partagé chargé." : "Prêt à configurer.");
+    } catch {
+      setStatus(planningStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (planningRefreshButton) planningRefreshButton.disabled = false;
+    }
+  };
+
+  const savePlanning = async () => {
+    if (!planningDaysNode || planningSaving) return;
+    planningSaving = true;
+    if (planningSaveButton) planningSaveButton.disabled = true;
+    setStatus(planningSaveStatus, "Enregistrement…");
+    try {
+      const response = await fetch("/api/site-config", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(collectPlanning()),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(planningSaveStatus, data.message || data.error || "L’enregistrement a échoué.", "error");
+        return;
+      }
+      paintPlanning(data.config);
+      writePersistedAdminState(data.config);
+      populateForm(data.config);
+      setStatus(planningSaveStatus, "Planning et annonces enregistrés pour tout le monde.", "success");
+    } catch {
+      setStatus(planningSaveStatus, "Erreur de connexion : rien n’a été enregistré.", "error");
+    } finally {
+      planningSaving = false;
+      if (planningSaveButton) planningSaveButton.disabled = false;
+    }
+  };
+
+  planningAddButton?.addEventListener("click", () => {
+    if (!planningAnnouncementsNode || listCount() >= MAX_ANNOUNCEMENTS) return;
+    planningAnnouncementsNode.append(createAnnouncementField(""));
+    if (planningAddButton) planningAddButton.disabled = listCount() >= MAX_ANNOUNCEMENTS;
+  });
+  planningSaveButton?.addEventListener("click", () => void savePlanning());
+  planningRefreshButton?.addEventListener("click", () => void loadPlanning({ quiet: true }));
 
   const collectConfig = () => {
     const socials = Object.fromEntries(

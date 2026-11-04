@@ -372,6 +372,11 @@
         (typeof config.socialInfo[key] !== "string" || config.socialInfo[key].length > 120)
       )
     ) return false;
+    if (config.announcements !== undefined) {
+      if (!Array.isArray(config.announcements)) return false;
+      if (config.announcements.length > 8) return false;
+      if (config.announcements.some((line) => typeof line !== "string" || line.length > 120)) return false;
+    }
     return WEEKDAYS.every(({ key }) => {
       const day = config.schedule[key];
       return (
@@ -820,6 +825,24 @@
     updateHighlightedScheduleDay();
   };
 
+  // Bandeau « À la une » : les annonces éditées dans /admin remplacent le
+  // message du premier item du ticker. Le libellé « À LA UNE » reste sobre ;
+  // on ne touche pas à la géométrie du défilement (aucun clone n'est recalculé).
+  const announcementsNode = document.querySelector("[data-ticker-announcements]");
+  const renderAnnouncements = (announcements) => {
+    if (!announcementsNode) return;
+    const lines = Array.isArray(announcements)
+      ? announcements
+        .map((line) => (typeof line === "string" ? line.trim().slice(0, 120) : ""))
+        .filter(Boolean)
+        .slice(0, 8)
+      : [];
+    announcementsNode.textContent = lines.join("  ·  ");
+    announcementsNode.hidden = lines.length === 0;
+    // L'item complet (icône + libellé) disparaît quand il n'y a rien à dire.
+    announcementsNode.closest(".ticker-item")?.toggleAttribute("hidden", lines.length === 0);
+  };
+
   const applySiteConfig = (config) => {
     if (!isValidSiteConfig(config)) return false;
     configuredSocials = config.socials;
@@ -828,6 +851,7 @@
     );
     renderSocialInfo();
     renderSchedule(config.schedule);
+    renderAnnouncements(config.announcements);
 
     if (latestTickerUpdates) applyTickerUpdates(latestTickerUpdates);
     else applyConfiguredLinks();

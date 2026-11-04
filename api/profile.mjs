@@ -7,6 +7,7 @@ import {
 } from "../lib/contact-inbox.mjs";
 import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
 import { handleSettingsRequest } from "../lib/discord-link.mjs";
+import { handleMessagesRequest, isDmRequest } from "../lib/dm-api.mjs";
 import {
   MEDIA_KINDS,
   REPORT_REASONS,
@@ -209,6 +210,11 @@ export default async function handler(request, response) {
       };
     }
     return handleSettingsRequest(request, response);
+  }
+
+  // Étape 6 : messagerie multi-DM. /api/messages arrive ici par rewrite.
+  if (isDmRequest(request)) {
+    return handleMessagesRequest(request, response);
   }
 
   if (queryValue(request, "media")) {

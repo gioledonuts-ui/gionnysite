@@ -5799,3 +5799,816 @@ body {
   outline: 2px solid var(--x-accent);
   outline-offset: 2px;
 }
+
+/* ==========================================================================
+   ÉTAPE 7 · Messagerie multi-DM (boîte de réception, groupes, demandes)
+   Aucune classe utilitaire : tout est écrit en CSS natif.
+   ========================================================================== */
+
+.x-dm[data-x-dm] {
+  gap: 0;
+  padding: 0;
+}
+
+/* Onglets « Boîte de réception » / « Demandes ». */
+.x-dm-tabs {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--x-line);
+}
+
+.x-dm-tab {
+  position: relative;
+  flex: 1 1 0;
+  padding: 14px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--x-muted);
+  font-family: var(--x-font);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.x-dm-tab:hover,
+.x-dm-tab:focus-visible {
+  background: var(--x-surface-hover);
+  color: var(--x-text);
+}
+
+.x-dm-tab[aria-selected="true"] {
+  color: var(--x-text);
+}
+
+/* Trait bleu sobre, jamais de halo. */
+.x-dm-tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  margin: 0 auto;
+  width: 56px;
+  border-radius: 999px;
+  background: var(--x-accent);
+}
+
+.x-dm-tab-count {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--x-accent);
+  color: #04121f;
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+
+.x-dm-tab-count[hidden] {
+  display: none;
+}
+
+.x-dm-status {
+  margin: 0;
+  padding: 10px 16px 0;
+  color: var(--x-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.x-dm-status[hidden] {
+  display: none;
+}
+
+.x-dm-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.x-dm-empty {
+  margin: 0;
+  padding: 28px 16px;
+  color: var(--x-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.x-dm-empty[hidden] {
+  display: none;
+}
+
+/* Une ligne de discussion. */
+.x-dm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--x-line);
+  transition: background-color 160ms ease;
+}
+
+.x-dm-row:hover {
+  background: var(--x-surface-hover);
+}
+
+.x-dm-row[data-unread="true"] {
+  border-left: 2px solid rgba(56, 189, 248, 0.55);
+}
+
+.x-dm-row[data-unread="true"] .x-dm-snippet {
+  color: var(--x-text);
+  font-weight: 700;
+}
+
+.x-dm-row-open {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font-family: var(--x-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.x-dm-row-open:focus-visible {
+  outline: 2px solid var(--x-accent);
+  outline-offset: -2px;
+}
+
+.x-dm-row-avatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #16233b;
+  color: #dbeafe;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.x-dm-row-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.x-dm-row-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.x-dm-row-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--x-text);
+  font-size: 15px;
+}
+
+.x-dm-row-name strong {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.x-dm-row-crown svg,
+.x-dm-row-verified svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.x-dm-row-crown {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: #fbbf24;
+}
+
+.x-dm-row-verified {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: var(--x-accent);
+}
+
+.x-dm-row-tag {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border: 1px solid var(--x-line);
+  border-radius: 999px;
+  color: var(--x-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.x-dm-row-time {
+  margin-left: auto;
+  flex: 0 0 auto;
+  padding-left: 8px;
+  color: var(--x-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.x-dm-row .x-dm-badge {
+  flex: 0 0 auto;
+  margin-right: 6px;
+}
+
+/* Accepter / Refuser·Bloquer sous une demande. */
+.x-dm-request-actions {
+  display: flex;
+  flex-basis: 100%;
+  gap: 8px;
+  padding: 0 8px 12px 66px;
+}
+
+.x-dm-accept,
+.x-dm-refuse {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-family: var(--x-font);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.x-dm-accept {
+  border: 1px solid transparent;
+  background: var(--x-accent);
+  color: #04121f;
+}
+
+.x-dm-accept:hover,
+.x-dm-accept:focus-visible {
+  background: #7dd3fc;
+}
+
+.x-dm-refuse {
+  border: 1px solid #334155;
+  background: transparent;
+  color: var(--x-text);
+}
+
+.x-dm-refuse:hover,
+.x-dm-refuse:focus-visible {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+.x-dm-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px 18px;
+  border-top: 1px solid var(--x-line);
+}
+
+.x-dm-note svg {
+  flex: 0 0 auto;
+}
+
+/* --------------------------------------------------------------------------
+   Composeur : nouvelle discussion ou groupe
+   -------------------------------------------------------------------------- */
+.x-dm-compose,
+.x-dm-conversation {
+  display: flex;
+  min-height: calc(100vh - var(--x-header) - 54px - 120px);
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.x-dm-compose[hidden],
+.x-dm-conversation[hidden] {
+  display: none;
+}
+
+.x-dm-compose-head,
+.x-dm-conversation-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.x-dm-compose-head h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.x-back-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--x-text);
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.x-back-button:hover,
+.x-back-button:focus-visible {
+  background: var(--x-surface-hover);
+}
+
+.x-back-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.x-dm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--x-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.x-dm-field em {
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.x-dm-field input {
+  padding: 11px 14px;
+  border: 1px solid var(--x-line);
+  border-radius: 12px;
+  background: #0b1120;
+  color: var(--x-text);
+  font-family: var(--x-font);
+  font-size: 15px;
+}
+
+.x-dm-field input:focus-visible,
+.x-dm-search input:focus-visible {
+  border-color: var(--x-accent);
+  outline: none;
+}
+
+.x-dm-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--x-line);
+  border-radius: 999px;
+  background: #0b1120;
+  color: var(--x-muted);
+}
+
+.x-dm-search input {
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  color: var(--x-text);
+  font-family: var(--x-font);
+  font-size: 15px;
+}
+
+.x-dm-search input:focus-visible {
+  outline: none;
+}
+
+.x-dm-help {
+  margin: 0;
+  color: var(--x-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.x-dm-people {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.x-dm-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--x-text);
+  font-family: var(--x-font);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.x-dm-person .x-dm-row-avatar {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  font-size: 15px;
+}
+
+.x-dm-person:hover,
+.x-dm-person:focus-visible {
+  background: var(--x-surface-hover);
+}
+
+.x-dm-person[aria-pressed="true"] {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.x-dm-person-name {
+  font-weight: 600;
+}
+
+.x-dm-compose-submit {
+  margin-top: auto;
+  padding: 13px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--x-accent);
+  color: #04121f;
+  font-family: var(--x-font);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 160ms ease, opacity 160ms ease;
+}
+
+.x-dm-compose-submit:hover:not(:disabled) {
+  background: #7dd3fc;
+}
+
+.x-dm-compose-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* --------------------------------------------------------------------------
+   Conversation ouverte
+   -------------------------------------------------------------------------- */
+.x-dm-conversation-head {
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--x-line);
+}
+
+.x-dm-conversation-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #16233b;
+  color: #dbeafe;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.x-dm-conversation-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.x-dm-conversation-id {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.x-dm-conversation-id strong {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.x-dm-conversation-id span {
+  overflow: hidden;
+  color: var(--x-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.x-dm-messages {
+  display: flex;
+  min-height: 200px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.x-dm-bubble {
+  display: flex;
+  max-width: min(78%, 520px);
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 13px;
+  border: 1px solid var(--x-line);
+  border-radius: 18px 18px 18px 6px;
+  background: var(--x-surface);
+}
+
+.x-dm-bubble.is-mine {
+  align-self: flex-end;
+  border-color: rgba(56, 189, 248, 0.4);
+  border-radius: 18px 18px 6px 18px;
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.x-dm-bubble-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--x-muted);
+  font-size: 12px;
+}
+
+.x-dm-bubble-head strong {
+  color: var(--x-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.x-dm-bubble-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.x-dm-bubble-body p {
+  margin: 0;
+  color: var(--x-text);
+  font-size: 15px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.x-dm-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.x-dm-audio {
+  width: 100%;
+  max-width: 260px;
+  height: 34px;
+}
+
+.x-dm-wave {
+  display: flex;
+  height: 26px;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.x-dm-wave i {
+  width: 3px;
+  min-height: 3px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.7);
+}
+
+/* Barre d'écriture : boutons sans bordure, +20 % plus clairs au survol. */
+.x-dm-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 6px;
+  border-top: 1px solid var(--x-line);
+}
+
+.x-dm-composer[hidden],
+.x-dm-composer[data-locked="true"] {
+  display: none;
+}
+
+.x-dm-composer textarea {
+  min-height: 40px;
+  flex: 1 1 auto;
+  padding: 10px 14px;
+  border: 1px solid var(--x-line);
+  border-radius: 18px;
+  background: #0b1120;
+  color: var(--x-text);
+  font-family: var(--x-font);
+  font-size: 15px;
+  line-height: 20px;
+  resize: none;
+}
+
+.x-dm-composer textarea:focus-visible {
+  border-color: var(--x-accent);
+  outline: none;
+}
+
+.x-dm-composer-plus,
+.x-dm-composer-send {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--x-accent);
+  cursor: pointer;
+  transition: background-color 160ms ease, filter 160ms ease;
+}
+
+.x-dm-composer-plus svg,
+.x-dm-composer-send svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* +20 % de luminosité au survol, sans bordure ni halo. */
+.x-dm-composer-plus:hover,
+.x-dm-composer-plus:focus-visible,
+.x-dm-composer-send:hover,
+.x-dm-composer-send:focus-visible {
+  background: rgba(56, 189, 248, 0.16);
+  filter: brightness(1.2);
+}
+
+/* Sur téléphone, la conversation prend le dessus : une seule colonne. */
+@media (max-width: 639px) {
+  .x-dm-row-request-actions {
+    padding-left: 8px;
+  }
+
+  .x-dm-request-actions {
+    padding-left: 8px;
+  }
+
+  .x-dm-bubble {
+    max-width: 88%;
+  }
+
+  .x-dm-messages {
+    max-height: calc(100dvh - var(--x-header) - 220px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ÉTAPE 7 · Cartes de paramètres (sobriété exacte demandée)
+   bg #0e1525 · border #1e293b · radius 16px · padding 16px
+   -------------------------------------------------------------------------- */
+.x-settings-card,
+.x-setting-card {
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  background: #0e1525;
+}
+
+.x-settings-card .x-settings-row-title,
+.x-settings-card .x-settings-card-title {
+  color: #e2e8f0;
+}
+
+.x-settings-card .x-settings-row-sub,
+.x-settings-card .x-settings-card-sub,
+.x-settings-card .x-settings-help {
+  color: #94a3b8;
+}
+
+/* Le compte privé est signalé par un cadenas discret, dans le bleu du QG. */
+.x-settings-card-icon {
+  color: #38bdf8;
+}
+
+.x-settings-card-icon--discord {
+  color: #5865f2;
+}
+
+/* Ligne « Comptes bloqués » : nom + bouton Débloquer. */
+.x-settings-blocked {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #1e293b;
+}
+
+.x-settings-blocked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.x-settings-blocked-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  background: #0b1120;
+}
+
+.x-settings-blocked-name {
+  flex: 1 1 auto;
+  overflow: hidden;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.x-settings-unblock {
+  padding: 6px 14px;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: transparent;
+  color: #e2e8f0;
+  font-family: var(--x-font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, filter 160ms ease;
+}
+
+.x-settings-unblock:hover,
+.x-settings-unblock:focus-visible {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  filter: brightness(1.2);
+}
+
+.x-settings-unblock:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Bandeau « À la une » épinglé : annonces éditables depuis /admin.
+   Sobre, sans halo ni lueur colorée (bleu #38bdf8 uniquement). */
+.ticker-item--news {
+  min-height: var(--x-header);
+  gap: 7px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--x-muted);
+  font-size: 13px;
+  line-height: 16px;
+}
+
+.ticker-item--news[hidden] {
+  display: none !important;
+}
+
+.ticker-item--news .ticker-eyebrow {
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.ticker-item--news .ticker-message {
+  color: var(--x-muted);
+}

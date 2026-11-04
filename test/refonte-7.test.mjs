@@ -4,11 +4,12 @@ import test from "node:test";
 
 const root = new URL("../", import.meta.url);
 const read = (file) => readFile(new URL(file, root), "utf8");
-const [html, css, xApp, script] = await Promise.all([
+const [html, css, xApp, script, messages] = await Promise.all([
   read("index.html"),
   read("social-x.css"),
   read("x-app.js"),
   read("script.js"),
+  read("x-messages.js"),
 ]);
 
 // ---------------------------------------------------------------------------
@@ -27,25 +28,23 @@ test("1. la conversation n'a qu'une flèche : retour en arrière", () => {
 // ---------------------------------------------------------------------------
 // 2. Liste des conversations : pas d'icône à droite, non-lus signés
 // ---------------------------------------------------------------------------
-test("2. la ligne de conversation n'a plus d'icône et signe les non-lus", () => {
-  const row = html.match(/<button class="x-dm-thread"[\s\S]*?<\/button>/u);
-  assert.ok(row, "ligne de conversation présente");
-  // Seuls les badges du pseudo restent : aucune icône décorative à droite.
-  assert.doesNotMatch(row[0], /x-dm-open-icon/u, "aucune icône décorative dans la ligne");
-  assert.equal([...row[0].matchAll(/<svg/gu)].length, 2, "couronne + badge vérifié seulement");
-  assert.match(row[0], /data-x-dm-badge/u);
-  assert.match(css, /\.x-dm-thread\[data-unread="true"\] \{[\s\S]*?border-color: rgba\(56, 189, 248, 0\.55\)/u);
-  assert.match(css, /\.x-dm-thread\[data-unread="true"\] \.x-dm-snippet \{[\s\S]*?font-weight: 700;/u);
-  assert.match(xApp, /row\.dataset\.unread = String\(hasUnread\)/u);
+test("2. la liste des discussions signe les non-lus (contour bleu, gras, compteur)", () => {
+  // Étape 7 : les lignes sont construites par la messagerie multi-DM.
+  assert.doesNotMatch(html, /x-dm-open-icon/u, "aucune icône décorative dans une ligne");
+  assert.match(html, /data-x-dm-list role="list"/u);
+  assert.match(css, /\.x-dm-row\[data-unread="true"\] \{[\s\S]{0,120}rgba\(56, 189, 248/u);
+  assert.match(css, /\.x-dm-row\[data-unread="true"\] \.x-dm-snippet[\s\S]{0,120}font-weight: 700/u);
+  assert.match(messages, /dataset\.unread = String\(entry\.unread > 0\)/u);
 });
 
 test("2 bis. l'icône Messages de l'en-tête crée une conversation, pas le tiroir", () => {
-  assert.match(html, /data-x-new-thread aria-label="Nouvelle conversation"/u);
+  assert.match(html, /data-x-new-thread aria-label="Nouveau message ou nouveau groupe"/u);
   assert.doesNotMatch(html, /data-x-messages-open/u);
-  assert.match(xApp, /\[data-x-new-thread\]/u);
-  assert.match(xApp, /querySelector\("\[data-new-conversation\]"\)/u);
-  // Le tiroir s'ouvre désormais uniquement par la ligne de conversation.
-  assert.match(xApp, /\[data-x-compose-open\], \[data-x-compose-focus\], \[data-x-dm-open\]/u);
+  // Étape 7 : le bouton ouvre le composeur de la messagerie multi-DM.
+  assert.match(messages, /\[data-x-new-thread\]/u);
+  assert.match(messages, /data-x-dm-compose/u);
+  // Le tiroir reste accessible par la conversation officielle.
+  assert.match(html, /data-x-dm-conversation/u);
 });
 
 // ---------------------------------------------------------------------------
@@ -53,9 +52,9 @@ test("2 bis. l'icône Messages de l'en-tête crée une conversation, pas le tiro
 // ---------------------------------------------------------------------------
 test("3. on peut ouvrir le profil de la personne depuis la conversation", () => {
   assert.match(html, /data-contact-open-profile aria-label="Voir le profil de Gionny"/u);
-  assert.match(html, /data-x-dm-profile="Gionny"/u);
-  // L'avatar reste décoratif : le chemin clavier est l'en-tête de la conversation.
-  assert.match(html, /data-x-dm-profile="Gionny" aria-hidden="true"/u);
+  assert.match(html, /data-x-dm-conversation-profile aria-label="Voir le profil"/u);
+  // L'avatar reste décoratif : le chemin clavier est le bouton « Voir le profil ».
+  assert.match(html, /data-x-dm-conversation-avatar aria-hidden="true"/u);
   assert.match(script, /contactHeaderProfile\.addEventListener\("click", openContactProfile\)/u);
   assert.match(script, /window\.qgOpenProfile\("Gionny"\)/u);
   assert.match(xApp, /window\.qgOpenProfile = \(pseudo\) => openPublicProfile\(pseudo\)/u);
