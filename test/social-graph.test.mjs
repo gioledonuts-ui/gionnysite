@@ -12,12 +12,19 @@ import {
   ensureHostFollowFor,
   getProfileRecord,
   getPublicProfile,
+  attachPostMedia,
+  countUnreadNotifications,
   listFeed,
+  listNotifications,
   listReports,
+  markNotificationsRead,
+  readPostMedia,
   setBlock,
   setFollow,
+  setPinned,
   setReportStatus,
   toggleLike,
+  toggleRepost,
   updateProfileDetails,
   REPORT_REASONS,
 } from "../lib/social-graph.mjs";
@@ -281,4 +288,221 @@ test("a blocked author disappears from the feed", async () => {
   await setBlock({ pseudo: "Lecteur", target: "Auteur", blocked: true }, store);
   assert.equal((await listFeed({ viewer: "Lecteur", mode: "all" }, store)).length, 0);
   assert.equal((await listFeed({ mode: "all" }, store)).length, 1);
+});
+
+test("un post accepte une image, un vocal ou une vidéo, jamais un média vide", async () => {
+  const store = new MemoryBlobStore();
+  await register(store, "MediaMembre");
+  const { listVisitorAccounts } = await import("../lib/contact-inbox.mjs");
+  const { members } = await listVisitorAccounts("", store);
+  const member = members.find((entry) => entry.pseudo === "MediaMembre");
+  await setVisitorAccountBadges(member.id, ["verified"], store);
+
+  // Ni texte ni média : refusé.
+  const empty = await createPost({ pseudo: "MediaMembre", text: "   " }, store);
+  assert.equal(empty.ok, false);
+  assert.equal(empty.reason, "empty");
+
+  // Un média seul suffit à publier.
+  const withImage = await createPost(
+    { pseudo: "MediaMembre", text: "", media: { kind: "image", alt: "Affiche du live" } },
+    store
+  );
+  assert.equal(withImage.ok, true);
+  assert.equal(withImage.post.media.kind, "image");
+
+  // Un type inconnu est ignoré comme un média absent.
+  const bogus = await createPost({ pseudo: "MediaMembre", text: "", media: { kind: "gif" } }, store);
+  assert.equal(bogus.reason, "empty");
+
+  const bytes = Buffer.from("RIFF0000WEBPVP8 ", "ascii");
+  const stored = await attachPostMedia(
+    { pseudo: "MediaMembre", postId: withImage.post.id, kind: "image", bytes, contentType: "image/webp" },
+    store
+  );
+  assert.equal(stored.ok, true);
+
+  const read = await readPostMedia({ postId: withImage.post.id, kind: "image" }, store);
+  assert.ok(read);
+  assert.equal(read.contentType, "image/webp");
+  assert.deepEqual(Buffer.from(await new Response(read.stream).arrayBuffer()), bytes);
+
+  // Un autre membre ne peut pas déposer de média sur ce post.
+  await register(store, "Voisin");
+  const stolen = await attachPostMedia(
+    { pseudo: "Voisin", postId: withImage.post.id, kind: "image", bytes },
+    store
+  );
+  assert.equal(stolen.ok, false);
+  assert.equal(stolen.reason, "forbidden");
+
+  // Le fil expose l'URL média, jamais le binaire.
+  const feed = await listFeed({ mode: "all" }, store);
+  const posted = feed.find((entry) => entry.id === withImage.post.id);
+  assert.ok(posted.media.url.includes(`post=${withImage.post.id}`));
+  assert.equal(posted.media.kind, "image");
+
+  // Supprimer le post supprime aussi son média.
+  await deletePost({ pseudo: "MediaMembre", postId: withImage.post.id }, store);
+  assert.equal(await readPostMedia({ postId: withImage.post.id, kind: "image" }, store), null);
+});
+
+test("likes et reposts créent des notifications groupées par post", async () => {
+  const store = new MemoryBlobStore();
+  await register(store, "AuteurPost");
+  await register(store, "FanUn");
+  await register(store, "FanDeux");
+  const { listVisitorAccounts } = await import("../lib/contact-inbox.mjs");
+  const { members } = await listVisitorAccounts("", store);
+  await setVisitorAccountBadges(members.find((entry) => entry.pseudo === "AuteurPost").id, ["verified"], store);
+
+  const created = await createPost({ pseudo: "AuteurPost", text: "Salut le QG" }, store);
+  const postId = created.post.id;
+
+  await toggleLike({ pseudo: "FanUn", postId }, store);
+  await toggleLike({ pseudo: "FanDeux", postId }, store);
+  const again = await toggleLike({ pseudo: "FanUn", postId }, store);
+  assert.equal(again.liked, false);
+
+  // Deux acteurs, une seule entrée (regroupée), non lue.
+  const notifications = await listNotifications({ viewer: "AuteurPost" }, store);
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0].type, "like");
+  assert.equal(notifications[0].count, 2);
+  assert.deepEqual(notifications[0].actors.map((actor) => actor.pseudo).sort(), ["FanDeux", "FanUn"]);
+  assert.equal(notifications[0].read, false);
+  assert.equal(await countUnreadNotifications({ viewer: "AuteurPost" }, store), 1);
+
+  const repost = await toggleRepost({ pseudo: "FanUn", postId }, store);
+  assert.equal(repost.ok, true);
+  assert.equal(repost.reposted, true);
+  assert.equal(repost.reposts, 1);
+
+  const all = await listNotifications({ viewer: "AuteurPost" }, store);
+  assert.equal(all.length, 2);
+  assert.equal(all.filter((item) => item.type === "repost").length, 1);
+
+  // Se liker soi-même ne notifie personne.
+  await toggleLike({ pseudo: "AuteurPost", postId }, store);
+  assert.equal((await listNotifications({ viewer: "AuteurPost" }, store)).length, 2);
+
+  await markNotificationsRead({ viewer: "AuteurPost" }, store);
+  assert.equal(await countUnreadNotifications({ viewer: "AuteurPost" }, store), 0);
+  assert.equal((await listNotifications({ viewer: "AuteurPost" }, store)).every((item) => item.read), true);
+
+  // Un compte bloqué ne notifie plus son auteur de référence.
+  await setBlock({ pseudo: "AuteurPost", target: "FanDeux", blocked: true }, store);
+  await toggleLike({ pseudo: "FanDeux", postId }, store);
+  const afterBlock = await listNotifications({ viewer: "AuteurPost" }, store);
+  const likeItem = afterBlock.find((item) => item.type === "like");
+  assert.equal(likeItem.actors.some((actor) => actor.pseudo === "FanDeux"), false);
+});
+
+test("les filtres du fil : suivis, reposts et j'aime", async () => {
+  const store = new MemoryBlobStore();
+  await register(store, "Suiveur");
+  await register(store, "Suivi");
+  await register(store, "Ignore");
+  const { listVisitorAccounts } = await import("../lib/contact-inbox.mjs");
+  const { members } = await listVisitorAccounts("", store);
+  for (const pseudo of ["Suivi", "Ignore"]) {
+    await setVisitorAccountBadges(members.find((entry) => entry.pseudo === pseudo).id, ["verified"], store);
+  }
+
+  const followed = await createPost({ pseudo: "Suivi", text: "Post suivi" }, store);
+  await createPost({ pseudo: "Ignore", text: "Post ignoré" }, store);
+  await setFollow({ pseudo: "Suiveur", target: "Suivi", follow: true }, store);
+
+  const followsFeed = await listFeed({ viewer: "Suiveur", mode: "follows" }, store);
+  assert.equal(followsFeed.length, 1);
+  assert.equal(followsFeed[0].pseudo, "Suivi");
+
+  // Un visiteur n'a pas de « suivis » : le fil est vide, jamais cassé.
+  assert.equal((await listFeed({ mode: "follows" }, store)).length, 0);
+
+  await toggleRepost({ pseudo: "Suiveur", postId: followed.post.id }, store);
+  const repostsFeed = await listFeed({ viewer: "Suiveur", mode: "reposts" }, store);
+  assert.equal(repostsFeed.length, 1);
+  assert.equal(repostsFeed[0].reposts, 1);
+  assert.equal(repostsFeed[0].reposted, true);
+
+  await toggleLike({ pseudo: "Suiveur", postId: followed.post.id }, store);
+  const likesFeed = await listFeed({ viewer: "Suiveur", mode: "likes" }, store);
+  assert.equal(likesFeed.length, 1);
+  assert.equal((await listFeed({ viewer: "Suiveur", mode: "all" }, store)).length, 2);
+});
+
+test("seul l'Hôte épingle, et un seul post reste en tête du QG", async () => {
+  const store = new MemoryBlobStore();
+  await register(store, "Epingleur");
+  const { listVisitorAccounts } = await import("../lib/contact-inbox.mjs");
+  const { members } = await listVisitorAccounts("", store);
+  await setVisitorAccountBadges(members.find((m) => m.pseudo === "Epingleur").id, ["verified"], store);
+
+  const first = await createPost({ pseudo: "Epingleur", text: "Annonce 1" }, store);
+  const second = await createPost({ pseudo: "Gionny", text: "Annonce 2" }, store);
+
+  // Un membre ne peut pas épingler.
+  const refused = await setPinned({ pseudo: "Epingleur", postId: first.post.id, pinned: true }, store);
+  assert.equal(refused.ok, false);
+  assert.equal(refused.reason, "forbidden");
+
+  const pinnedFirst = await setPinned({ pseudo: "Gionny", postId: first.post.id, pinned: true }, store);
+  assert.equal(pinnedFirst.ok, true);
+  let feed = await listFeed({ mode: "all" }, store);
+  assert.equal(feed[0].id, first.post.id);
+  assert.equal(feed[0].pinned, true);
+
+  // Épingler un autre post retire l'épinglage du précédent.
+  await setPinned({ pseudo: "Gionny", postId: second.post.id, pinned: true }, store);
+  feed = await listFeed({ mode: "all" }, store);
+  assert.equal(feed[0].id, second.post.id);
+  assert.equal(feed.filter((post) => post.pinned).length, 1);
+
+  await setPinned({ pseudo: "Gionny", postId: second.post.id, pinned: false }, store);
+  feed = await listFeed({ mode: "all" }, store);
+  assert.equal(feed.filter((post) => post.pinned).length, 0);
+  // Sans épinglage, le plus récent reprend la tête.
+  assert.equal(feed[0].id, second.post.id);
+});
+
+test("suivre un membre le notifie une seule fois", async () => {
+  const store = new MemoryBlobStore();
+  await register(store, "SuiviNotif");
+  await register(store, "SuiveurNotif");
+
+  await setFollow({ pseudo: "SuiveurNotif", target: "SuiviNotif", follow: true }, store);
+  let notifications = await listNotifications({ viewer: "SuiviNotif" }, store);
+  const follow = notifications.filter((item) => item.type === "follow");
+  assert.equal(follow.length, 1);
+  assert.equal(follow[0].actors[0].pseudo, "SuiveurNotif");
+  assert.equal(follow[0].postId, "");
+
+  // Suivre / ne plus suivre / re-suivre ne duplique pas l'entrée.
+  await setFollow({ pseudo: "SuiveurNotif", target: "SuiviNotif", follow: false }, store);
+  await setFollow({ pseudo: "SuiveurNotif", target: "SuiviNotif", follow: true }, store);
+  notifications = await listNotifications({ viewer: "SuiviNotif" }, store);
+  assert.equal(notifications.filter((item) => item.type === "follow").length, 1);
+});
+
+test("un post de l'Hôte est annoncé à toute la communauté, pas à lui-même", async () => {
+  const store = new MemoryBlobStore();
+  await register(store, "MembreUn");
+  await register(store, "MembreDeux");
+
+  const hostPost = await createPost({ pseudo: "Gionny", text: "Le live démarre 🎥" }, store);
+  assert.equal(hostPost.ok, true);
+
+  for (const pseudo of ["MembreUn", "MembreDeux"]) {
+    const notifications = await listNotifications({ viewer: pseudo }, store);
+    const announced = notifications.filter((item) => item.type === "post");
+    assert.equal(announced.length, 1, `${pseudo} doit recevoir l'annonce`);
+    assert.equal(announced[0].postId, hostPost.post.id);
+    assert.equal(announced[0].actors[0].isHost, true);
+  }
+  assert.equal((await listNotifications({ viewer: "Gionny" }, store)).length, 0);
+
+  // Supprimer le post retire l'annonce de toutes les boîtes.
+  await deletePost({ pseudo: "Gionny", postId: hostPost.post.id }, store);
+  assert.equal((await listNotifications({ viewer: "MembreUn" }, store)).length, 0);
 });

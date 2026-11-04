@@ -7,7 +7,10 @@ import {
 } from "../lib/contact-inbox.mjs";
 import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
 import {
+  MEDIA_KINDS,
   REPORT_REASONS,
+  attachPostMedia,
+  countUnreadNotifications,
   createPost,
   createReport,
   deletePost,
@@ -15,9 +18,13 @@ import {
   getProfileRecord,
   getPublicProfile,
   listFeed,
+  listNotifications,
+  markNotificationsRead,
+  setPinned,
   setBlock,
   setFollow,
   toggleLike,
+  toggleRepost,
   updateProfileDetails,
 } from "../lib/social-graph.mjs";
 
@@ -34,6 +41,10 @@ import {
 // photo (déjà publique dans le fil) sont renvoyés.
 
 const MAX_BODY_BYTES = 4000;
+// Un média de post arrive dans le même JSON (base64) : 4 Mo couvrent une vidéo
+// de 2 Mo + son enveloppe base64, sans laisser passer un fichier arbitraire.
+const MAX_MEDIA_BODY_BYTES = 4 * 1024 * 1024;
+const MEDIA_LIMITS = { image: 60 * 1024, vocal: 200 * 1024, video: 2 * 1024 * 1024 };
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_REPORTS_PER_WINDOW = 10;
 const MAX_DIRECTORY = 120;
@@ -46,10 +57,10 @@ function setNoStore(response) {
   response.setHeader("Vary", "Origin, Cookie");
 }
 
-function readJsonBody(request) {
+function readJsonBody(request, limit = MAX_BODY_BYTES) {
   if (request.body && typeof request.body === "object" && !Buffer.isBuffer(request.body)) {
     try {
-      return Buffer.byteLength(JSON.stringify(request.body), "utf8") <= MAX_BODY_BYTES ? request.body : null;
+      return Buffer.byteLength(JSON.stringify(request.body), "utf8") <= limit ? request.body : null;
     } catch {
       return null;
     }
@@ -59,7 +70,7 @@ function readJsonBody(request) {
     : typeof request.body === "string"
       ? request.body
       : "";
-  if (!raw || Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return null;
+  if (!raw || Buffer.byteLength(raw, "utf8") > limit) return null;
   try {
     return JSON.parse(raw);
   } catch {
@@ -84,16 +95,22 @@ function clientKey(request) {
   return String(Array.isArray(raw) ? raw[0] : raw).split(",")[0].trim().slice(0, 100);
 }
 
-function rateLimited(key) {
+function rateLimited(key, limit = MAX_REPORTS_PER_WINDOW, windowMs = RATE_WINDOW_MS) {
   const now = Date.now();
   let state = rateLimits.get(key);
-  if (!state || state.resetAt <= now) state = { count: 0, resetAt: now + RATE_WINDOW_MS };
+  if (!state || state.resetAt <= now) state = { count: 0, resetAt: now + windowMs };
   state.count += 1;
   rateLimits.set(key, state);
   if (rateLimits.size > 2000) {
     for (const [storedKey, stored] of rateLimits) if (stored.resetAt <= now) rateLimits.delete(storedKey);
   }
-  return state.count > MAX_REPORTS_PER_WINDOW;
+  return state.count > limit;
+}
+
+// L'Hôte est reconnu par son rôle (source de vérité : le compte), avec le
+// pseudo comme filet de sécurité pour les installations historiques.
+function isHostAccount(account) {
+  return account?.role === "host" || ["gionny", "7gionny"].includes(String(account?.pseudo || "").trim().toLowerCase());
 }
 
 function isVerified(account) {
@@ -160,7 +177,11 @@ export default async function handler(request, response) {
     const directory = queryValue(request, "directory");
     if (directory) return response.status(200).json({ members: await readDirectory() });
 
-    const mode = queryValue(request, "mode") === "verified" ? "verified" : "all";
+    // Quatre lectures possibles : tout, les suivis, les Validés, les reposts.
+    const requestedMode = queryValue(request, "mode");
+    const mode = ["follows", "verified", "reposts", "likes"].includes(requestedMode)
+      ? requestedMode
+      : "all";
     const author = queryValue(request, "author");
     if (queryValue(request, "feed") || author) {
       try {
@@ -171,6 +192,20 @@ export default async function handler(request, response) {
           name: error instanceof Error ? error.name : "UnknownError",
         });
         return response.status(502).json({ error: "Le fil ne peut pas être chargé pour le moment." });
+      }
+    }
+
+    if (queryValue(request, "notifications")) {
+      if (!viewer) return response.status(200).json({ notifications: [], unread: 0, viewer: null });
+      try {
+        const notifications = await listNotifications({ viewer: viewer.pseudo }, undefined);
+        const unread = await countUnreadNotifications({ viewer: viewer.pseudo }, undefined);
+        return response.status(200).json({ notifications, unread, viewer: viewer.pseudo });
+      } catch (error) {
+        console.error("[profile] notifications read failed", {
+          name: error instanceof Error ? error.name : "UnknownError",
+        });
+        return response.status(502).json({ error: "Les notifications ne peuvent pas être chargées." });
       }
     }
 
@@ -190,7 +225,17 @@ export default async function handler(request, response) {
     }
   }
 
-  const body = readJsonBody(request);
+  // Seul un dépôt de média a le droit à une enveloppe plus large : on regarde
+  // la requête brute avant de parser, sans jamais faire confiance au client.
+  const rawBody = Buffer.isBuffer(request.body)
+    ? request.body.toString("utf8")
+    : typeof request.body === "string"
+      ? request.body
+      : request.body && typeof request.body === "object"
+        ? JSON.stringify(request.body)
+        : "";
+  const wantsMediaSlot = rawBody.length > MAX_BODY_BYTES && rawBody.includes('"mediaData"');
+  const body = readJsonBody(request, wantsMediaSlot ? MAX_MEDIA_BODY_BYTES : MAX_BODY_BYTES);
   if (!body || typeof body !== "object") return response.status(400).json({ error: "La demande est incomplète." });
   const action = typeof body.action === "string" ? body.action : "";
   const target = typeof body.target === "string" ? body.target : "";
@@ -264,7 +309,18 @@ export default async function handler(request, response) {
       if (rateLimited(`post:${clientKey(request)}`)) {
         return response.status(429).json({ error: "Doucement : tu publies trop vite. Réessaie dans quelques minutes." });
       }
-      const result = await createPost({ pseudo: viewer.pseudo, text: body.text }, undefined);
+      const descriptor = body.media && typeof body.media === "object"
+        ? { kind: body.media.kind, alt: body.media.alt, duration: body.media.duration }
+        : null;
+      if (descriptor && !MEDIA_LIMITS[descriptor.kind]) {
+        return response.status(400).json({ error: "Ce type de média n’est pas accepté." });
+      }
+      const result = await createPost({
+        pseudo: viewer.pseudo,
+        text: body.text,
+        media: descriptor,
+        quoteOf: body.quoteOf,
+      }, undefined);
       if (!result.ok) {
         if (result.reason === "not_allowed") {
           return response.status(403).json({ error: "Seuls Gionny et les membres Validés publient des posts publics." });
@@ -276,8 +332,83 @@ export default async function handler(request, response) {
       await syncStateToSupabase().catch(() => {});
       return response.status(201).json({
         ok: true,
-        post: { ...result.post, isHost: viewer.role === "host", badges: viewer.badges || [], likes: 0, liked: false, canDelete: true },
+        post: {
+          ...result.post,
+          isHost: isHostAccount(viewer),
+          badges: Array.isArray(viewer.badges) ? viewer.badges : [],
+          likes: 0,
+          liked: false,
+          reposts: 0,
+          reposted: false,
+          canDelete: true,
+          media: result.post.media
+            ? { ...result.post.media, url: `/api/media?post=${encodeURIComponent(result.post.id)}&kind=${result.post.media.kind}` }
+            : null,
+        },
       });
+    }
+
+    // Dépôt du binaire d'un média, juste après la création du post.
+    if (action === "media") {
+      const kind = typeof body.kind === "string" ? body.kind : "";
+      const limit = MEDIA_LIMITS[kind];
+      if (!limit || !MEDIA_KINDS.includes(kind)) {
+        return response.status(400).json({ error: "Ce type de média n’est pas accepté." });
+      }
+      if (rateLimited(`media:${clientKey(request)}`, 40, RATE_WINDOW_MS)) {
+        return response.status(429).json({ error: "Trop d’envois d’un coup. Réessaie dans une minute." });
+      }
+      const encoded = typeof body.mediaData === "string" ? body.mediaData : "";
+      if (!encoded) return response.status(400).json({ error: "Le média est vide." });
+      const bytes = Buffer.from(encoded, "base64");
+      if (!bytes.length || bytes.length > limit) {
+        return response.status(413).json({
+          error: kind === "video"
+            ? "Cette vidéo dépasse 2 Mo après compression (30 s maximum)."
+            : kind === "vocal"
+              ? "Ce vocal dépasse 200 Ko."
+              : "Cette image dépasse 60 Ko après compression.",
+        });
+      }
+      const stored = await attachPostMedia({
+        pseudo: viewer.pseudo,
+        postId: body.postId,
+        kind,
+        bytes,
+        contentType: body.contentType,
+      }, undefined);
+      if (!stored.ok) {
+        if (stored.reason === "forbidden") return response.status(403).json({ error: "Tu ne peux pas modifier ce post." });
+        return response.status(404).json({ error: "Ce post n’existe plus." });
+      }
+      await syncStateToSupabase().catch(() => {});
+      return response.status(201).json({ ok: true });
+    }
+
+    if (action === "pin" || action === "unpin") {
+      const result = await setPinned({ pseudo: viewer.pseudo, postId: body.postId, pinned: action === "pin" }, undefined);
+      if (!result.ok) {
+        if (result.reason === "forbidden") return response.status(403).json({ error: "Seul Gionny épingle un post dans le QG." });
+        return response.status(404).json({ error: "Ce post n’existe plus." });
+      }
+      await syncStateToSupabase().catch(() => {});
+      return response.status(200).json({ ok: true, pinned: result.pinned });
+    }
+
+    if (action === "repost" || action === "unrepost") {
+      const result = await toggleRepost({ pseudo: viewer.pseudo, postId: body.postId }, undefined);
+      if (!result.ok) {
+        if (result.reason === "blocked") return response.status(403).json({ error: "Ce post vient d’un compte bloqué." });
+        return response.status(404).json({ error: "Ce post n’existe plus." });
+      }
+      await syncStateToSupabase().catch(() => {});
+      return response.status(200).json({ ok: true, reposted: result.reposted, reposts: result.reposts });
+    }
+
+    if (action === "notifications-read") {
+      const result = await markNotificationsRead({ viewer: viewer.pseudo }, undefined);
+      await syncStateToSupabase().catch(() => {});
+      return response.status(200).json({ ok: true, unread: result.unread || 0 });
     }
 
     if (action === "like" || action === "unlike") {

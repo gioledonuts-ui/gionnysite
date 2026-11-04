@@ -110,3 +110,64 @@ test("la couche d'interface ne surveille pas les attributs qu'elle écrit", () =
   assert.match(xApp, /forward\("\[data-member-login\]"\)/u);
   assert.match(xApp, /forward\("\[data-member-profile\]"\).*|forward\(isSignedIn\(\)/u);
 });
+
+// ---------------------------------------------------------------------------
+// Étape 3 : composeur média, emojis Twemoji, likes/reposts, notifications.
+// ---------------------------------------------------------------------------
+
+const postComposer = (() => {
+  const marker = html.indexOf("data-x-composer");
+  const start = html.lastIndexOf("<div", marker);
+  const end = html.indexOf('<div class="x-feed"', marker);
+  return html.slice(start, end);
+})();
+
+test("le composeur offre les quatre attachements, réservés à l'Hôte et aux Validés", () => {
+  for (const hook of [
+    "data-x-post-input",
+    "data-x-post-submit",
+    "data-x-post-image",
+    "data-x-post-image-input",
+    "data-x-post-video",
+    "data-x-post-video-input",
+    "data-x-post-vocal",
+    "data-x-post-emoji",
+    "data-x-emoji-panel",
+    "data-x-post-recorder",
+    "data-x-composer-attachment",
+    "data-x-post-count",
+  ]) {
+    assert.match(postComposer, new RegExp(hook, "u"), `attendu : ${hook}`);
+  }
+
+  // Le droit de publier est le même pour le texte et pour les médias.
+  assert.match(xApp, /\[data-x-post-image\], \[data-x-post-video\], \[data-x-post-vocal\], \[data-x-post-emoji\]/u);
+  assert.match(xApp, /const canPost = Boolean\(user && \(user\.isHost \|\| user\.isVerified\)\)/u);
+  // Aucun média ne part sans passer par les limites annoncées.
+  assert.match(xApp, /const MEDIA_LIMITS = \{ image: 60 \* 1024, vocal: 200 \* 1024, video: 2 \* 1024 \* 1024 \}/u);
+  // Image : 800 px max ; vidéo : 30 s max (refus explicite au-delà).
+  assert.match(xApp, /maxWidth: 800,\s*\n\s*maxHeight: 800/u);
+  assert.match(xApp, /const MEDIA_MAX_SECONDS = \{ video: 30, vocal: 60 \}/u);
+  // Le binaire est déposé après la création du post, jamais dans le même POST.
+  assert.match(xApp, /action: "media",\s*\n\s*postId,/u);
+});
+
+test("les emojis du composeur s'insèrent au curseur et se rendent en Twemoji", () => {
+  assert.match(xApp, /const insertEmoji = \(emoji\) =>/u);
+  assert.match(xApp, /setSelectionRange\(caret, caret\)/u);
+  assert.match(xApp, /window\.qgTwemoji\?\.render\?\.\(card\)/u);
+  assert.match(twemoji, /cdnjs\.cloudflare\.com\/ajax\/libs\/twemoji\/14\.0\.2\/svg/u);
+});
+
+test("likes, reposts et notifications restent branchés sur les mêmes routes", () => {
+  assert.match(xApp, /action: already \? "unrepost" : "repost"/u);
+  assert.match(xApp, /action: already \? "unlike" : "like"/u);
+  assert.match(xApp, /action: "notifications-read"/u);
+  assert.match(xApp, /url\.searchParams\.set\("notifications", "1"\)/u);
+  assert.match(xApp, /notificationsFilter === "verified"/u);
+  for (const mode of ["all", "follows", "verified", "reposts"]) {
+    assert.match(html, new RegExp(`data-x-feed-tab="${mode}"`, "u"));
+  }
+  // Le badge de la nav reçoit le compte réel, plafonné à 9+.
+  assert.match(xApp, /count > 9 \? "9\+"/u);
+});

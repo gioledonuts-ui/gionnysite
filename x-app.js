@@ -47,6 +47,8 @@
       target?.focus({ preventScroll: true });
     }
     if (view === "profile") renderProfileView();
+    // Ouvrir l'onglet Notifications marque tout comme lu (badge remis à zéro).
+    if (view === "notifications") void refreshNotifications({ markRead: true });
     if (view === "home") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -578,7 +580,9 @@
      ---------------------------------------------------------------------- */
   const FEED_COPY = {
     all: "Les posts publics de Gionny et des membres Validés s’affichent ici.",
+    follows: "Les posts des membres que tu suis apparaissent ici.",
     verified: "Seuls les posts de Gionny et des membres Validés apparaissent ici.",
+    reposts: "Les posts que le QG a repostés apparaissent ici.",
   };
   const feedState = $("[data-x-feed-state]");
 
@@ -589,7 +593,8 @@
       $$("[data-x-feed-tab]").forEach((other) =>
         other.setAttribute("aria-selected", String(other === tab))
       );
-      feedMode = tab.dataset.xFeedTab === "verified" ? "verified" : "all";
+      const wanted = String(tab.dataset.xFeedTab || "all");
+      feedMode = ["all", "follows", "verified", "reposts"].includes(wanted) ? wanted : "all";
       if (feedState) feedState.textContent = FEED_COPY[feedMode] || FEED_COPY.all;
       void loadFeed({ mode: feedMode });
     });
@@ -618,10 +623,752 @@
     return date3.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
   };
 
+  /* ------------------------------------------------------------------------
+     Médias : image, vocal, vidéo — compressés dans le navigateur
+     ----------------------------------------------------------------------
+     Rien de lourd ne part vers le serveur : une image est ré-encodée en WebP
+     (max 120 Ko), une vidéo est ré-encodée si le navigateur sait le faire
+     (max ~2,6 Mo visés, 3 Mo refusés côté API), un vocal reste en dessous de
+     200 Ko grâce à l'enregistreur du chat.
+     -------------------------------------------------------------------- */
+  const MEDIA_LIMITS = { image: 60 * 1024, vocal: 200 * 1024, video: 2 * 1024 * 1024 };
+  const MEDIA_MAX_SECONDS = { video: 30, vocal: 60 };
+  const MEDIA_LIMIT_COPY = {
+    image: "Image trop lourde : 60 Ko maximum après compression (800 px).",
+    vocal: "Vocal trop long : 60 secondes et 200 Ko maximum.",
+    video: "Vidéo trop longue ou trop lourde : 30 secondes et 2 Mo maximum.",
+  };
+
+  const readFileAsDataUrl = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("read_failed"));
+      reader.readAsDataURL(blob);
+    });
+
+  const dataUrlPayload = (value) => {
+    const text = String(value || "");
+    const comma = text.indexOf(",");
+    return comma >= 0 ? text.slice(comma + 1) : "";
+  };
+
+  const formatBytes = (bytes) => {
+    const size = Math.max(0, Number(bytes) || 0);
+    if (size < 1024) return `${size} o`;
+    if (size < 1024 * 1024) return `${Math.round(size / 1024)} Ko`;
+    return `${(size / (1024 * 1024)).toFixed(1).replace(".", ",")} Mo`;
+  };
+
+  // Image : on réutilise le compresseur WebP du chat (image-tools.js).
+  const compressImageForPost = async (file) => {
+    if (typeof window.qgImageTools?.compressToWebp !== "function") {
+      throw new Error("Ce navigateur ne peut pas compresser l’image.");
+    }
+    const blob = await window.qgImageTools.compressToWebp(file, {
+      maxWidth: 800,
+      maxHeight: 800,
+      preserveDimensions: true,
+      maxBytes: MEDIA_LIMITS.image,
+      initialQuality: 0.7,
+    });
+    if (!blob || blob.size > MEDIA_LIMITS.image) throw new Error("too_large");
+    return blob;
+  };
+
+  // Vidéo : ré-encodage dans un <canvas> + MediaRecorder quand c'est possible.
+  // Si le navigateur ne sait pas le faire, on refuse proprement plutôt que
+  // d'envoyer 40 Mo qui feraient échouer le post.
+  const compressVideoForPost = async (file, onProgress) => {
+    if (!file || !file.type.startsWith("video/")) throw new Error("not_video");
+    if (!(file.size > 0)) throw new Error("empty");
+    const Recorder = window.MediaRecorder;
+    const canTranscode = typeof Recorder === "function" &&
+      typeof document.createElement("canvas").captureStream === "function" &&
+      typeof URL.createObjectURL === "function";
+    if (!canTranscode) throw new Error("unsupported");
+
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    try {
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = () => resolve();
+        video.onerror = () => reject(new Error("not_video"));
+      });
+      const fullDuration = Number(video.duration) || 0;
+      if (!fullDuration) throw new Error("not_video");
+      // Clip court uniquement : au-delà de 30 s, on refuse au lieu de tronquer
+      // silencieusement le contenu de l'utilisateur.
+      if (fullDuration > MEDIA_MAX_SECONDS.video + 0.5) throw new Error("too_long");
+      const duration = Math.min(MEDIA_MAX_SECONDS.video, fullDuration);
+      const scale = Math.min(1, 720 / Math.max(video.videoWidth || 720, video.videoHeight || 720));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(2, Math.round((video.videoWidth || 720) * scale));
+      canvas.height = Math.max(2, Math.round((video.videoHeight || 720) * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("unsupported");
+      const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]
+        .find((type) => Recorder.isTypeSupported?.(type));
+      if (!mimeType) throw new Error("unsupported");
+      const stream = canvas.captureStream(24);
+      const recorder = new Recorder(stream, { mimeType, videoBitsPerSecond: 900_000 });
+      const chunks = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) chunks.push(event.data);
+      };
+      const done = new Promise((resolve) => {
+        recorder.onstop = () => resolve();
+      });
+      recorder.start(200);
+      await video.play();
+      let stopped = false;
+      await new Promise((resolve) => {
+        const draw = () => {
+          if (stopped) return;
+          if (video.paused || video.ended || video.currentTime >= duration) {
+            resolve();
+            return;
+          }
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          onProgress?.(Math.min(1, video.currentTime / duration));
+          window.requestAnimationFrame(draw);
+        };
+        draw();
+      });
+      stopped = true;
+      recorder.stop();
+      stream.getTracks().forEach((track) => track.stop());
+      await done;
+      const blob = new Blob(chunks, { type: "video/webm" });
+      if (!blob.size) throw new Error("unsupported");
+      if (blob.size > MEDIA_LIMITS.video) throw new Error("too_large");
+      return { blob, duration: Math.round(duration) };
+    } finally {
+      URL.revokeObjectURL(url);
+      video.removeAttribute("src");
+    }
+  };
+
+  /* ------------------------------------------------------------------------
+     Le composeur : aperçu, médias, emojis, publication
+     -------------------------------------------------------------------- */
+  const composerNode = $("[data-x-composer]");
+  const attachmentBox = $("[data-x-composer-attachment]");
+  const attachmentPreview = $("[data-x-composer-attachment-media]");
+  const attachmentName = $("[data-x-composer-attachment-name]");
+  const attachmentMeta = $("[data-x-composer-attachment-meta]");
+  const attachmentRemove = $("[data-x-composer-attachment-remove]");
+  const imageInput = $("[data-x-post-image-input]");
+  const videoInput = $("[data-x-post-video-input]");
+  const vocalButton = $("[data-x-post-vocal]");
+  const emojiButton = $("[data-x-post-emoji]");
+  const emojiPanel = $("[data-x-emoji-panel]");
+  const emojiGrid = $("[data-x-emoji-grid]");
+  const postCount = $("[data-x-post-count]");
+  const recorderBox = $("[data-x-post-recorder]");
+  const recorderLive = $("[data-x-recorder-live]");
+  const recorderWave = $("[data-x-recorder-wave]");
+  const recorderPreview = $("[data-x-recorder-preview]");
+  const recorderTimer = $("[data-x-recorder-timer]");
+  const recorderStatus = $("[data-x-recorder-status]");
+  const recorderStop = $("[data-x-recorder-stop]");
+  const recorderCancel = $("[data-x-recorder-cancel]");
+  const recorderSend = $("[data-x-recorder-send]");
+
+  let draftMedia = null;          // { kind, blob, alt, duration, url }
+  let mediaBusy = false;
+  let composerUser = null;        // dernier état connu du compte connecté
+
+  const clearDraftMedia = () => {
+    if (draftMedia?.url) URL.revokeObjectURL(draftMedia.url);
+    draftMedia = null;
+    if (attachmentPreview) attachmentPreview.replaceChildren();
+    if (attachmentBox) attachmentBox.hidden = true;
+    if (attachmentName) attachmentName.textContent = "";
+    if (attachmentMeta) attachmentMeta.textContent = "";
+    syncComposerState();
+  };
+
+  const paintDraftMedia = () => {
+    if (!attachmentBox || !attachmentPreview) return;
+    if (!draftMedia) {
+      attachmentBox.hidden = true;
+      return;
+    }
+    attachmentPreview.replaceChildren();
+    if (draftMedia.kind === "image") {
+      const image = document.createElement("img");
+      image.src = draftMedia.url;
+      image.alt = draftMedia.alt || "Image du post";
+      image.loading = "lazy";
+      attachmentPreview.append(image);
+      if (attachmentName) attachmentName.textContent = "Photo";
+      if (attachmentMeta) attachmentMeta.textContent = `${formatBytes(draftMedia.blob.size)} · WebP compressé`;
+    } else if (draftMedia.kind === "video") {
+      const video = document.createElement("video");
+      video.src = draftMedia.url;
+      video.muted = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      attachmentPreview.append(video);
+      if (attachmentName) attachmentName.textContent = "Vidéo";
+      if (attachmentMeta) {
+        attachmentMeta.textContent = `${draftMedia.duration || 0} s · ${formatBytes(draftMedia.blob.size)} · compressée`;
+      }
+    } else {
+      const badge = document.createElement("span");
+      badge.className = "x-composer-attachment-vocal";
+      badge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.8" width="6" height="11.4" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M5.6 11.6a6.4 6.4 0 0 0 12.8 0M12 18v3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>';
+      attachmentPreview.append(badge);
+      if (attachmentName) attachmentName.textContent = "Message vocal";
+      if (attachmentMeta) {
+        attachmentMeta.textContent = `${draftMedia.duration || 0} s · ${formatBytes(draftMedia.blob.size)}`;
+      }
+    }
+    attachmentBox.hidden = false;
+    syncComposerState();
+  };
+
+  const syncComposerState = () => {
+    if (!postComposer || !postSubmit) return;
+    const user = composerUser || currentUser();
+    const canPost = Boolean(user && (user.isHost || user.isVerified));
+    const hasText = Boolean(String(postComposer.value || "").trim());
+    postSubmit.disabled = !canPost || mediaBusy || (!hasText && !draftMedia);
+    if (postCount) {
+      const length = String(postComposer.value || "").length;
+      postCount.hidden = length < 400;
+      postCount.textContent = `${length}/500`;
+      postCount.dataset.warn = String(length >= 480);
+    }
+  };
+
+  const setComposerNote = (message) => {
+    if (!composerNote) return;
+    composerNote.textContent = message ||
+      "Seuls Gionny et les membres Validés publient des posts publics. Tu peux liker et reposter les posts dès maintenant.";
+  };
+
+  // Image
+  $("[data-x-post-image]")?.addEventListener("click", () => imageInput?.click());
+  imageInput?.addEventListener("change", async () => {
+    const file = imageInput.files?.[0];
+    imageInput.value = "";
+    if (!file) return;
+    mediaBusy = true;
+    syncComposerState();
+    setComposerNote("Compression de l’image…");
+    try {
+      const blob = await compressImageForPost(file);
+      clearDraftMedia();
+      draftMedia = { kind: "image", blob, alt: "", duration: 0, url: URL.createObjectURL(blob) };
+      paintDraftMedia();
+      setComposerNote("");
+    } catch (error) {
+      setComposerNote(error?.message === "too_large" ? MEDIA_LIMIT_COPY.image : "Cette image ne peut pas être ajoutée.");
+    } finally {
+      mediaBusy = false;
+      syncComposerState();
+    }
+  });
+
+  // Vidéo
+  $("[data-x-post-video]")?.addEventListener("click", () => videoInput?.click());
+  videoInput?.addEventListener("change", async () => {
+    const file = videoInput.files?.[0];
+    videoInput.value = "";
+    if (!file) return;
+    mediaBusy = true;
+    syncComposerState();
+    setComposerNote("Compression de la vidéo… (garde l’onglet ouvert)");
+    try {
+      const result = await compressVideoForPost(file, (progress) => {
+        setComposerNote(`Compression de la vidéo… ${Math.round(progress * 100)} %`);
+      });
+      clearDraftMedia();
+      draftMedia = {
+        kind: "video",
+        blob: result.blob,
+        alt: "",
+        duration: result.duration,
+        url: URL.createObjectURL(result.blob),
+      };
+      paintDraftMedia();
+      setComposerNote("");
+    } catch (error) {
+      const reason = error?.message;
+      setComposerNote(
+        reason === "too_large"
+          ? MEDIA_LIMIT_COPY.video
+          : reason === "unsupported"
+            ? "Ce navigateur ne sait pas compresser la vidéo : envoie-la en photo ou en vocal."
+            : "Cette vidéo ne peut pas être ajoutée."
+      );
+    } finally {
+      mediaBusy = false;
+      syncComposerState();
+    }
+  });
+
+  attachmentRemove?.addEventListener("click", () => {
+    clearDraftMedia();
+    setComposerNote("");
+  });
+
+  // Emojis : grille curated, insertion au curseur, rendu Twemoji dans le post.
+  const EMOJIS = [
+    "😀", "😂", "🥲", "😍", "😎", "🤔", "😴", "🥳", "😭", "😱",
+    "🔥", "💜", "✨", "🎉", "👑", "🏆", "🎮", "🎧", "🎬", "📣",
+    "👀", "🙌", "👏", "🤝", "💪", "🫡", "🫶", "❤️", "💯", "⚡",
+    "🌙", "☀️", "🌊", "🍩", "🍕", "☕", "🚀", "🎯", "💬", "✅",
+  ];
+
+  const buildEmojiGrid = () => {
+    if (!emojiGrid || emojiGrid.childElementCount) return;
+    const fragment = document.createDocumentFragment();
+    EMOJIS.forEach((emoji) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "x-emoji";
+      button.textContent = emoji;
+      button.setAttribute("aria-label", `Emoji ${emoji}`);
+      button.addEventListener("click", () => insertEmoji(emoji));
+      fragment.append(button);
+    });
+    emojiGrid.append(fragment);
+  };
+
+  const insertEmoji = (emoji) => {
+    if (!postComposer) return;
+    const start = postComposer.selectionStart ?? postComposer.value.length;
+    const end = postComposer.selectionEnd ?? start;
+    postComposer.value = `${postComposer.value.slice(0, start)}${emoji}${postComposer.value.slice(end)}`;
+    const caret = start + emoji.length;
+    postComposer.focus();
+    postComposer.setSelectionRange(caret, caret);
+    autoGrowComposer();
+    syncComposerState();
+  };
+
+  emojiButton?.addEventListener("click", () => {
+    if (!emojiPanel) return;
+    buildEmojiGrid();
+    const open = emojiPanel.hidden;
+    emojiPanel.hidden = !open;
+    emojiButton.setAttribute("aria-expanded", String(open));
+  });
+
+  const autoGrowComposer = () => {
+    if (!postComposer) return;
+    postComposer.style.height = "auto";
+    postComposer.style.height = `${Math.min(220, postComposer.scrollHeight)}px`;
+  };
+
+  /* --- Enregistreur vocal du composeur --------------------------------- */
+  let composerRecorder = null;
+  const ensureComposerRecorder = () => {
+    if (composerRecorder || typeof window.createQGVoiceComposer !== "function") return composerRecorder;
+    if (!recorderBox || !recorderLive || !recorderWave || !recorderTimer || !recorderStop ||
+        !recorderCancel || !recorderSend || !recorderPreview || !vocalButton || !recorderStatus) {
+      return null;
+    }
+    composerRecorder = window.createQGVoiceComposer({
+      inputPill: vocalButton,
+      panel: recorderBox,
+      liveControls: recorderLive,
+      waveform: recorderWave,
+      timer: recorderTimer,
+      stopButton: recorderStop,
+      cancelButton: recorderCancel,
+      sendButton: recorderSend,
+      preview: recorderPreview,
+      composeButton: postSubmit,
+      plusButton: null,
+      status: recorderStatus,
+      label: "vocal du post",
+      canRecord: () => {
+        const user = currentUser();
+        return Boolean(user && (user.isHost || user.isVerified));
+      },
+      canSend: () => true,
+      onSend: async (blob) => {
+        if (!blob || !blob.size) return false;
+        if (blob.size > MEDIA_LIMITS.vocal) {
+          if (recorderStatus) recorderStatus.textContent = MEDIA_LIMIT_COPY.vocal;
+          return false;
+        }
+        clearDraftMedia();
+        const duration = composerRecorder?.getDuration?.() || 0;
+        draftMedia = {
+          kind: "vocal",
+          blob,
+          alt: "",
+          duration: Math.round(duration),
+          url: URL.createObjectURL(blob),
+        };
+        paintDraftMedia();
+        setComposerNote("");
+        return true;
+      },
+    });
+    return composerRecorder;
+  };
+
+  vocalButton?.addEventListener("click", () => {
+    const recorder = ensureComposerRecorder();
+    if (!recorder) {
+      setComposerNote("Ce navigateur ne peut pas enregistrer de vocal. Tu peux publier un texte ou une image.");
+      return;
+    }
+  });
+
+  /* --- Publication ------------------------------------------------------ */
+  const postJson = async (payload) => {
+    const response = await fetch("/api/profile", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    return { response, data };
+  };
+
+  const publishPost = async () => {
+    if (!postComposer || !postSubmit) return;
+    const text = String(postComposer.value || "").trim();
+    const media = draftMedia;
+    if (!text && !media) return;
+    postSubmit.disabled = true;
+    mediaBusy = true;
+    syncComposerState();
+    setComposerNote("Publication…");
+    try {
+      const { response, data } = await postJson({
+        action: "post",
+        text,
+        media: media ? { kind: media.kind, alt: media.alt, duration: media.duration } : null,
+      });
+      if (!response.ok) {
+        if (response.status === 401) forward("[data-member-login]");
+        setComposerNote(data.error || "Le post n’a pas pu être publié.");
+        return;
+      }
+      const postId = data?.post?.id || "";
+      if (media && postId) {
+        const mediaData = dataUrlPayload(await readFileAsDataUrl(media.blob));
+        const upload = await postJson({
+          action: "media",
+          postId,
+          kind: media.kind,
+          contentType: media.blob.type || undefined,
+          mediaData,
+        });
+        if (!upload.response.ok) {
+          // Le post texte existe déjà : on prévient sans le supprimer.
+          setComposerNote(upload.data?.error || "Le post est publié, mais le média n’a pas pu être joint.");
+        }
+      }
+      postComposer.value = "";
+      postComposer.style.height = "";
+      clearDraftMedia();
+      if (emojiPanel) emojiPanel.hidden = true;
+      setComposerNote("");
+      await loadFeed({ mode: feedMode });
+      void refreshNotifications({ quiet: true });
+    } catch {
+      setComposerNote("Impossible de joindre le serveur. Réessaie.");
+    } finally {
+      mediaBusy = false;
+      syncComposerState();
+    }
+  };
+
+  postSubmit?.addEventListener("click", () => void publishPost());
+  postComposer?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      void publishPost();
+    }
+  });
+  postComposer?.addEventListener("input", () => {
+    autoGrowComposer();
+    syncComposerState();
+  });
+
+  const quitComposerTransients = () => {
+    if (emojiPanel) emojiPanel.hidden = true;
+    emojiButton?.setAttribute("aria-expanded", "false");
+  };
+  document.addEventListener("click", (event) => {
+    if (!emojiPanel || emojiPanel.hidden) return;
+    if (emojiPanel.contains(event.target) || emojiButton?.contains(event.target)) return;
+    quitComposerTransients();
+  });
+
+  /* ------------------------------------------------------------------------
+     Une carte de post : texte, média, likes, reposts, signalement, suppression
+     -------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------
+     Toast discret (lien copié, action confirmée)
+     -------------------------------------------------------------------- */
+  const toastNode = $("[data-qg-toast]");
+  let toastTimer = 0;
+  const showToast = (message) => {
+    if (!toastNode || !message) return;
+    toastNode.textContent = message;
+    toastNode.hidden = false;
+    toastNode.dataset.visible = "true";
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      toastNode.dataset.visible = "false";
+      toastNode.hidden = true;
+    }, 2400);
+  };
+
+  /* ------------------------------------------------------------------------
+     Médias d'un post : image (zoom), vocal (pilule style X), vidéo
+     -------------------------------------------------------------------- */
+  // Pilule vocale : bouton blanc, spectre de barres, durée — construite ici pour
+  // rester dans la palette du QG (le lecteur du chat a ses propres couleurs).
+  const createVocalPill = (media) => {
+    const pill = document.createElement("div");
+    pill.className = "x-vocal-pill";
+    pill.dataset.state = "idle";
+
+    const play = document.createElement("button");
+    play.type = "button";
+    play.className = "x-vocal-play";
+    play.setAttribute("aria-label", "Lire la note vocale");
+    play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 4.9a1.5 1.5 0 0 1 2.2-1.3l10 6.7a2 2 0 0 1 0 3.4l-10 6.7a1.5 1.5 0 0 1-2.2-1.3V4.9Z" fill="currentColor" /></svg>';
+
+    const wave = document.createElement("div");
+    wave.className = "x-vocal-wave";
+    const bars = [];
+    for (let index = 0; index < 34; index += 1) {
+      const bar = document.createElement("span");
+      bar.className = "x-vocal-bar";
+      bar.style.setProperty("--bar", `${22 + ((index * 37 + 13) % 70)}%`);
+      wave.append(bar);
+      bars.push(bar);
+    }
+
+    const time = document.createElement("span");
+    time.className = "x-vocal-time";
+    const total = Math.max(0, Number(media.duration) || 0);
+    const format = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+    time.textContent = total ? format(total) : "--:--";
+
+    const audio = document.createElement("audio");
+    audio.preload = "none";
+    audio.src = media.url;
+    audio.hidden = true;
+
+    const paintProgress = () => {
+      const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : total;
+      const ratio = duration ? Math.min(1, audio.currentTime / duration) : 0;
+      bars.forEach((bar, index) => {
+        bar.classList.toggle("is-played", index / bars.length <= ratio);
+      });
+      if (duration) time.textContent = `${format(audio.currentTime)} / ${format(duration)}`;
+    };
+
+    const toggle = () => {
+      if (audio.paused) {
+        void audio.play().catch(() => {
+          pill.dataset.state = "error";
+        });
+      } else {
+        audio.pause();
+      }
+    };
+
+    play.addEventListener("click", toggle);
+    wave.addEventListener("click", (event) => {
+      const rect = wave.getBoundingClientRect();
+      const duration = Number.isFinite(audio.duration) ? audio.duration : total;
+      if (!rect.width || !duration) return;
+      audio.currentTime = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)) * duration;
+      paintProgress();
+    });
+    audio.addEventListener("play", () => {
+      pill.dataset.state = "playing";
+      play.setAttribute("aria-label", "Mettre la note vocale en pause");
+      play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.6h3.4v14.8H7zM13.6 4.6H17v14.8h-3.4z" fill="currentColor" /></svg>';
+      const tick = () => {
+        if (audio.paused) return;
+        paintProgress();
+        window.requestAnimationFrame(tick);
+      };
+      window.requestAnimationFrame(tick);
+    });
+    audio.addEventListener("pause", () => {
+      pill.dataset.state = "idle";
+      play.setAttribute("aria-label", "Lire la note vocale");
+      play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 4.9a1.5 1.5 0 0 1 2.2-1.3l10 6.7a2 2 0 0 1 0 3.4l-10 6.7a1.5 1.5 0 0 1-2.2-1.3V4.9Z" fill="currentColor" /></svg>';
+      paintProgress();
+    });
+    audio.addEventListener("ended", () => {
+      audio.currentTime = 0;
+      paintProgress();
+    });
+    audio.addEventListener("loadedmetadata", paintProgress);
+
+    pill.append(play, wave, time, audio);
+    return pill;
+  };
+
+  const createMediaNode = (media, { compact = false } = {}) => {
+    if (!media) return null;
+    const wrap = document.createElement("div");
+    wrap.className = `x-post-media x-post-media--${media.kind}${compact ? " x-post-media--compact" : ""}`;
+    if (media.kind === "image") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "x-post-media-image";
+      button.setAttribute("aria-label", "Agrandir l’image");
+      const image = document.createElement("img");
+      image.src = media.url;
+      image.alt = media.alt || "Image du post";
+      image.loading = "lazy";
+      image.decoding = "async";
+      button.append(image);
+      button.addEventListener("click", () => {
+        if (typeof window.qgImageTools?.openImageViewer === "function") {
+          window.qgImageTools.openImageViewer(media.url, media.alt || "Image du post");
+          return;
+        }
+        window.open(media.url, "_blank", "noopener");
+      });
+      wrap.append(button);
+      return wrap;
+    }
+    if (media.kind === "video") {
+      const video = document.createElement("video");
+      video.className = "x-post-media-video";
+      video.src = media.url;
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      if (media.duration) video.dataset.duration = String(media.duration);
+      wrap.append(video);
+      return wrap;
+    }
+    wrap.append(createVocalPill(media));
+    return wrap;
+  };
+
+  const postActionIcon = {
+    like: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2 4.6 13a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9A4.6 4.6 0 1 1 19.4 13Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>',
+    likeFull: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2 4.6 13a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9A4.6 4.6 0 1 1 19.4 13Z" fill="currentColor" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>',
+    repost: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 8.6h9.8a2.4 2.4 0 0 1 2.4 2.4v3.4M17.6 15.4l-2.4-2.4M17.6 15.4l-2.4 2.4M17.6 15.4H7.8a2.4 2.4 0 0 1-2.4-2.4V9.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>',
+    share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.4v11.2M8.2 7.2 12 3.4l3.8 3.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M5.4 13.4v4.8a2.4 2.4 0 0 0 2.4 2.4h8.4a2.4 2.4 0 0 0 2.4-2.4v-4.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>',
+    quiet: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.4" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="18.6" cy="12" r="1.6" fill="currentColor" /></svg>',
+    pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.4 3.8h5.2l-.7 4.3 3.1 3.1H6.8l3.1-3.1-.5-4.3ZM12 11.2v6.4M9.6 20.4 12 17.6l2.4 2.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>',
+    crown: '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg>',
+  };
+
+  // Temps relatif court : « à l’instant », « 2 min », « 1 h », « 3 j ».
+  const shortTime = (value) => {
+    const date = Date.parse(value || "");
+    if (!Number.isFinite(date)) return "";
+    const seconds = Math.round((Date.now() - date) / 1000);
+    if (seconds < 60) return "à l’instant";
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) return `${hours} h`;
+    const days = Math.round(hours / 24);
+    if (days < 7) return `${days} j`;
+    return new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  };
+
+  /* ------------------------------------------------------------------------
+     Une carte de post : épinglé/republié, texte, média, actions, menu •••
+     -------------------------------------------------------------------- */
+  const closePostMenus = (except) => {
+    $$(".x-post-menu").forEach((menu) => {
+      if (menu === except) return;
+      menu.hidden = true;
+      menu.closest(".x-post-menu-wrap")?.querySelector("[data-post-menu-button]")?.setAttribute("aria-expanded", "false");
+    });
+  };
+
+  const buildPostMenu = (post) => {
+    const wrap = document.createElement("div");
+    wrap.className = "x-post-menu-wrap";
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "x-post-menu-button";
+    trigger.dataset.postMenuButton = "";
+    trigger.setAttribute("aria-label", "Options du post");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.innerHTML = postActionIcon.quiet;
+
+    const menu = document.createElement("div");
+    menu.className = "x-post-menu";
+    menu.setAttribute("role", "menu");
+    menu.hidden = true;
+
+    const item = (label, action, { danger = false } = {}) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `x-post-menu-item${danger ? " x-post-menu-item--danger" : ""}`;
+      button.setAttribute("role", "menuitem");
+      button.dataset.postMenuAction = action;
+      button.textContent = label;
+      return button;
+    };
+
+    if (post.canPin) {
+      menu.append(item(post.pinned ? "Désépingler" : "Épingler en haut du QG", post.pinned ? "unpin" : "pin"));
+    }
+    if (post.canDelete) menu.append(item("Supprimer le post", "delete", { danger: true }));
+    menu.append(item("Signaler ce post", "report"));
+    if (!post.isMine) menu.append(item(`Bloquer @${post.pseudo}`, "block", { danger: true }));
+
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const open = menu.hidden;
+      closePostMenus(menu);
+      menu.hidden = !open;
+      trigger.setAttribute("aria-expanded", String(open));
+    });
+
+    wrap.append(trigger, menu);
+    return wrap;
+  };
+
   const createPostCard = (post) => {
     const card = document.createElement("article");
     card.className = "x-post";
     card.dataset.postId = post.id;
+    if (post.pinned) card.dataset.pinned = "true";
+    post.isMine = Boolean(currentUser() && post.pseudo && currentUser().pseudo.toLowerCase() === String(post.pseudo).toLowerCase());
+
+    const body = document.createElement("div");
+    body.className = "x-post-body";
+
+    // Ligne de contexte : épinglé (Hôte) ou republié (membre).
+    if (post.pinned) {
+      const pinned = document.createElement("p");
+      pinned.className = "x-post-context x-post-context--pinned";
+      pinned.innerHTML = `${postActionIcon.pin}<span>Post épinglé par Gionny</span>`;
+      body.append(pinned);
+    } else if (post.repostedBy) {
+      const reposted = document.createElement("p");
+      reposted.className = "x-post-context x-post-context--repost";
+      reposted.innerHTML = `${postActionIcon.repost}<span>Republié par <strong>@${post.repostedBy}</strong></span>`;
+      body.append(reposted);
+    }
+
+    const row = document.createElement("div");
+    row.className = "x-post-row";
 
     const avatar = document.createElement("button");
     avatar.type = "button";
@@ -643,8 +1390,8 @@
       avatar.append(image);
     }
 
-    const body = document.createElement("div");
-    body.className = "x-post-body";
+    const column = document.createElement("div");
+    column.className = "x-post-column";
 
     const head = document.createElement("div");
     head.className = "x-post-head";
@@ -657,58 +1404,83 @@
     if (post.isHost) {
       const crown = document.createElement("span");
       crown.className = "x-post-badge x-post-badge--host";
+      crown.title = "Hôte du QG";
       crown.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg>';
       head.append(crown);
     }
     if (Array.isArray(post.badges) && post.badges.includes("verified")) {
       const badge = document.createElement("span");
       badge.className = "x-post-badge x-post-badge--verified";
+      badge.title = "Membre Validé";
       badge.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg>';
       head.append(badge);
     }
+    const handle = document.createElement("span");
+    handle.className = "x-post-handle";
+    handle.textContent = post.handle || `@${String(post.pseudo || "").replace(/\s+/gu, "")}`;
+    const dot = document.createElement("span");
+    dot.className = "x-post-dot";
+    dot.textContent = "·";
     const when = document.createElement("span");
     when.className = "x-post-time";
-    when.textContent = relativeTime(post.createdAt);
-    head.append(when);
+    when.textContent = shortTime(post.createdAt);
+    head.append(handle, dot, when);
 
-    const text = document.createElement("p");
-    text.className = "x-post-text";
-    text.textContent = post.text;
+    const menu = buildPostMenu(post);
+    head.append(menu);
 
+    column.append(head);
+
+    if (post.text) {
+      const text = document.createElement("p");
+      text.className = "x-post-text";
+      text.textContent = post.text;
+      column.append(text);
+    }
+    const mediaNode = createMediaNode(post.media);
+    if (mediaNode) column.append(mediaNode);
+
+    // Barre d'actions : repost, j'aime, partager.
     const actions = document.createElement("div");
     actions.className = "x-post-actions";
+
+    const repost = document.createElement("button");
+    repost.type = "button";
+    repost.className = `x-post-action x-post-action--repost${post.reposted ? " is-reposted" : ""}`;
+    repost.dataset.action = "repost";
+    repost.setAttribute("aria-pressed", String(Boolean(post.reposted)));
+    repost.setAttribute("aria-label", post.reposted ? "Annuler le repost" : "Reposter ce post");
+    repost.innerHTML = postActionIcon.repost;
+    const repostCount = document.createElement("span");
+    repostCount.textContent = String(post.reposts || 0);
+    repost.append(repostCount);
+
     const like = document.createElement("button");
     like.type = "button";
-    like.className = `x-post-action${post.liked ? " is-liked" : ""}`;
+    like.className = `x-post-action x-post-action--like${post.liked ? " is-liked" : ""}`;
     like.dataset.action = "like";
     like.setAttribute("aria-pressed", String(Boolean(post.liked)));
     like.setAttribute("aria-label", post.liked ? "Retirer le like" : "Liker ce post");
-    like.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2 4.6 13a4.6 4.6 0 0 1 6.5-6.5l.9.9.9-.9A4.6 4.6 0 1 1 19.4 13Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>';
-    const count = document.createElement("span");
-    count.textContent = String(post.likes || 0);
-    like.append(count);
-    actions.append(like);
+    like.innerHTML = post.liked ? postActionIcon.likeFull : postActionIcon.like;
+    const likeCount = document.createElement("span");
+    likeCount.textContent = String(post.likes || 0);
+    like.append(likeCount);
 
-    const report = document.createElement("button");
-    report.type = "button";
-    report.className = "x-post-action x-post-action--quiet";
-    report.dataset.action = "report";
-    report.setAttribute("aria-label", `Signaler le post de ${post.pseudo}`);
-    report.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.2" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="17.8" cy="12" r="1.6" fill="currentColor" /></svg>';
-    actions.append(report);
+    const share = document.createElement("button");
+    share.type = "button";
+    share.className = "x-post-action x-post-action--share";
+    share.dataset.action = "share";
+    share.setAttribute("aria-label", "Copier le lien du post");
+    share.innerHTML = postActionIcon.share;
 
-    if (post.canDelete) {
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "x-post-action x-post-action--quiet";
-      remove.dataset.action = "delete";
-      remove.setAttribute("aria-label", "Supprimer ce post");
-      remove.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>';
-      actions.append(remove);
-    }
+    actions.append(repost, like, share);
+    column.append(actions);
 
-    body.append(head, text, actions);
-    card.append(avatar, body);
+    row.append(avatar, column);
+    body.append(row);
+    card.append(body);
+
+    window.qgTwemoji?.render?.(card);
     return card;
   };
 
@@ -740,105 +1512,329 @@
     }
   }
 
-  // Liker / supprimer depuis le fil (délégation : aucun écouteur par post).
-  feedPostsNode?.addEventListener("click", async (event) => {
-    const actionButton = event.target.closest("[data-action]");
-    if (!actionButton) return;
+  // Liker / reposter / supprimer depuis le fil (délégation, zéro écouteur par post).
+  const feedAction = async (actionButton, container) => {
     const card = actionButton.closest(".x-post");
     const postId = card?.dataset.postId;
     if (!postId) return;
     const action = actionButton.dataset.action;
+    if (action === "share") {
+      const permalink = `${window.location.origin}/post/${encodeURIComponent(postId)}`;
+      // 1. partage natif, 2. presse-papiers, 3. repli manuel : jamais de cul-de-sac.
+      try {
+        if (typeof navigator.share === "function") {
+          await navigator.share({ url: permalink, title: "QG2GIONNY" });
+          return;
+        }
+      } catch {
+        // Partage annulé par l'utilisateur : on ne dit rien.
+        return;
+      }
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(permalink);
+          showToast("Lien copié");
+          return;
+        }
+      } catch {
+        // Presse-papiers refusé : on bascule sur la sélection manuelle.
+      }
+      window.prompt("Copie le lien du post :", permalink);
+      return;
+    }
     if (action === "report") {
       const who = card.querySelector(".x-post-who")?.textContent || "";
       openReportDialog({ pseudo: who, reasons: viewedProfile?.reasons, messageId: postId });
       return;
     }
+    if (action === "like" || action === "repost") {
+      const already = actionButton.getAttribute("aria-pressed") === "true";
+      if (action === "like" && !isSignedIn()) {
+        forward("[data-member-login]");
+        return;
+      }
+      const payload = action === "like"
+        ? { action: already ? "unlike" : "like", postId }
+        : { action: already ? "unrepost" : "repost", postId };
+      actionButton.disabled = true;
+      try {
+        const { response, data } = await postJson(payload);
+        if (!response.ok) {
+          if (response.status === 401) forward("[data-member-login]");
+          return;
+        }
+        const counter = actionButton.querySelector("span");
+        if (action === "like") {
+          const liked = data.liked === true;
+          if (counter) counter.textContent = String(data.likes ?? 0);
+          actionButton.classList.toggle("is-liked", liked);
+          actionButton.setAttribute("aria-pressed", String(liked));
+          actionButton.setAttribute("aria-label", liked ? "Retirer le like" : "Liker ce post");
+          // Cœur au trait → cœur plein, rose, avec le petit rebond.
+          actionButton.innerHTML = (liked ? postActionIcon.likeFull : postActionIcon.like);
+          if (counter) actionButton.append(counter);
+          actionButton.classList.remove("is-bumping");
+          void actionButton.offsetWidth;
+          actionButton.classList.add("is-bumping");
+        } else {
+          const reposted = data.reposted === true;
+          if (counter) counter.textContent = String(data.reposts ?? 0);
+          actionButton.classList.toggle("is-reposted", reposted);
+          actionButton.setAttribute("aria-pressed", String(reposted));
+          actionButton.setAttribute("aria-label", reposted ? "Annuler le repost" : "Reposter ce post");
+        }
+      } catch {
+        // Le bouton se réactive simplement.
+      } finally {
+        actionButton.disabled = false;
+      }
+      return;
+    }
+
     actionButton.disabled = true;
     try {
-      const response = await fetch("/api/profile", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        body: JSON.stringify({
-          action: action === "delete" ? "delete-post" : "like",
-          postId,
-        }),
+      const { response, data } = await postJson({
+        action: "delete-post",
+        postId,
       });
-      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         if (response.status === 401) forward("[data-member-login]");
         return;
       }
-      if (action === "delete") {
-        card.remove();
-        if (feedPostsNode && !feedPostsNode.childElementCount) {
-          if (feedEmpty) feedEmpty.hidden = false;
-        }
-        if (typeof renderProfileView === "function" && activeView === "profile") void renderProfileView();
-        return;
+      card.remove();
+      if (container && !container.querySelector(".x-post")) {
+        if (container === feedPostsNode && feedEmpty) feedEmpty.hidden = false;
+        if (container === profileFeedNode && profileFeedEmpty) profileFeedEmpty.hidden = false;
       }
-      const counter = actionButton.querySelector("span");
-      const liked = data.liked === true;
-      if (counter) counter.textContent = String(data.likes ?? 0);
-      actionButton.classList.toggle("is-liked", liked);
-      actionButton.setAttribute("aria-pressed", String(liked));
+      if (container === profileFeedNode) void loadProfileFeed();
+      void data;
     } catch {
-      // Rien à signaler : le bouton se réactive simplement.
+      // Rien à signaler : le bouton se réactive.
     } finally {
       actionButton.disabled = false;
     }
-  });
-
-  const publishPost = async () => {
-    if (!postComposer || !postSubmit) return;
-    const text = String(postComposer.value || "").trim();
-    if (!text) return;
-    postSubmit.disabled = true;
-    try {
-      const response = await fetch("/api/profile", {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        credentials: "same-origin",
-        cache: "no-store",
-        body: JSON.stringify({ action: "post", text }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        if (composerNote) composerNote.textContent = data.error || "Le post n’a pas pu être publié.";
-        if (response.status === 401) forward("[data-member-login]");
-        return;
-      }
-      postComposer.value = "";
-      postComposer.style.height = "";
-      if (composerNote) {
-        composerNote.textContent = "Seuls Gionny et les membres Validés publient des posts publics. Tu peux liker les posts dès maintenant.";
-      }
-      await loadFeed({ mode: feedMode });
-    } catch {
-      if (composerNote) composerNote.textContent = "Impossible de joindre le serveur. Réessaie.";
-    } finally {
-      postSubmit.disabled = false;
-    }
   };
 
-  postSubmit?.addEventListener("click", () => void publishPost());
-  postComposer?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault();
-      void publishPost();
+  feedPostsNode?.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-action]");
+    if (!actionButton) return;
+    void feedAction(actionButton, feedPostsNode);
+  });
+
+  profileFeedNode?.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-action]");
+    if (!actionButton) return;
+    void feedAction(actionButton, profileFeedNode);
+  });
+
+  // Menu ••• d'un post : épingler, supprimer, signaler, bloquer.
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest?.(".x-post-menu-wrap")) closePostMenus();
+  });
+
+  document.addEventListener("click", async (event) => {
+    const menuItem = event.target.closest?.("[data-post-menu-action]");
+    if (!menuItem) return;
+    const card = menuItem.closest(".x-post");
+    const postId = card?.dataset.postId;
+    const action = menuItem.dataset.postMenuAction;
+    const who = card?.querySelector(".x-post-who")?.textContent || "";
+    closePostMenus();
+    if (!postId) return;
+
+    if (action === "report") {
+      openReportDialog({ pseudo: who, reasons: viewedProfile?.reasons, messageId: postId });
+      return;
+    }
+    if (action === "delete") {
+      const desired = window.confirm("Supprimer définitivement ce post ?");
+      if (!desired) return;
+      const { response, data } = await postJson({ action: "delete-post", postId });
+      if (!response.ok) {
+        showToast(data.error || "Ce post n’a pas pu être supprimé.");
+        return;
+      }
+      const box = card.closest("[data-x-feed-posts], [data-x-profile-feed]");
+      card.remove();
+      if (box && !box.querySelector(".x-post")) {
+        if (box === feedPostsNode && feedEmpty) feedEmpty.hidden = false;
+        if (box === profileFeedNode && profileFeedEmpty) profileFeedEmpty.hidden = false;
+      }
+      showToast("Post supprimé");
+      return;
+    }
+    if (action === "pin" || action === "unpin") {
+      const { response, data } = await postJson({ action, postId });
+      if (!response.ok) {
+        showToast(data.error || "Impossible de modifier l’épinglage.");
+        return;
+      }
+      showToast(action === "pin" ? "Post épinglé en haut du QG" : "Post désépinglé");
+      await loadFeed({ mode: feedMode, quiet: true });
+      return;
+    }
+    if (action === "block") {
+      const confirmed = window.confirm(`Bloquer @${who} ? Son contenu et ses messages disparaîtront du QG.`);
+      if (!confirmed) return;
+      const { response, data } = await postJson({ action: "block", target: who });
+      if (!response.ok) {
+        showToast(data.error || "Ce blocage n’a pas pu être enregistré.");
+        return;
+      }
+      showToast(`@${who} est bloqué`);
+      await loadFeed({ mode: feedMode, quiet: true });
     }
   });
-  postComposer?.addEventListener("input", () => {
-    postComposer.style.height = "auto";
-    postComposer.style.height = `${Math.min(220, postComposer.scrollHeight)}px`;
-  });
+
+  /* ------------------------------------------------------------------------
+     Notifications réelles : likes, reposts, follows et posts de l'Hôte
+     -------------------------------------------------------------------- */
+  const notificationsList = $("[data-x-notifications-list]");
+  const notificationsEmpty = $("[data-x-notifications-empty]");
+  const notificationBadges = $$('[data-x-badge="notifications"]');
+  let notificationsFilter = "all";
+  let lastNotifications = [];
+
+  const notificationSentence = (item) => {
+    const names = Array.isArray(item.actors) ? item.actors : [];
+    const first = names[0]?.pseudo || "Quelqu’un";
+    if (item.type === "follow") {
+      if (names.length <= 1) return `${first} a commencé à te suivre`;
+      return `${first} et ${names.length - 1} autre${names.length > 2 ? "s" : ""} ont commencé à te suivre`;
+    }
+    if (item.type === "post") return "Gionny 👑 a publié un nouveau post dans le QG";
+    const verbs = {
+      repost: ["a reposté ton post", "ont reposté ton post"],
+      like: ["a aimé ton post", "ont aimé ton post"],
+    }[item.type] || ["a interagi avec ton post", "ont interagi avec ton post"];
+    if (names.length <= 1) return `${first} ${verbs[0]}`;
+    return `${first} et ${names.length - 1} autre${names.length > 2 ? "s" : ""} ${verbs[1]}`;
+  };
+
+  const createNotificationRow = (item) => {
+    const row = document.createElement("article");
+    row.className = "x-notification";
+    row.dataset.kind = item.type;
+    if (!item.read) row.dataset.unread = "true";
+
+    const icon = document.createElement("span");
+    icon.className = `x-notification-icon x-notification-icon--${item.type}`;
+    icon.innerHTML = item.type === "repost"
+      ? postActionIcon.repost
+      : item.type === "post"
+        ? postActionIcon.crown
+        : item.type === "follow"
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.4" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M3.4 20.4a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /><path d="M18.6 8.4v5M21.1 10.9h-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>'
+          : postActionIcon.like;
+
+    // Avatar de l'auteur de l'action (ou couronne du QG pour un post officiel).
+    const avatar = document.createElement("span");
+    avatar.className = "x-notification-avatar";
+    const actor = item.actors?.[0];
+    if (actor?.avatarData) {
+      const img = document.createElement("img");
+      img.src = actor.avatarData;
+      img.alt = "";
+      avatar.append(img);
+    } else if (actor?.isHost || item.type === "post") {
+      const img = document.createElement("img");
+      img.src = hostAvatar();
+      img.alt = "";
+      avatar.append(img);
+    } else {
+      avatar.innerHTML = '<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><circle cx="20" cy="20" r="19" /><circle cx="20" cy="15" r="6" /><path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" /></svg>';
+    }
+
+    const copy = document.createElement("div");
+    copy.className = "x-notification-copy";
+    const line = document.createElement("p");
+    line.className = "x-notification-text";
+    line.textContent = notificationSentence(item);
+    const preview = document.createElement("p");
+    preview.className = "x-notification-preview";
+    preview.textContent = item.preview || "Ton post";
+    const when = document.createElement("span");
+    when.className = "x-notification-time";
+    when.textContent = relativeTime(item.createdAt);
+    copy.append(line, preview, when);
+
+    const lead = document.createElement("div");
+    lead.className = "x-notification-lead";
+    lead.append(icon, avatar);
+
+    row.append(lead, copy);
+    row.addEventListener("click", () => {
+      if (item.type === "post" && item.postId) {
+        setActiveView("home");
+        window.requestAnimationFrame(() => {
+          document.querySelector(`.x-post[data-post-id="${item.postId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+        return;
+      }
+      const pseudo = item.actors?.[0]?.pseudo;
+      if (pseudo) void openPublicProfile(pseudo);
+    });
+    window.qgTwemoji?.render?.(row);
+    return row;
+  };
+
+  const paintNotifications = (items) => {
+    if (!notificationsList) return;
+    const filtered = notificationsFilter === "verified"
+      ? items.filter((item) => item.type === "post" ||
+          (item.actors || []).some((actor) => actor.isHost || actor.badges?.includes("verified")))
+      : items;
+    notificationsList.replaceChildren(...filtered.map(createNotificationRow));
+    if (notificationsEmpty) notificationsEmpty.hidden = filtered.length > 0;
+  };
+
+  const setNotificationBadge = (unread) => {
+    const count = Math.max(0, Number(unread) || 0);
+    notificationBadges.forEach((node) => {
+      node.hidden = count === 0;
+      if (count > 0) {
+        node.textContent = count > 9 ? "9+" : String(count);
+        node.setAttribute("aria-label", `${count} notification${count > 1 ? "s" : ""} non lue${count > 1 ? "s" : ""}`);
+      }
+    });
+  };
+
+  async function refreshNotifications({ quiet = false, markRead = false } = {}) {
+    if (!notificationsList) return;
+    try {
+      const url = new URL("/api/profile", window.location.origin);
+      url.searchParams.set("notifications", "1");
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return;
+      const items = Array.isArray(data.notifications) ? data.notifications : [];
+      lastNotifications = items;
+      paintNotifications(items);
+      if (markRead && items.some((item) => !item.read)) {
+        const { response: readResponse } = await postJson({ action: "notifications-read" });
+        if (readResponse.ok) {
+          setNotificationBadge(0);
+          return;
+        }
+      }
+      setNotificationBadge(data.unread || 0);
+      if (quiet) return;
+    } catch {
+      // Aucune notification affichée : le panneau garde son état vide.
+    }
+  }
 
   $$("[data-x-notif-tab]").forEach((tab) => {
     tab.addEventListener("click", () => {
       $$("[data-x-notif-tab]").forEach((other) =>
         other.setAttribute("aria-selected", String(other === tab))
       );
+      notificationsFilter = tab.dataset.xNotifTab === "verified" ? "verified" : "all";
+      paintNotifications(lastNotifications);
     });
   });
 
@@ -981,17 +1977,28 @@
 
   const applyComposerRights = (user) => {
     if (!postComposer || !postSubmit) return;
+    composerUser = user;
     const canPost = Boolean(user && (user.isHost || user.isVerified));
-    postSubmit.disabled = !canPost;
+    // Connecté mais pas encore Validé : le bandeau remplace la zone d'écriture.
+    if (composerNode) composerNode.hidden = !canPost;
+    const lockedBanner = $("[data-x-composer-locked]");
+    if (lockedBanner) lockedBanner.hidden = !user || canPost;
     postComposer.readOnly = !canPost;
     postComposer.placeholder = canPost
       ? "Quoi de neuf dans le QG ?"
       : "Seuls Gionny et les membres Validés publient des posts publics";
-    if (composerNote) {
-      composerNote.textContent = canPost
-        ? "Ton post est visible par toute la commu du QG."
-        : "Seuls Gionny et les membres Validés publient des posts publics. Tu peux liker les posts dès maintenant.";
-    }
+    // Les outils d'attachement suivent exactement le droit de publier.
+    $$("[data-x-post-image], [data-x-post-video], [data-x-post-vocal], [data-x-post-emoji]").forEach(
+      (button) => {
+        button.disabled = !canPost;
+      }
+    );
+    if (!canPost && draftMedia) clearDraftMedia();
+    if (!canPost) quitComposerTransients();
+    setComposerNote(
+      canPost ? "Ton post est visible par toute la commu du QG." : ""
+    );
+    syncComposerState();
   };
 
   const applyIdentityGates = (user) => {
@@ -1109,6 +2116,7 @@
   syncAccount();
   syncMessages();
   void loadFeed();
+  void refreshNotifications({ quiet: true });
 
   /* ------------------------------------------------------------------------
      Téléphone : bascule Fil / Lives & réseaux

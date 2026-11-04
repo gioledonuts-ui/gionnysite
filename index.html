@@ -250,8 +250,10 @@
         <section class="welcome-panel" data-x-view="home" aria-labelledby="welcome-title">
           <div class="x-feed-header">
             <div class="x-feed-tabs" role="tablist" aria-label="Navigation du fil">
-              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="all" aria-selected="true" aria-controls="x-feed">Pour vous</button>
-              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="verified" aria-selected="false" aria-controls="x-feed">Validés &amp; Officiel</button>
+              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="all" aria-selected="true" aria-controls="x-feed">Pour toi</button>
+              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="follows" aria-selected="false" aria-controls="x-feed">Suivis</button>
+              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="verified" aria-selected="false" aria-controls="x-feed">Officiel &amp; Validés</button>
+              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="reposts" aria-selected="false" aria-controls="x-feed">Reposts</button>
             </div>
             <div class="x-feed-header-row">
               <button class="x-feed-avatar" type="button" data-x-profile-link="Gionny" aria-label="Ouvrir le profil de Gionny">
@@ -346,12 +348,71 @@
               <label class="x-composer-field">
                 <textarea data-x-post-input rows="1" maxlength="500" placeholder="Quoi de neuf dans le QG ?" aria-label="Écrire un post public"></textarea>
               </label>
-              <div class="x-composer-tools">
-                <span class="x-composer-who">Visible par la commu · post public</span>
-                <button class="x-composer-post" type="button" data-x-post-submit>Poster</button>
+
+              <!-- Aperçu du média choisi (image, vocal ou vidéo) -->
+              <div class="x-composer-attachment" data-x-composer-attachment hidden>
+                <div class="x-composer-attachment-media" data-x-composer-attachment-media></div>
+                <div class="x-composer-attachment-copy">
+                  <p class="x-composer-attachment-name" data-x-composer-attachment-name></p>
+                  <p class="x-composer-attachment-meta" data-x-composer-attachment-meta></p>
+                </div>
+                <button class="x-composer-attachment-remove" type="button" data-x-composer-attachment-remove aria-label="Retirer ce média">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+                </button>
               </div>
+
+              <!-- Barre d'outils d'attachement + bouton Poster -->
+              <div class="x-composer-tools">
+                <div class="x-composer-attach" role="group" aria-label="Ajouter un média">
+                  <button class="x-composer-tool" type="button" data-x-post-image aria-label="Ajouter une image" title="Image">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3.4" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="8.6" cy="9.6" r="1.7" fill="currentColor" /><path d="m4.4 17.4 4.5-4.6a1.8 1.8 0 0 1 2.6 0l2.1 2.2 1.8-1.9a1.8 1.8 0 0 1 2.6 0l1.6 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </button>
+                  <button class="x-composer-tool" type="button" data-x-post-video aria-label="Ajouter une vidéo" title="Vidéo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.6" y="5.6" width="13.2" height="12.8" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m16.4 11.2 4-2.4v6.4l-4-2.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+                  </button>
+                  <button class="x-composer-tool" type="button" data-x-post-vocal aria-label="Enregistrer un vocal" title="Vocal" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.8" width="6" height="11.4" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M5.6 11.6a6.4 6.4 0 0 0 12.8 0M12 18v3.2M9 21.2h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                  </button>
+                  <button class="x-composer-tool" type="button" data-x-post-emoji aria-label="Ajouter un emoji" title="Emoji" aria-expanded="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M8.4 14.2a4.2 4.2 0 0 0 7.2 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="9.2" cy="9.8" r="1.15" fill="currentColor" /><circle cx="14.8" cy="9.8" r="1.15" fill="currentColor" /></svg>
+                  </button>
+                  <input type="file" accept="image/*" data-x-post-image-input hidden />
+                  <input type="file" accept="video/*" data-x-post-video-input hidden />
+                </div>
+                <span class="x-composer-count" data-x-post-count hidden>0/500</span>
+                <button class="x-composer-post" type="button" data-x-post-submit disabled>Poster</button>
+              </div>
+
+              <!-- Enregistreur vocal intégré : le même moteur que la discussion privée -->
+              <div class="x-composer-recorder" data-x-post-recorder hidden>
+                <div class="x-recorder-live" data-x-recorder-live>
+                  <span class="x-recorder-dot" aria-hidden="true"></span>
+                  <span class="x-recorder-timer" data-x-recorder-timer>0:00</span>
+                  <div class="x-recorder-wave" data-x-recorder-wave aria-hidden="true"></div>
+                </div>
+                <div class="x-recorder-preview" data-x-recorder-preview hidden></div>
+                <div class="x-recorder-actions">
+                  <button class="x-auth-button x-auth-button--quiet" type="button" data-x-recorder-cancel>Annuler</button>
+                  <button class="x-auth-button x-auth-button--quiet" type="button" data-x-recorder-stop>Stop</button>
+                  <button class="x-auth-button x-auth-button--primary" type="button" data-x-recorder-send hidden>Utiliser ce vocal</button>
+                </div>
+                <p class="x-recorder-status" data-x-recorder-status role="status" aria-live="polite"></p>
+              </div>
+
+              <!-- Emojis : rendu Twemoji SVG dans le post, insertion en unicode -->
+              <div class="x-emoji-panel" data-x-emoji-panel hidden role="dialog" aria-label="Choisir un emoji">
+                <div class="x-emoji-grid" data-x-emoji-grid></div>
+              </div>
+
               <p class="x-composer-note" data-x-composer-note>Seuls Gionny et les membres Validés <svg class="x-note-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg> publient des posts publics. Tu peux liker les posts dès maintenant.</p>
             </div>
+          </div>
+
+          <!-- Membre connecté mais pas encore Validé : bandeau sobre à la place du composeur -->
+          <div class="x-composer-locked" data-x-composer-locked data-x-member-only hidden>
+            <svg class="x-composer-locked-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.6" y="10.4" width="14.8" height="9.8" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M8.4 10.4V7.8a3.6 3.6 0 0 1 7.2 0v2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+            <p class="x-composer-locked-copy">Seuls Gionny et les membres Validés <svg class="x-note-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg> peuvent publier des posts. Tu peux aimer et republier les posts du QG !</p>
+            <button class="x-composer-locked-button" type="button" data-x-profile-settings>Paramètres</button>
           </div>
 
           <div class="x-feed" id="x-feed" role="tabpanel" aria-label="Fil du QG" data-x-feed>
@@ -382,7 +443,8 @@
               <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
             </div>
           </div>
-          <div class="x-empty" data-x-notifications-list>
+          <div class="x-notifications" data-x-notifications-list></div>
+          <div class="x-empty" data-x-notifications-empty hidden>
             <svg class="x-empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a5.9 5.9 0 0 1 5.9 5.9v3.4l1.7 3.3a.7.7 0 0 1-.6 1H4.9a.7.7 0 0 1-.6-1l1.7-3.3V9.1A5.9 5.9 0 0 1 12 3.2Z" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round" /><path d="M9.6 20.2a2.6 2.6 0 0 0 4.8 0" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>
             <h3 class="x-empty-title">Rien de neuf pour le moment</h3>
             <p class="x-empty-copy">Dès qu’un live démarre ou qu’un membre Validé publie, ça tombe ici.</p>
@@ -1126,6 +1188,8 @@
         </section>
       </div>
     </aside>
+
+    <div class="qg-toast" data-qg-toast role="status" aria-live="polite" hidden></div>
 
     <dialog
       class="profile-dialog"
