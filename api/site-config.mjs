@@ -1,8 +1,10 @@
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import {
+  ensureStateLoaded,
   readSharedSiteConfig,
   restoreAdminStateReplica,
   restoreSharedSiteConfig,
+  syncStateToSupabase,
   writeSharedSiteConfig,
 } from "../lib/blob-store.mjs";
 import { SOCIAL_INFO_FIELDS, validateSiteConfig } from "../lib/site-config.mjs";
@@ -32,6 +34,7 @@ function readJsonBody(request) {
 
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
 
   if (request.method === "GET") {
     try {
@@ -107,7 +110,9 @@ export default async function handler(request, response) {
     const updatedAt = browserRestore
       ? await restoreSharedSiteConfig(validation.config)
       : await writeSharedSiteConfig(validation.config);
+    const persisted = await syncStateToSupabase();
     return response.status(200).json({
+      persisted: persisted.saved,
       restoredFromBrowser: browserRestore,
       config: validation.config,
       storageConfigured: true,

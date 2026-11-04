@@ -8,7 +8,13 @@ import {
   setVisitorAccountRole,
   ensureOwnerAccountSeeded,
 } from "../lib/contact-inbox.mjs";
-import { restoreAdminStateReplica, snapshotAdminState, writeAdminStateReplica } from "../lib/blob-store.mjs";
+import {
+  ensureStateLoaded,
+  restoreAdminStateReplica,
+  snapshotAdminState,
+  syncStateToSupabase,
+  writeAdminStateReplica,
+} from "../lib/blob-store.mjs";
 
 const MAX_BODY_BYTES = 4000;
 
@@ -62,8 +68,21 @@ function memberError(reason) {
   return { status: 409, error: "Cette action sur le membre n’a pas pu être effectuée." };
 }
 
+/**
+ * Répond au navigateur puis pousse l'état vers Supabase avant de rendre la
+ * main : un compte créé, un rôle changé ou un message envoyé est durable avant
+ * l'accusé de réception. Si Supabase est momentanément injoignable on répond
+ * quand même : la donnée reste en RAM et le prochain envoi la rattrape.
+ */
+function sendPersisted(response, status, payload) {
+  return syncStateToSupabase()
+    .catch(() => ({ saved: false, reason: "error" }))
+    .then(() => response.status(status).json(payload));
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
   await ensureOwnerAccountSeeded().catch(() => {});
   if (!["GET", "PATCH", "DELETE"].includes(request.method)) {
     response.setHeader("Allow", "GET, PATCH, DELETE");
@@ -104,7 +123,7 @@ export default async function handler(request, response) {
       // Roles and badges are admin state: they go in the crash-proof replica so
       // a cold start does not lose them.
       await writeAdminStateReplica(snapshotAdminState()).catch(() => {});
-      return response.status(200).json(result);
+      return sendPersisted(response, 200, result);
     }
 
     const result = await deleteVisitorAccount(body.id);
@@ -112,7 +131,7 @@ export default async function handler(request, response) {
       const failure = memberError(result.reason);
       return response.status(failure.status).json({ error: failure.error });
     }
-    return response.status(200).json({ deleted: true, conversationPreserved: true });
+    return sendPersisted(response, 200, { deleted: true, conversationPreserved: true });
   } catch (error) {
     console.error("[admin-members] private member request failed", {
       name: error instanceof Error ? error.name : "UnknownError",

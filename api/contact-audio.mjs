@@ -9,6 +9,7 @@ import {
   isConversationSubject,
   readAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
+import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
 
 const MAX_AUDIO_BYTES = 200_000;
 const AUDIO_MIME_TYPES = new Set(["audio/webm", "audio/mp4", "audio/ogg", "audio/aac", "audio/3gpp"]);
@@ -152,8 +153,21 @@ function parseRange(value, size) {
   return { start, end: Math.min(end, size - 1) };
 }
 
+/**
+ * Répond au navigateur puis pousse l'état vers Supabase avant de rendre la
+ * main : un compte créé, un rôle changé ou un message envoyé est durable avant
+ * l'accusé de réception. Si Supabase est momentanément injoignable on répond
+ * quand même : la donnée reste en RAM et le prochain envoi la rattrape.
+ */
+function sendPersisted(response, status, payload) {
+  return syncStateToSupabase()
+    .catch(() => ({ saved: false, reason: "error" }))
+    .then(() => response.status(status).json(payload));
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
   if (!isSameOriginRequest(request)) return sendJson(response, 403, { error: "Requête refusée." });
   if (request.method === "POST") {
     const adminReply = firstHeader(request.headers?.["x-admin-reply"]) === "true";
@@ -197,7 +211,7 @@ export default async function handler(request, response) {
           const failure = conversationError(result.reason);
           return sendJson(response, failure.status, { error: failure.error });
         }
-        return sendJson(response, 201, { ok: true, conversation: result.conversation, message: result.message });
+        return sendPersisted(response, 201, { ok: true, conversation: result.conversation, message: result.message });
       }
 
       const result = await addAccountReply(sessionToken, {
@@ -212,7 +226,7 @@ export default async function handler(request, response) {
         const failure = conversationError(result.reason);
         return sendJson(response, failure.status, { error: failure.error });
       }
-      return sendJson(response, result.messages ? 201 : 200, {
+      return sendPersisted(response, result.messages ? 201 : 200, {
         ok: true,
         account: result.account,
         conversation: result.conversation,

@@ -19,6 +19,7 @@ import {
   startAdminConversationForAccount,
   ensureOwnerAccountSeeded,
 } from "../lib/contact-inbox.mjs";
+import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
 
 const MAX_BODY_BYTES = 6000;
 
@@ -94,8 +95,21 @@ function conversationError(reason) {
   return { status: 404, error: "Cette discussion est introuvable." };
 }
 
+/**
+ * Répond au navigateur puis pousse l'état vers Supabase avant de rendre la
+ * main : un compte créé, un rôle changé ou un message envoyé est durable avant
+ * l'accusé de réception. Si Supabase est momentanément injoignable on répond
+ * quand même : la donnée reste en RAM et le prochain envoi la rattrape.
+ */
+function sendPersisted(response, status, payload) {
+  return syncStateToSupabase()
+    .catch(() => ({ saved: false, reason: "error" }))
+    .then(() => response.status(status).json(payload));
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
   await ensureOwnerAccountSeeded().catch(() => {});
 
   if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
@@ -188,7 +202,7 @@ export default async function handler(request, response) {
         const failure = conversationError(result.reason);
         return response.status(failure.status).json({ error: failure.error });
       }
-      return response.status(201).json({ ok: true, conversation: result.conversation, message: result.message });
+      return sendPersisted(response, 201, { ok: true, conversation: result.conversation, message: result.message });
     }
 
     if (request.method === "PATCH") {
@@ -232,7 +246,7 @@ export default async function handler(request, response) {
           else skipped.push(result.id);
         }
       }
-      return response.status(200).json(isBulk ? { updated, skipped } : { conversation: updated[0] || null });
+      return sendPersisted(response, 200, isBulk ? { updated, skipped } : { conversation: updated[0] || null });
     }
 
     if (Array.isArray(body.conversationIds)) {
@@ -257,7 +271,7 @@ export default async function handler(request, response) {
           else skippedIds.push(result.id);
         }
       }
-      return response.status(200).json({ deletedIds, skippedIds, failedIds });
+      return sendPersisted(response, 200, { deletedIds, skippedIds, failedIds });
     }
 
     if (typeof body.conversationId === "string") {
@@ -265,14 +279,14 @@ export default async function handler(request, response) {
         return response.status(400).json({ error: "Cette discussion est introuvable." });
       }
       const deleted = await deleteConversation(body.conversationId);
-      return response.status(200).json({ deleted });
+      return sendPersisted(response, 200, { deleted });
     }
 
     if (!isContactMessagePath(body.id)) {
       return response.status(400).json({ error: "Ce message est introuvable." });
     }
     await deleteContactMessage(body.id);
-    return response.status(200).json({ deleted: true });
+    return sendPersisted(response, 200, { deleted: true });
   } catch (error) {
     console.error("[admin-messages] private inbox request failed", {
       name: error instanceof Error ? error.name : "UnknownError",

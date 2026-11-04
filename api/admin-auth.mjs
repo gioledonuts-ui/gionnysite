@@ -12,6 +12,7 @@ import {
   getHostAccountIdentityFromSession,
   readAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
+import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
 
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -82,8 +83,21 @@ function methodNotAllowed(response) {
   return response.status(405).json({ error: "Méthode non autorisée." });
 }
 
+/**
+ * Répond au navigateur puis pousse l'état vers Supabase avant de rendre la
+ * main : un compte créé, un rôle changé ou un message envoyé est durable avant
+ * l'accusé de réception. Si Supabase est momentanément injoignable on répond
+ * quand même : la donnée reste en RAM et le prochain envoi la rattrape.
+ */
+function sendPersisted(response, status, payload) {
+  return syncStateToSupabase()
+    .catch(() => ({ saved: false, reason: "error" }))
+    .then(() => response.status(status).json(payload));
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
   await ensureOwnerAccountSeeded().catch(() => {});
 
   if (request.method === "GET") {
@@ -157,5 +171,5 @@ export default async function handler(request, response) {
 
   failedAttempts.delete(key);
   setAdminSessionCookie(request, response);
-  return response.status(200).json({ authenticated: true });
+  return sendPersisted(response, 200, { authenticated: true });
 }

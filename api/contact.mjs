@@ -19,6 +19,7 @@ import {
   setAccountConversationSubject,
   updateVisitorAccountProfile,
 } from "../lib/contact-inbox.mjs";
+import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
 
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 12;
@@ -185,7 +186,7 @@ async function handleAuthentication(request, response, body, action) {
   } catch {
     state = null;
   }
-  response.status(200).json({
+  return sendPersisted(response, 200, {
     ok: true,
     account: state?.account || result.account,
     conversation: state?.conversation || null,
@@ -231,7 +232,7 @@ async function handleProfile(request, response, body, sessionToken) {
     clearAccountSessionCookie(request, response);
     return response.status(401).json({ error: "Reconnecte-toi pour modifier ton profil." });
   }
-  return response.status(200).json({ ok: true, ...state, subjects: CONVERSATION_SUBJECTS });
+  return sendPersisted(response, 200, { ok: true, ...state, subjects: CONVERSATION_SUBJECTS });
 }
 
 // The owner account must exist before anything else: it is seeded once per
@@ -250,8 +251,21 @@ async function ensureOwnerSeeded() {
   return ownerSeeded;
 }
 
+/**
+ * Répond au navigateur puis pousse l'état vers Supabase avant de rendre la
+ * main : un compte créé, un rôle changé ou un message envoyé est durable avant
+ * l'accusé de réception. Si Supabase est momentanément injoignable on répond
+ * quand même : la donnée reste en RAM et le prochain envoi la rattrape.
+ */
+function sendPersisted(response, status, payload) {
+  return syncStateToSupabase()
+    .catch(() => ({ saved: false, reason: "error" }))
+    .then(() => response.status(status).json(payload));
+}
+
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
 
   if (request.method !== "GET" && request.method !== "POST" && request.method !== "DELETE") {
     response.setHeader("Allow", "GET, POST, DELETE");
@@ -307,7 +321,7 @@ export default async function handler(request, response) {
       });
       if (restored.ok) saveAccountSessionCookie(request, response, restored.sessionToken);
       const state = restored.ok ? await getAccountConversation(restored.sessionToken).catch(() => null) : null;
-      return response.status(200).json({
+      return await sendPersisted(response, 200, {
         ok: restored.ok === true,
         account: state?.account || restored.account || null,
         conversation: state?.conversation || null,
@@ -364,7 +378,7 @@ export default async function handler(request, response) {
     try {
       const result = await markAccountConversationRead(sessionToken);
       if (!result.ok) return response.status(401).json({ error: "Reconnecte-toi pour ouvrir ta discussion." });
-      return response.status(200).json({ ok: true, changed: result.changed });
+      return sendPersisted(response, 200, { ok: true, changed: result.changed });
     } catch (error) {
       console.error("[contact] read receipt update failed", {
         name: error instanceof Error ? error.name : "UnknownError",
@@ -383,7 +397,7 @@ export default async function handler(request, response) {
         if (result.reason === "unauthorized") return response.status(401).json({ error: "Reconnecte-toi pour modifier le sujet." });
         return response.status(404).json({ error: "Cette discussion est introuvable." });
       }
-      return response.status(200).json({ ok: true, account: result.account, conversation: result.conversation, messages: result.messages, subjects: CONVERSATION_SUBJECTS });
+      return sendPersisted(response, 200, { ok: true, account: result.account, conversation: result.conversation, messages: result.messages, subjects: CONVERSATION_SUBJECTS });
     } catch (error) {
       console.error("[contact] subject update failed", {
         name: error instanceof Error ? error.name : "UnknownError",
@@ -427,7 +441,7 @@ export default async function handler(request, response) {
     // The very first message opens the thread: return it whole so the client
     // can paint it immediately (no empty bubble, no second round-trip).
     const firstMessage = result.message || result.messages?.[0] || null;
-    return response.status(result.messages ? 201 : 200).json({
+    return await sendPersisted(response, result.messages ? 201 : 200, {
       ok: true,
       account: result.account,
       conversation: result.conversation,

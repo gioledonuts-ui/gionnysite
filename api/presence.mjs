@@ -1,6 +1,7 @@
 import { randomBytes, createHash } from "node:crypto";
 import { isAdminRequest, isSameOriginRequest } from "../lib/admin-security.mjs";
 import { PRESENCE_WINDOW_MS, recordPresence } from "../lib/presence.mjs";
+import { ensureStateLoaded } from "../lib/blob-store.mjs";
 
 const COOKIE_NAME = "qg_presence";
 const SESSION_PATTERN = /^[A-Za-z0-9_-]{32}$/u;
@@ -55,6 +56,7 @@ function setNoStore(response) {
 
 export default async function handler(request, response) {
   setNoStore(response);
+  await ensureStateLoaded().catch(() => {});
   if (request.method !== "POST") {
     response.setHeader("Allow", "POST");
     return response.status(405).json({ error: "Méthode non autorisée." });
