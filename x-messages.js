@@ -603,10 +603,10 @@
     }).observe(identity, { attributes: true, attributeFilter: ["hidden"] });
   }
 
-  // Rafraîchissement doux quand la page Messages est visible.
+  // Rafraîchissement doux, uniquement quand la page Messages est à l'écran
+  // et qu'aucune conversation n'est ouverte.
   window.setInterval(() => {
-    const view = root.dataset.visible;
-    if (view === "false") return;
+    if (root.hidden) return;
     if (document.hidden) return;
     if (!isSignedIn()) return;
     if (!conversationNode?.hidden) return;
