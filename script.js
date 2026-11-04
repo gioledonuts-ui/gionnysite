@@ -169,9 +169,9 @@
         );
       }
     });
-    document.querySelectorAll("[data-youtube-visited]").forEach((visitedBadge) => {
-      visitedBadge.hidden = available ? count > 0 : !visitedNetworks.has("youtube");
-    });
+    // Le badge « Déjà visité » a été retiré de « Retrouve-moi ici » : plus
+    // aucun compteur n'est requis pour les cartes, on ne garde que le signal
+    // « nouvelles vidéos » du carrousel.
     const youtubeSlideLabel = document.querySelector('[data-carousel-slide="youtube"] .creator-state-pill--youtube');
     if (youtubeSlideLabel) {
       youtubeSlideLabel.hidden = available ? count > 0 : visitedNetworks.has("youtube");
@@ -224,12 +224,9 @@
   };
 
   const showVisitedState = (link) => {
-    if (link.dataset.network === "youtube") return;
-    // Nothing is "already visited" before the member actually opened the link.
+    // « Retrouve-moi ici » n'affiche plus de badge « déjà visité » : il ne
+    // décalait que le texte des cartes. On garde l'état utile (vidéos vues).
     if (!visitedNetworks.has(link.dataset.network)) return;
-    const badge = link.querySelector(".visited-badge");
-    const twitchIsLive = link.dataset.network === "twitch" && link.dataset.live === "true";
-    if (badge) badge.hidden = twitchIsLive;
     link.dataset.visited = "true";
   };
 
@@ -2367,8 +2364,6 @@
       if (liveLabel) liveLabel.hidden = !isLive;
       if (channelLabel) channelLabel.hidden = isLive;
       if (liveBadge) liveBadge.hidden = !isLive;
-      const visitedBadge = twitchSlide.querySelector(".visited-badge");
-      if (visitedBadge) visitedBadge.hidden = isLive || !visitedNetworks.has("twitch");
       if (detail) {
         detail.textContent = !twitchAvailable
           ? "La chaîne officielle de Gionny : retrouve ici les prochains lives."
@@ -2402,9 +2397,7 @@
       card.dataset.live = twitchAvailable ? (isLive ? "true" : "false") : "unknown";
       const status = card.querySelector("[data-stream-status]");
       const title = card.querySelector("[data-stream-title]");
-      const visitedBadge = card.querySelector(".visited-badge");
       if (status) status.hidden = !isLive;
-      if (visitedBadge) visitedBadge.hidden = isLive || !visitedNetworks.has("twitch");
       if (title) {
         title.textContent = streamTitle;
         title.hidden = !isLive || !streamTitle;

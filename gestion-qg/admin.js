@@ -123,6 +123,13 @@
   let membersLoading = false;
   let membersLoaded = false;
   let membersCursor = "";
+  const reportsList = document.querySelector("[data-reports-list]");
+  const reportsStatus = document.querySelector("[data-reports-status]");
+  const reportsRefreshButton = document.querySelector("[data-reports-refresh]");
+  const reportsCountBadge = document.querySelector("[data-admin-reports-count]");
+  const reportsById = new Map();
+  let reportsLoading = false;
+  let reportsLoaded = false;
   let membersHasMore = false;
   const memberRecords = new Map();
 
@@ -862,13 +869,221 @@
     }
   };
 
+  /* ------------------------------------------------------------------------
+     SIGNALEMENTS · voir, supprimer, retirer Validé, bannir — en un clic
+     ---------------------------------------------------------------------- */
+  const formatReportDate = (value) => {
+    const date = value ? new Date(value) : null;
+    if (!date || !Number.isFinite(date.getTime())) return "";
+    return date.toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const updateReportsBadge = () => {
+    const open = [...reportsById.values()].filter((report) => report.status !== "handled").length;
+    if (!reportsCountBadge) return;
+    reportsCountBadge.hidden = open === 0;
+    reportsCountBadge.textContent = open > 99 ? "99+" : String(open);
+  };
+
+  const reportAction = async (report, action, button) => {
+    if (!report || !report.id) return;
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch("/api/admin-reports", {
+        method: "PATCH",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id: report.id, action, pseudo: report.targetPseudo }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(reportsStatus, data.error || "Cette action n’a pas pu être effectuée.", "error");
+        return;
+      }
+      if (data.report) reportsById.set(data.report.id, { ...reportsById.get(report.id), ...data.report });
+      else if (action === "ban" || action === "unverify") {
+        reportsById.set(report.id, { ...report, status: "handled" });
+      }
+      setStatus(
+        reportsStatus,
+        action === "ban"
+          ? `@${report.targetPseudo} est banni${report.targetPseudo.endsWith("e") ? "e" : ""}.`
+          : action === "unban"
+            ? `@${report.targetPseudo} est réactivé.`
+            : action === "unverify"
+              ? `Badge Validé retiré à @${report.targetPseudo}.`
+              : action === "reopen"
+                ? "Signalement rouvert."
+                : "Signalement marqué comme traité."
+      );
+      await loadReports({ quiet: true });
+    } catch {
+      setStatus(reportsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (button) button.disabled = false;
+    }
+  };
+
+  const removeReport = async (report, button) => {
+    if (!report?.id) return;
+    if (button) button.disabled = true;
+    try {
+      const url = new URL("/api/admin-reports", window.location.origin);
+      url.searchParams.set("id", report.id);
+      const response = await fetch(url.href, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(reportsStatus, data.error || "Le signalement n’a pas pu être supprimé.", "error");
+        return;
+      }
+      reportsById.delete(report.id);
+      [...(reportsList?.querySelectorAll(".report-row") || [])]
+        .find((row) => row.dataset.reportId === report.id)?.remove();
+      updateReportsBadge();
+      setStatus(reportsStatus, "Signalement supprimé.");
+    } catch {
+      setStatus(reportsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (button) button.disabled = false;
+    }
+  };
+
+  const createReportRow = (report) => {
+    const row = document.createElement("article");
+    row.className = `report-row${report.status === "handled" ? " is-handled" : ""}`;
+    row.dataset.reportId = report.id;
+
+    const head = document.createElement("div");
+    head.className = "report-row-head";
+    const pseudo = document.createElement("strong");
+    pseudo.className = "report-row-target";
+    pseudo.textContent = `@${report.targetPseudo || "membre inconnu"}`;
+    const state = document.createElement("span");
+    state.className = `report-state report-state--${report.status === "handled" ? "handled" : "open"}`;
+    state.textContent = report.status === "handled" ? "Traité" : "À traiter";
+    head.append(pseudo, state);
+
+    const reason = document.createElement("p");
+    reason.className = "report-row-reason";
+    reason.textContent = report.targetMessageId ? `${report.reason} · message signalé` : report.reason || "Signalement";
+
+    const meta = document.createElement("p");
+    meta.className = "report-row-meta";
+    meta.textContent = `Signalé par @${report.reporterPseudo || "membre"} · ${formatReportDate(report.createdAt)}`;
+    const details = document.createElement("p");
+    details.className = "report-row-details";
+    details.textContent = report.details || "";
+    details.hidden = !report.details;
+
+    const actions = document.createElement("div");
+    actions.className = "report-row-actions";
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "member-action-button member-action-button--delete";
+    removeButton.textContent = "Supprimer le signalement";
+    removeButton.addEventListener("click", () => void removeReport(report, removeButton));
+
+    const unverifyButton = document.createElement("button");
+    unverifyButton.type = "button";
+    unverifyButton.className = "member-action-button member-action-button--verified";
+    unverifyButton.textContent = "Retirer le badge Validé";
+    unverifyButton.addEventListener("click", () => void reportAction(report, "unverify", unverifyButton));
+
+    const banButton = document.createElement("button");
+    banButton.type = "button";
+    banButton.className = "member-action-button member-action-button--danger";
+    banButton.textContent = "Bannir / suspendre";
+    banButton.addEventListener("click", () => void reportAction(report, "ban", banButton));
+
+    const stateButton = document.createElement("button");
+    stateButton.type = "button";
+    stateButton.className = "member-action-button";
+    const handled = report.status === "handled";
+    stateButton.textContent = handled ? "Rouvrir" : "Marquer traité";
+    stateButton.addEventListener("click", () =>
+      void reportAction(report, handled ? "reopen" : "handled", stateButton)
+    );
+
+    actions.append(stateButton, unverifyButton, banButton, removeButton);
+    row.append(head, reason, meta, details, actions);
+    return row;
+  };
+
+  const loadReports = async ({ quiet = false } = {}) => {
+    if (!reportsList || reportsLoading) return;
+    reportsLoading = true;
+    if (reportsRefreshButton) reportsRefreshButton.disabled = true;
+    if (!quiet) setStatus(reportsStatus, "Chargement des signalements…");
+    try {
+      const response = await fetch("/api/admin-reports", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(reportsStatus, data.error || "Les signalements n’ont pas pu être chargés.", "error");
+        return;
+      }
+      const reports = (Array.isArray(data.reports) ? data.reports : []).filter(
+        (report) => report && typeof report.id === "string" && typeof report.targetPseudo === "string"
+      );
+      reportsById.clear();
+      reports.forEach((report) => reportsById.set(report.id, report));
+      reportsList.replaceChildren(...reports.map(createReportRow));
+      const open = reports.filter((report) => report.status !== "handled").length;
+      if (!reports.length) {
+        const empty = document.createElement("p");
+        empty.className = "reports-empty";
+        empty.textContent = "Aucun signalement pour le moment. Tout est calme dans le QG.";
+        reportsList.append(empty);
+      }
+      updateReportsBadge();
+      reportsLoaded = true;
+      if (!quiet) {
+        setStatus(
+          reportsStatus,
+          reports.length
+            ? `${reports.length} signalement${reports.length > 1 ? "s" : ""} · ${open} à traiter.`
+            : "Aucun signalement pour le moment."
+        );
+      }
+    } catch {
+      if (!quiet) setStatus(reportsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      reportsLoading = false;
+      if (reportsRefreshButton) reportsRefreshButton.disabled = false;
+    }
+  };
+
+  reportsRefreshButton?.addEventListener("click", () => void loadReports({ quiet: false }));
+
   const setAdminTab = (tabName, { focus = false, refresh = true } = {}) => {
-    const validTab = ["settings", "members", "conversations"].includes(tabName) ? tabName : "settings";
+    const validTab = ["settings", "members", "conversations", "reports"].includes(tabName) ? tabName : "settings";
     const previousTab = activeAdminTab;
     activeAdminTab = validTab;
     if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
     if (adminPanel) adminPanel.dataset.activeTab = validTab;
-    const tabTitles = { settings: "Tes réglages", members: "Membres", conversations: "Discussions" };
+    const tabTitles = { settings: "Tes réglages", members: "Membres", conversations: "Discussions", reports: "Signalements" };
     adminTabs.forEach((tab) => {
       const selected = tab.dataset.adminTab === validTab;
       tab.setAttribute("aria-selected", String(selected));
@@ -881,6 +1096,9 @@
     if (adminTitle) adminTitle.textContent = tabTitles[validTab];
     if (validTab === "members" && !adminPanel.hidden && !membersLoaded) {
       void loadMembers({ reset: true, quiet: false });
+    }
+    if (validTab === "reports" && !adminPanel.hidden && !reportsLoaded) {
+      void loadReports({ quiet: false });
     }
     if (validTab === "conversations" && !adminPanel.hidden && refresh &&
         (previousTab !== validTab || !conversationsList?.childElementCount)) {

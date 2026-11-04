@@ -3623,3 +3623,116 @@ body.admin-body {
 .member-action-button--verified.is-on:hover:not(:disabled) {
   filter: brightness(1.12);
 }
+
+/* ---------------------------------------------------------------------------
+   SIGNALEMENTS — liste compacte, une action par signalement
+   ------------------------------------------------------------------------- */
+.reports-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reports-heading {
+  align-items: flex-start;
+}
+
+.reports-refresh {
+  margin-left: auto;
+}
+
+.reports-status {
+  margin: 0;
+  color: var(--admin-muted, #8b9ab4);
+  font-size: 13px;
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reports-empty {
+  margin: 0;
+  padding: 22px;
+  border: 1px dashed rgba(139, 154, 180, 0.35);
+  border-radius: 14px;
+  color: var(--admin-muted, #8b9ab4);
+  font-size: 14px;
+  text-align: center;
+}
+
+.report-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(30, 41, 59, 0.9);
+  border-radius: 14px;
+  background: rgba(14, 21, 37, 0.86);
+}
+
+.report-row.is-handled {
+  opacity: 0.72;
+}
+
+.report-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.report-row-target {
+  color: var(--admin-text, #e8eefb);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.report-state {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.report-state--open {
+  background: rgba(240, 82, 92, 0.16);
+  color: #ff8b93;
+}
+
+.report-state--handled {
+  background: rgba(63, 185, 120, 0.16);
+  color: #6fe0a5;
+}
+
+.report-row-reason {
+  margin: 0;
+  color: var(--admin-text, #e8eefb);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.report-row-meta {
+  margin: 0;
+  color: var(--admin-muted, #8b9ab4);
+  font-size: 12px;
+}
+
+.report-row-details {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2px solid rgba(59, 130, 246, 0.6);
+  color: var(--admin-text, #dbe4f3);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.report-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}

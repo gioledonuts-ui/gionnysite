@@ -49,6 +49,7 @@
           <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist" aria-orientation="vertical" hidden>
             <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations" aria-label="Discussions"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-discussions"></use></svg> Discussions<span class="admin-tab-unread-count" data-admin-unread-count hidden>0</span></button>
             <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-users"></use></svg> Membres</button>
+            <button class="admin-tab" id="admin-tab-reports" type="button" role="tab" aria-selected="false" aria-controls="reports-panel" data-admin-tab="reports" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Signalements<span class="admin-tab-unread-count" data-admin-reports-count hidden>0</span></button>
             <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-settings"></use></svg> Réglages</button>
           </nav>
           <button class="quiet-button admin-sidebar-logout" type="button" data-logout hidden>Se déconnecter</button>
@@ -277,6 +278,19 @@
           <p class="members-status" data-members-status role="status" aria-live="polite">Chargement des membres…</p>
           <div class="members-list" data-members-list aria-live="polite"></div>
           <button class="quiet-button members-more" type="button" data-members-more hidden>Afficher plus de membres</button>
+        </section>
+
+        <section class="settings-section reports-section admin-tab-panel" id="reports-panel" role="tabpanel" aria-labelledby="admin-tab-reports" data-admin-tab-panel="reports" hidden>
+          <div class="section-heading reports-heading">
+            <span class="section-number">04</span>
+            <div>
+              <h3 id="reports-title">Signalements</h3>
+              <p>Les profils et messages signalés par la commu. Une action en un clic.</p>
+            </div>
+            <button class="quiet-button reports-refresh" type="button" data-reports-refresh>Actualiser</button>
+          </div>
+          <p class="reports-status" data-reports-status role="status" aria-live="polite">Chargement des signalements…</p>
+          <div class="reports-list" data-reports-list aria-live="polite"></div>
         </section>
 
         <div class="admin-tab-panel" id="conversations-panel" role="tabpanel" aria-labelledby="admin-tab-conversations" data-admin-tab-panel="conversations" hidden>

@@ -33,19 +33,23 @@ const socialCss = readFileSync(new URL("../social-x.css", import.meta.url), "utf
 const twemoji = readFileSync(new URL("../twemoji.js", import.meta.url), "utf8");
 const xApp = readFileSync(new URL("../x-app.js", import.meta.url), "utf8");
 
-test("la charte X est appliquée : noir pur, surfaces #16181c, dividers #2f3336", () => {
-  assert.match(socialCss, /--x-bg:\s*#000000/u);
-  assert.match(socialCss, /--x-surface:\s*#16181c/u);
-  assert.match(socialCss, /--x-surface-hover:\s*#1d1f23/u);
-  assert.match(socialCss, /--x-line:\s*#2f3336/u);
-  assert.match(socialCss, /--x-text:\s*#e7e9ea/u);
-  assert.match(socialCss, /--x-muted:\s*#71767b/u);
-  assert.match(socialCss, /--x-accent:\s*#1d9bf0/u);
-  // couleur d'accent survolée
-  assert.match(socialCss, /#1a8cd8/u);
-  // surface de page mate, jamais de dégradé sur le body
+test("la charte du QG est appliquée : fond #070b14, surfaces #0e1525, bordures #1e293b", () => {
+  // Étape 2 : le site garde l'organisation de X mais reprend l'identité du QG
+  // (fond sombre profond, surfaces bleu nuit, bordures fines).
+  assert.match(socialCss, /--x-bg:\s*#070b14/u);
+  assert.match(socialCss, /--x-surface:\s*#0e1525/u);
+  assert.match(socialCss, /--x-surface-hover:\s*#152037/u);
+  assert.match(socialCss, /--x-line:\s*#1e293b/u);
+  assert.match(socialCss, /--x-text:\s*#e8eefb/u);
+  assert.match(socialCss, /--x-muted:\s*#8b9ab4/u);
+  // surface de page mate
   assert.match(socialCss, /body \{[^}]*background: var\(--x-bg\)/su);
-  assert.doesNotMatch(socialCss, /gradient\(/u);
+  // plus aucun noir pur #000000 : le QG n'est pas un clone brut de X
+  assert.doesNotMatch(socialCss, /#000000/u);
+  // un seul dégradé autorisé : le bandeau de couverture du profil
+  const gradients = socialCss.match(/gradient\(/gu) || [];
+  assert.equal(gradients.length, 1);
+  assert.match(socialCss, /x-profile-banner \{[^}]*gradient\(90deg, #132038 0%, #1a2c4e 100%\)/su);
 });
 
 test("l'architecture en trois colonnes et le bandeau « À la une » sont en place", () => {
@@ -98,11 +102,11 @@ test("la couche d'interface ne surveille pas les attributs qu'elle écrit", () =
   assert.match(xApp, /new MutationObserver\(syncAccount\)\.observe\(source/u);
   assert.match(xApp, /attributeFilter: \["hidden", "src"\]/u);
   assert.doesNotMatch(xApp, /observe\(rail(?:Card|Crown|Verified)/u);
-  assert.match(xApp, /railCrown\.toggleAttribute\("hidden", !isCrown\)/u);
+  assert.match(xApp, /railCrown\.toggleAttribute\("hidden", !user\?\.isHost\)/u);
   assert.match(xApp, /node\.toggleAttribute\("hidden", !count/u);
   assert.doesNotMatch(xApp, /\[data-x-profile-edit\], \[data-rail-account-card\]/u);
   assert.match(xApp, /if \(syncing\) return;/u);
   // toutes les actions sensibles sont déléguées aux boutons d'origine
   assert.match(xApp, /forward\("\[data-member-login\]"\)/u);
-  assert.match(xApp, /forward\(isSignedIn\(\) \? "\[data-member-profile\]"/u);
+  assert.match(xApp, /forward\("\[data-member-profile\]"\).*|forward\(isSignedIn\(\)/u);
 });

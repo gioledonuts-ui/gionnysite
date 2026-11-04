@@ -20,6 +20,7 @@ import {
   updateVisitorAccountProfile,
 } from "../lib/contact-inbox.mjs";
 import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
+import { ensureHostFollowFor, getProfileRecord } from "../lib/social-graph.mjs";
 
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 12;
@@ -180,6 +181,9 @@ async function handleAuthentication(request, response, body, action) {
   if (!result.ok) return authenticationFailure(response, result.reason);
 
   saveAccountSessionCookie(request, response, result.sessionToken);
+  // Règle d'or du QG : chaque compte suit l'Hôte dès sa création, et les
+  // comptes existants sont rattrapés à chaque connexion (idempotent).
+  await ensureHostFollowFor(result.account?.pseudo || credentials.pseudo).catch(() => {});
   let state = null;
   try {
     state = await getAccountConversation(result.sessionToken);
@@ -288,7 +292,23 @@ export default async function handler(request, response) {
         clearAccountSessionCookie(request, response);
         return response.status(200).json({ account: null, conversation: null, messages: [], subjects: CONVERSATION_SUBJECTS });
       }
-      return response.status(200).json({ ...state, subjects: CONVERSATION_SUBJECTS });
+      const viewerProfile = state.account?.pseudo
+        ? await getProfileRecord(state.account.pseudo).catch(() => null)
+        : null;
+      return response.status(200).json({
+        ...state,
+        subjects: CONVERSATION_SUBJECTS,
+        ...(viewerProfile
+          ? {
+              profile: {
+                bio: viewerProfile.bio,
+                discordUsername: viewerProfile.discordUsername,
+                followingCount: viewerProfile.following.length,
+                blockedUsers: viewerProfile.blockedUsers,
+              },
+            }
+          : {}),
+      });
     } catch (error) {
       console.error("[contact] private conversation read failed", {
         name: error instanceof Error ? error.name : "UnknownError",
