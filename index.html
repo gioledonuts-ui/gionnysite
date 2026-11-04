@@ -43,6 +43,7 @@
     <script src="/script.js" defer></script>
     <script src="/x-app.js" defer></script>
     <script src="/x-messages.js" defer></script>
+    <script src="/x-widget-messages.js" defer></script>
   </head>
   <body>
   <svg class="qg-inline-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -1233,6 +1234,9 @@
             <strong>Connexion requise</strong>
             <span>Connecte-toi pour écrire à Gionny</span>
           </div>
+          <button class="contact-inbox-toggle" type="button" data-widget-inbox-toggle aria-label="Ouvrir ma boîte de messages" aria-pressed="false">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" /><path d="M8.2 8.4h7.6M8.2 11.6h4.6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" /></svg>
+          </button>
           <!-- Une seule flèche, toujours : retour en arrière. -->
           <button class="contact-dialog-close" type="button" data-minimize-contact aria-label="Revenir en arrière">
             <svg class="qg-icon contact-close-mobile" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5.6 4.6 12 11 18.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -1300,6 +1304,55 @@
             <p class="contact-status" data-contact-status role="status" aria-live="polite"></p>
             <button class="sr-only" type="submit" data-contact-submit>Envoyer le message</button>
           </form>
+        </section>
+
+        <!-- Messagerie multi-DM du widget : boîte de réception + conversation. -->
+        <section class="contact-dm" data-contact-dm aria-label="Ma boîte de messages" hidden>
+          <div class="contact-dm-list" data-contact-dm-list-view>
+            <div class="contact-dm-list-head">
+              <button class="contact-dm-back" type="button" data-contact-dm-close aria-label="Revenir à la discussion avec Gionny">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4M10.5 5.5 4 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+              <strong>Messages</strong>
+              <button class="contact-dm-new" type="button" data-contact-dm-new aria-label="Nouvelle discussion">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+              </button>
+            </div>
+            <div class="contact-dm-tabs" role="tablist" aria-label="Boîte de messages">
+              <button type="button" role="tab" aria-selected="true" data-contact-dm-tab="inbox">Boîte de réception</button>
+              <button type="button" role="tab" aria-selected="false" data-contact-dm-tab="requests">
+                Demandes<span class="contact-dm-count" data-contact-dm-count hidden>0</span>
+              </button>
+            </div>
+            <p class="contact-dm-status" data-contact-dm-status role="status" aria-live="polite"></p>
+            <div class="contact-dm-threads" data-contact-dm-threads role="list"></div>
+            <p class="contact-dm-empty" data-contact-dm-empty hidden>Aucune discussion pour le moment.</p>
+          </div>
+
+          <div class="contact-dm-chat" data-contact-dm-chat-view hidden>
+            <div class="contact-dm-chat-head">
+              <button class="contact-dm-back" type="button" data-contact-dm-back aria-label="Revenir à la boîte de réception">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4M10.5 5.5 4 12l6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+              <span class="contact-dm-avatar" data-contact-dm-avatar aria-hidden="true"></span>
+              <div class="contact-dm-id">
+                <strong data-contact-dm-title>Discussion</strong>
+                <span data-contact-dm-subtitle></span>
+              </div>
+            </div>
+            <div class="contact-dm-messages" data-contact-dm-messages role="log" aria-live="polite"></div>
+            <p class="contact-dm-status" data-contact-dm-chat-status role="status" aria-live="polite"></p>
+            <form class="contact-dm-composer" data-contact-dm-form>
+              <input type="file" accept="image/*" data-contact-dm-image hidden />
+              <button class="contact-dm-attach" type="button" data-contact-dm-attach aria-label="Joindre une image">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" /></svg>
+              </button>
+              <textarea rows="1" maxlength="1500" placeholder="Message" aria-label="Ton message" data-contact-dm-input></textarea>
+              <button class="contact-dm-send" type="submit" aria-label="Envoyer le message">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </button>
+            </form>
+          </div>
         </section>
 
         <section class="contact-thread" data-contact-thread aria-label="Ta conversation avec Gionny" hidden>

@@ -41,6 +41,22 @@ test("1 ter. les groupes se créent avec plusieurs membres Validés", () => {
   assert.match(indexHtml, /réservés aux membres Validés ✓/u);
 });
 
+test("1 quater. le widget bas-droite porte aussi la boîte de messages", async () => {
+  const widgetMessages = await read("x-widget-messages.js");
+  const chatCss = await read("chat-x.css");
+  assert.match(indexHtml, /data-contact-dm aria-label="Ma boîte de messages"/u);
+  assert.match(indexHtml, /data-widget-inbox-toggle/u);
+  assert.match(indexHtml, /data-contact-dm-tab="inbox">Boîte de réception</u);
+  assert.match(widgetMessages, /action, threadId: entry\.id/u);
+  assert.match(widgetMessages, /accept\.textContent = "Accepter"/u);
+  assert.match(widgetMessages, /\[data-contact-dm-close\]"\)\?\.addEventListener\("click", \(\) => setOpen\(false\)\)/u);
+  assert.match(widgetMessages, /\[data-contact-dm-back\]/u);
+  // Pas de flou ni de voile derrière le widget.
+  assert.doesNotMatch(chatCss, /\.contact-dm[^{]*\{[^}]*backdrop-filter/u);
+  // Boutons sans bordure, +20 % plus clairs au survol.
+  assert.match(chatCss, /\.contact-dm-back:hover,[\s\S]{0,400}filter: brightness\(1\.2\)/u);
+});
+
 // ---------------------------------------------------------------------------
 // 2. Paramètres
 // ---------------------------------------------------------------------------
