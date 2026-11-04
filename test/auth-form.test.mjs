@@ -93,9 +93,16 @@ test("les emojis passent par Twemoji, avec un rendu borné", () => {
 });
 
 test("la couche d'interface ne surveille pas les attributs qu'elle écrit", () => {
-  assert.doesNotMatch(xApp, /attributeFilter/u);
+  // Les attributs observés appartiennent uniquement aux sources script.js,
+  // jamais aux éléments miroirs modifiés par syncAccount / syncMessages.
+  assert.match(xApp, /new MutationObserver\(syncAccount\)\.observe\(source/u);
+  assert.match(xApp, /attributeFilter: \["hidden", "src"\]/u);
+  assert.doesNotMatch(xApp, /observe\(rail(?:Card|Crown|Verified)/u);
+  assert.match(xApp, /railCrown\.toggleAttribute\("hidden", !isCrown\)/u);
+  assert.match(xApp, /node\.toggleAttribute\("hidden", !count/u);
+  assert.doesNotMatch(xApp, /\[data-x-profile-edit\], \[data-rail-account-card\]/u);
   assert.match(xApp, /if \(syncing\) return;/u);
   // toutes les actions sensibles sont déléguées aux boutons d'origine
   assert.match(xApp, /forward\("\[data-member-login\]"\)/u);
-  assert.match(xApp, /forward\("\[data-member-profile\]"\)/u);
+  assert.match(xApp, /forward\(isSignedIn\(\) \? "\[data-member-profile\]"/u);
 });

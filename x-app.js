@@ -152,8 +152,8 @@
   $$("[data-x-register]").forEach((button) =>
     button.addEventListener("click", () => forward("[data-member-register]"))
   );
-  $$("[data-x-profile-open], [data-x-profile-edit], [data-rail-account-card]").forEach((button) =>
-    button.addEventListener("click", () => forward("[data-member-profile]"))
+  $$("[data-x-profile-open], [data-x-profile-edit]").forEach((button) =>
+    button.addEventListener("click", () => forward(isSignedIn() ? "[data-member-profile]" : "[data-member-login]"))
   );
   $$("[data-x-profile-settings]").forEach((button) =>
     button.addEventListener("click", () => setActiveView("settings"))
@@ -178,7 +178,7 @@
   const mobileAvatar = $("[data-x-mobile-account-avatar]");
   const dmBadge = $("[data-x-dm-badge]");
   const dmSnippet = $("[data-x-dm-snippet]");
-  const messagesBadge = $('[data-x-badge="messages"]');
+  const messagesBadges = $$('[data-x-badge="messages"]');
   const profileName = $("[data-x-profile-name]");
   const profileHandle = $("[data-x-profile-handle]");
   const profileAvatar = $("[data-x-profile-avatar]");
@@ -218,14 +218,14 @@
 
     setText(railPseudo, pseudo || "Membre du QG");
     setText(railHandle, `@${(pseudo || "membre").replace(/\s+/gu, "")}`);
-    if (railCrown) railCrown.hidden = !isCrown;
-    if (railVerified) railVerified.hidden = !isVerified;
+    if (railCrown) railCrown.toggleAttribute("hidden", !isCrown);
+    if (railVerified) railVerified.toggleAttribute("hidden", !isVerified);
 
     if (railAvatar) {
       railAvatar.hidden = !avatarSrc;
       if (avatarSrc && railAvatar.getAttribute("src") !== avatarSrc) railAvatar.src = avatarSrc;
       const fallback = railAvatar.parentElement?.querySelector("svg");
-      if (fallback) fallback.hidden = Boolean(avatarSrc);
+      if (fallback) fallback.toggleAttribute("hidden", Boolean(avatarSrc));
     }
     if (mobileAvatar) {
       // Déconnecté : l'icône « profil » générique, comme sur X. Connecté : la photo.
@@ -242,6 +242,9 @@
     const adminSource = $("[data-host-admin-link]");
     if (adminLink && adminSource) adminLink.hidden = adminSource.hidden;
 
+    $("[data-x-profile-view-crown]")?.toggleAttribute("hidden", signedIn && !isCrown);
+    $("[data-x-profile-verified]")?.toggleAttribute("hidden", signedIn && !isVerified);
+    $$("[data-x-profile-host-details]").forEach((node) => { node.hidden = signedIn; });
     setText(profileName, signedIn ? pseudo || "Membre du QG" : "Gionny");
     setText(profileHandle, `@${(signedIn ? pseudo || "membre" : "7gionny").replace(/\s+/gu, "")}`);
   };
@@ -263,9 +266,11 @@
       dmBadge.hidden = !count || count === "0";
       setText(dmBadge, count || "");
     }
-    if (messagesBadge) messagesBadge.hidden = !count || count === "0";
-    if (dmSnippet && count) {
-      setText(dmSnippet, `${count} nouveau${count === "1" ? "" : "x"} message${count === "1" ? "" : "s"} de Gionny`);
+    messagesBadges.forEach((node) => {
+      node.toggleAttribute("hidden", !count || count === "0");
+    });
+    if (dmSnippet) {
+      setText(dmSnippet, count ? `${count} nouveau${count === "1" ? "" : "x"} message${count === "1" ? "" : "s"} de Gionny` : "Ta discussion privée avec Gionny");
     }
   };
 
@@ -281,12 +286,19 @@
       characterData: true,
     });
   }
+  // Les changements de visibilité ou d'avatar n'impliquent pas forcément de texte.
+  ["[data-member-identity]", "[data-member-logged-in]", "[data-member-crown]", "[data-member-verified-badge]", "[data-member-avatar]", "[data-host-admin-link]"].forEach((selector) => {
+    const source = $(selector);
+    if (source) new MutationObserver(syncAccount).observe(source, { attributes: true, attributeFilter: ["hidden", "src"] });
+  });
   const contactBadge = $("[data-contact-badge]");
   if (contactBadge) {
     new MutationObserver(syncMessages).observe(contactBadge, {
       subtree: true,
       childList: true,
       characterData: true,
+      attributes: true,
+      attributeFilter: ["hidden"],
     });
   }
   syncAccount();
@@ -308,6 +320,7 @@
       );
     }
     if (switchLabel) switchLabel.textContent = social ? "Fil d’actualité" : "Lives & réseaux";
+    if (social) $('.x-mobile-nav [data-x-nav="home"]')?.removeAttribute("aria-current");
     // La barre mobile n'a qu'un bouton « Lives & réseaux » : il reste allumé
     // tant que cette vue est affichée.
     $$('[data-x-mobile-only="social"]').forEach((button) => {

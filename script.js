@@ -887,9 +887,6 @@
   const memberAvatarImage = document.querySelector("[data-member-avatar]");
   const sitePresence = document.querySelector("[data-site-presence]");
   const sitePresenceCount = document.querySelector("[data-site-presence-count]");
-  const welcomeTitle = document.querySelector("[data-intro-title]");
-  const welcomeName = document.querySelector("[data-welcome-name]");
-  const welcomeComma = document.querySelector("[data-welcome-comma]");
   const memberCrown = document.querySelector("[data-member-crown]");
   const memberProfileCrown = document.querySelector("[data-member-profile-crown]");
   const memberLoginButton = document.querySelector("[data-member-login]");
@@ -1305,17 +1302,6 @@
       if (avatarData && profileAvatarImage.src !== avatarData) profileAvatarImage.src = avatarData;
     }
     if (profileAvatarFallback) profileAvatarFallback.hidden = Boolean(avatarData);
-    if (welcomeName) {
-      welcomeName.textContent = pseudo;
-      welcomeName.hidden = !isConnected;
-    }
-    if (welcomeComma) welcomeComma.hidden = !isConnected;
-    if (welcomeTitle) {
-      welcomeTitle.setAttribute(
-        "aria-label",
-        isConnected ? `Bienvenue ${pseudo}, dans le QG de Gionny` : "Bienvenue dans le QG de Gionny"
-      );
-    }
     const isVerified = visitorAccount?.badges?.includes("verified") === true;
     if (memberCrown) memberCrown.hidden = !isHost;
     if (memberProfileCrown) memberProfileCrown.hidden = !isHost;

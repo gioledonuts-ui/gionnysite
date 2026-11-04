@@ -123,8 +123,11 @@ body {
   justify-content: space-between;
   gap: 14px;
   padding: 0 16px;
+  border: 0;
   border-bottom: 1px solid var(--x-line);
+  border-radius: 0;
   background: rgba(0, 0, 0, 0.9);
+  box-shadow: none;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   animation: none;
@@ -149,7 +152,14 @@ body {
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 16px;
+  overflow: visible;
   text-transform: uppercase;
+}
+
+/* Les anciens thèmes dessinaient une barre rouge avant le badge : on la coupe. */
+.ticker-label::before {
+  display: none;
+  content: none;
 }
 
 .ticker-viewport {
@@ -161,6 +171,8 @@ body {
   background: transparent;
   overflow-y: hidden;
   scrollbar-width: none;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .ticker-viewport:focus-visible {
@@ -447,9 +459,59 @@ body {
 
 /* Bloc compte / connexion, collé en bas */
 .x-rail-account {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* Déconnexion : une icône discrète dans la pilule de compte. */
+.x-rail-logout {
+  display: none;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--x-muted);
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.x-rail-logout svg {
+  width: 18px;
+  height: 18px;
+}
+
+.x-rail-logout:hover,
+.x-rail-logout:focus-visible {
+  background: rgba(231, 233, 234, 0.1);
+  color: var(--x-text);
+}
+
+.x-rail-logout:focus-visible {
+  outline: 2px solid var(--x-accent);
+  outline-offset: -2px;
+}
+
+@media (min-width: 1280px) {
+  .x-rail-account:has(> [data-rail-account-card]:not([hidden])) {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px 0 0;
+    border-radius: 999px;
+  }
+
+  .x-rail-account:has(> [data-rail-account-card]:not([hidden])):hover {
+    background: #16181c;
+  }
+
+  .x-rail-account:has(> [data-rail-account-card]:not([hidden])) .x-rail-logout {
+    display: grid;
+  }
 }
 
 .x-rail-account-card {
@@ -1562,6 +1624,7 @@ body {
 /* Messages */
 .x-dm {
   display: flex;
+  min-height: calc(100vh - var(--x-header) - 54px - 140px);
   flex-direction: column;
   gap: 12px;
   padding: 16px;
@@ -2712,7 +2775,9 @@ body {
     gap: 5px;
   }
 
-  /* Barre logo + bascule : styles communs définis en 1079 px. */
+  /* La navigation inférieure offre déjà l'accès aux lives sur téléphone. */
+  .x-mobile-bar { justify-content: space-between; }
+  .x-mobile-switch { display: none; }
 
   /* Bascule Fil / Lives & réseaux */
   .x-shell[data-mobile-view="social"] .x-main {
@@ -2786,15 +2851,6 @@ body {
     stroke-width: 1.4;
   }
 
-  .x-mobile-nav-link--post {
-    color: var(--x-accent);
-  }
-
-  .x-mobile-nav-link--post .x-rail-icon {
-    width: 26px;
-    height: 26px;
-  }
-
   .site-footer {
     flex-direction: column;
     align-items: flex-start;
@@ -2802,8 +2858,14 @@ body {
     padding-bottom: 70px;
   }
 
+  /* Le tiroir flottant ne recouvre plus le fil : sur téléphone, la vue
+     Messages de la colonne centrale joue ce rôle. */
   .contact-launcher {
-    bottom: 66px;
+    display: none;
+  }
+
+  .x-dm-note {
+    display: none;
   }
 }
 

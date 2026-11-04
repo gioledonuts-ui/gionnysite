@@ -229,6 +229,9 @@
               </span>
               <svg class="x-rail-account-more" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.2" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="17.8" cy="12" r="1.6" fill="currentColor" /></svg>
             </button>
+            <button class="x-rail-logout" type="button" data-contact-logout aria-label="Déconnexion" title="Déconnexion">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.4 3.6H6.8A2.4 2.4 0 0 0 4.4 6v12a2.4 2.4 0 0 0 2.4 2.4h7.6" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /><path d="m15.6 8.4 4 3.6-4 3.6M19.2 12h-9.6" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
             <div class="x-rail-auth" data-rail-auth>
               <button class="x-rail-auth-button" type="button" data-member-login aria-label="Se connecter">
                 <svg class="x-rail-auth-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M14.4 3.6H6.8A2.4 2.4 0 0 0 4.4 6v12a2.4 2.4 0 0 0 2.4 2.4h7.6" /><path class="x-icon-line" d="m15.6 8.4 4 3.6-4 3.6M19.2 12h-9.6" /></svg>
@@ -255,7 +258,7 @@
                 <img src="/assets/gionny-profile.jpg" alt="" />
               </span>
               <div class="x-feed-headline">
-                <h1 id="welcome-title" data-intro-title aria-label="Bienvenue dans le QG de Gionny">Bienvenue <span class="welcome-name" data-welcome-name hidden></span><span class="welcome-name-comma" data-welcome-comma hidden>,</span> dans le <span class="heading-accent">QG</span> <span class="welcome-tail">de Gionny</span></h1>
+                <h1 id="welcome-title" data-intro-title aria-label="Bienvenue dans le QG de Gionny">Bienvenue dans le <span class="heading-accent">QG</span> <span class="welcome-tail">de Gionny</span></h1>
                 <p class="x-feed-handle">@7gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></p>
               </div>
               <span class="site-presence" data-site-presence hidden aria-live="polite">
@@ -387,12 +390,12 @@
               <button class="x-outline-button" type="button" data-x-profile-edit>Éditer le profil</button>
             </div>
             <div class="x-profile-identity">
-              <h3 class="x-profile-name"><span data-x-profile-name>Gionny</span><svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></h3>
+              <h3 class="x-profile-name"><span data-x-profile-name>Gionny</span><svg data-x-profile-view-crown class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg data-x-profile-verified class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></h3>
               <p class="x-profile-handle" data-x-profile-handle>@7gionny</p>
-              <p class="x-profile-bio">La commu, les lives et les meilleurs moments sont ici. On se retrouve sur Discord, Twitch et YouTube.</p>
-              <p class="x-profile-meta"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.6" y="4.8" width="16.8" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="M8 2.8v4M16 2.8v4M3.6 10h16.8" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>Mardi, mercredi, samedi et dimanche · 22h</p>
-              <p class="x-profile-follow"><strong>@7gionny</strong> est suivi automatiquement par chaque membre du QG.</p>
-              <div class="x-profile-stats">
+              <p class="x-profile-bio" data-x-profile-host-details>La commu, les lives et les meilleurs moments sont ici. On se retrouve sur Discord, Twitch et YouTube.</p>
+              <p class="x-profile-meta" data-x-profile-host-details><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.6" y="4.8" width="16.8" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="M8 2.8v4M16 2.8v4M3.6 10h16.8" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>Mardi, mercredi, samedi et dimanche · 22h</p>
+              <p class="x-profile-follow" data-x-profile-host-details><strong>@7gionny</strong> est suivi automatiquement par chaque membre du QG.</p>
+              <div class="x-profile-stats" data-x-profile-host-details>
                 <span><strong>1</strong> Abonnement</span>
                 <span><strong data-x-profile-followers>0</strong> Abonnés</span>
               </div>
@@ -457,7 +460,7 @@
               </span>
               <span class="x-dm-badge" data-x-dm-badge hidden>0</span>
             </button>
-            <p class="x-dm-note">Le tiroir de discussion reste dispo en bas à droite, même quand tu changes de vue.</p>
+            <p class="x-dm-note">Le tiroir de discussion reste dispo en bas à droite sur ordinateur.</p>
           </div>
         </section>
       </main>
@@ -854,11 +857,11 @@
         <button class="x-mobile-nav-link" type="button" data-x-mobile-only="social" aria-label="Lives et réseaux">
           <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><rect class="x-icon-line" x="3.4" y="3.4" width="7.2" height="7.2" rx="1.8" /><rect class="x-icon-line" x="13.4" y="3.4" width="7.2" height="7.2" rx="1.8" /><rect class="x-icon-line" x="3.4" y="13.4" width="7.2" height="7.2" rx="1.8" /><rect class="x-icon-line" x="13.4" y="13.4" width="7.2" height="7.2" rx="1.8" /></svg>
         </button>
-        <button class="x-mobile-nav-link x-mobile-nav-link--post" type="button" data-x-compose-open aria-label="Poster">
-          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L20.2 7.8a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6 4 20Z" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round" /></svg>
-        </button>
         <button class="x-mobile-nav-link" type="button" data-x-nav="notifications" aria-label="Notifications">
           <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M12 3.2a5.9 5.9 0 0 1 5.9 5.9v3.4l1.7 3.3a.7.7 0 0 1-.6 1H4.9a.7.7 0 0 1-.6-1l1.7-3.3V9.1A5.9 5.9 0 0 1 12 3.2Z" /><path class="x-icon-line" d="M9.6 20.2a2.6 2.6 0 0 0 4.8 0" /><circle class="x-rail-dot" cx="18.4" cy="5.6" r="3.1" data-x-badge="notifications" hidden /></svg>
+        </button>
+        <button class="x-mobile-nav-link" type="button" data-x-nav="messages" aria-label="Messages">
+          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M4.2 6.4A2.4 2.4 0 0 1 6.6 4h10.8a2.4 2.4 0 0 1 2.4 2.4v8.1a2.4 2.4 0 0 1-2.4 2.4H9.9l-4 3.1a.7.7 0 0 1-1.1-.6v-2.8a2.4 2.4 0 0 1-.6-1.6Z" /><circle class="x-rail-dot" cx="18.6" cy="5.4" r="3.1" data-x-badge="messages" hidden /></svg>
         </button>
         <button class="x-mobile-nav-link" type="button" data-x-nav="profile" aria-label="Profil et paramètres">
           <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><circle class="x-icon-line" cx="12" cy="8.2" r="4.1" /><path class="x-icon-line" d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" /></svg>
