@@ -15,8 +15,8 @@
       content="La commu, les lives et les meilleurs moments sont juste ici. Pose-toi et viens dire salut."
     />
     <title>QG2GIONNY</title>
-    <link rel="icon" href="/assets/gionny-profile.jpg" type="image/jpeg" />
-    <link rel="apple-touch-icon" href="/assets/gionny-profile.jpg" />
+    <link rel="icon" href="/assets/apple-icon.png" type="image/png" sizes="180x180" />
+    <link rel="apple-touch-icon" href="/assets/apple-icon.png" sizes="180x180" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="/display-fixes.css" />
     <link rel="stylesheet" href="/chat-x.css" />
     <link rel="stylesheet" href="/layout-2026.css" />
+    <link rel="stylesheet" href="/dark-mode.css" />
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -66,15 +67,21 @@
       <path d="M9.15 6.6h5.7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.3" opacity="0.5" />
     </symbol>
   </svg>
-    <div class="ambient-glow ambient-glow--blue" aria-hidden="true"></div>
-    <div class="ambient-glow ambient-glow--cyan" aria-hidden="true"></div>
-    <div class="ambient-glow ambient-glow--ice" aria-hidden="true"></div>
-    <div class="ambient-grid" aria-hidden="true"></div>
 
     <a class="skip-link" href="#main">Aller au contenu</a>
 
     <div class="site-shell" id="top">
       <header class="site-header">
+        <a class="site-logo" href="#top" aria-label="QG2GIONNY — retour en haut de la page">
+          <img
+            src="/assets/logo-qg.png"
+            width="512"
+            height="512"
+            alt="Logo officiel du QG de Gionny"
+            decoding="async"
+            fetchpriority="high"
+          />
+        </a>
         <span class="ticker-label" aria-hidden="true">À LA UNE</span>
         <div
           class="ticker-viewport"
@@ -156,10 +163,6 @@
 
       <main class="hub-layout" id="main">
         <section class="welcome-panel" aria-labelledby="welcome-title">
-          <div class="welcome-atmosphere" aria-hidden="true">
-            <span class="welcome-watermark">QG</span>
-            <span class="welcome-radar"></span>
-          </div>
           <div class="welcome-account-bar" data-member-access role="group" aria-label="Accès au compte">
             <div class="welcome-account-identity">
               <span class="member-visitor" data-member-visitor><svg class="qg-icon member-visitor-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-user"></use></svg> Non connecté</span>

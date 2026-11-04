@@ -1,0 +1,422 @@
+/* ==========================================================================
+   DARK MODE SOBRE — X / Twitch / Instagram
+   --------------------------------------------------------------------------
+   Ce fichier est chargé en dernier : il neutralise une fois pour toutes les
+   motifs « décoratifs » (grille quadrillée, croisillons, halos néon, radar,
+   matrice de points, filigranes, hachures) et installe une palette mate.
+
+   Règle de base :
+     · fond de page  #090a0f  (uni, mat, aucun dégradé, aucun motif) ;
+     · surfaces      #12141c  (Hero, « Retrouve-moi ici », bandeau, chat) ;
+     · bordures      blanc 8 % (border-white/[0.08]) ;
+     · aucune ombre colorée autour des grands blocs.
+   Les couleurs d'accent (Discord, Twitch, YouTube, réseaux) restent : elles
+   portent l'identité des cartes, pas un effet de style.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --page: #090a0f;
+  --surface: #12141c;
+  --surface-2: #171a23;
+  --surface-3: #1d2029;
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.14);
+  --creator-background: none;
+  --creator-background-overlay: none;
+  --panel: #12141c;
+  --line: rgba(255, 255, 255, 0.08);
+  --text: #f4f6fb;
+  --muted: #a8b0bf;
+  --quiet: #7d8698;
+}
+
+/* --------------------------------------------------------------------------
+   1. Fond de page : noir profond, 100 % uni
+   --------------------------------------------------------------------------
+   Plus de dégradés, plus de vignette, plus de grille, plus de halo qui suit le
+   pointeur, plus de matrice de points. Un seul aplat mat.
+   -------------------------------------------------------------------------- */
+html {
+  background-color: var(--page);
+}
+
+body {
+  background: var(--page);
+  background-image: none;
+  background-attachment: scroll;
+}
+
+body::before,
+body::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+}
+
+/* Tous les calques décoratifs présents dans le HTML. */
+.ambient-glow,
+.ambient-glow--blue,
+.ambient-glow--cyan,
+.ambient-glow--ice,
+.ambient-grid,
+.welcome-atmosphere,
+.welcome-radar,
+.welcome-watermark,
+.discord-watermark,
+.creator-watermark {
+  display: none !important;
+  background: none !important;
+  animation: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Surfaces : mates, pleines, uniformes
+   -------------------------------------------------------------------------- */
+.welcome-panel,
+.networks-panel,
+.schedule-card,
+.creator-carousel .discord-cta,
+.welcome-account-bar,
+.ticker-label,
+.contact-widget,
+.profile-dialog,
+.about-dialog,
+.network-card,
+.member-access-button,
+.creator-carousel-next {
+  background-image: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Le Hero et « Retrouve-moi ici » : même surface, même bordure fine.
+   On garde leurs autres propriétés (grid, padding, rayon) intactes. */
+.welcome-panel,
+.networks-panel {
+  border: 1px solid var(--hairline) !important;
+  background-color: var(--surface) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Aucun pseudo-élément décoratif dans les grands blocs. */
+.welcome-panel::before,
+.welcome-panel::after,
+.networks-panel::before,
+.networks-panel::after,
+.schedule-card::before,
+.schedule-card::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+/* Bandeau du haut = une barre, pas une carte flottante. */
+.site-header {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.ticker-viewport {
+  background: transparent;
+}
+
+.ticker-label {
+  border-right: 1px solid var(--hairline);
+  background: transparent !important;
+  color: #ff5563;
+}
+
+/* Cartes du carrousel : la couleur du réseau reste (c'est l'identité de la
+   carte, pas un effet), mais en aplat uni — plus de dégradé, plus de halo. */
+.welcome-actions .creator-carousel .discord-cta,
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide],
+.welcome-actions .creator-carousel .creator-slide--discord {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background-color: #5865f2 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.welcome-actions .creator-carousel .creator-slide--twitch,
+.welcome-actions .creator-carousel .discord-cta.creator-slide--twitch {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background-color: #9146ff !important;
+  background-image: none !important;
+}
+
+.welcome-actions .creator-carousel .creator-slide--youtube,
+.welcome-actions .creator-carousel .discord-cta.creator-slide--youtube {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background-color: #e01f26 !important;
+  background-image: none !important;
+}
+
+/* Le voile diagonal qui balayait les cartes au survol : supprimé. */
+.welcome-actions .creator-carousel .discord-cta::after,
+.welcome-actions .creator-carousel .discord-cta::before {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+}
+
+/* Planning : surface légèrement plus claire que le Hero, une seule teinte. */
+.welcome-actions .schedule-card,
+.schedule-card--refresh {
+  border: 1px solid var(--hairline) !important;
+  background-color: var(--surface-2) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.schedule-card--refresh .schedule-days li {
+  border: 1px solid var(--hairline);
+  background: var(--surface-3);
+  box-shadow: none;
+}
+
+/* Le prochain live : un seul accent bleu uni, sans dégradé ni halo. */
+.schedule-card--refresh .schedule-days li[data-next-live],
+.schedule-card--refresh .schedule-days li[data-next-live]:hover {
+  border-color: transparent;
+  background: #2563eb;
+  background-image: none !important;
+  box-shadow: none;
+  color: #fff;
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-time {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.schedule-card--refresh .schedule-countdown {
+  border: 1px solid var(--hairline);
+  background: var(--surface-3);
+  box-shadow: none;
+}
+
+/* Barre de compte. */
+.welcome-account-bar {
+  border: 1px solid var(--hairline) !important;
+  background-color: var(--surface-2) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Cartes réseaux : surface mate, bordure discrète, aucun halo. */
+.network-card,
+.network-card--wide {
+  border: 1px solid var(--hairline) !important;
+  background-color: var(--surface-2) !important;
+  box-shadow: none !important;
+}
+
+/* Aucun motif dans les cartes réseaux : ni halo, ni liseré, ni glyphe géant
+   en filigrane (c'était le reste de « style IA » le plus visible). */
+.network-card::after,
+.network-card::before,
+.network-watermark,
+.networks-panel .network-watermark {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  filter: none !important;
+}
+
+.network-card:hover,
+.network-card:focus-visible {
+  border-color: var(--hairline-strong) !important;
+  box-shadow: none !important;
+}
+
+/* Chat : même surface que le reste, bordure fine. */
+.contact-widget,
+.profile-dialog,
+.about-dialog {
+  border: 1px solid var(--hairline) !important;
+  background-color: var(--surface) !important;
+  background-image: none !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+.contact-widget .contact-dialog-header,
+.contact-widget .contact-dialog-topline {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Boutons neutres (pas de dégradé, pas de glow). */
+.member-access-button {
+  box-shadow: none;
+}
+
+.member-access-button--accent {
+  background: #1d9bf0;
+  box-shadow: none;
+}
+
+.member-access-button--accent:hover,
+.member-access-button--accent:focus-visible {
+  background: #34aaf8;
+}
+
+/* --------------------------------------------------------------------------
+   3. Halo lumineux « qui suit la souris » : supprimé
+   -------------------------------------------------------------------------- */
+.welcome-panel,
+.networks-panel,
+.network-card,
+.discord-cta,
+.schedule-card,
+.profile-frame,
+.contact-launcher {
+  filter: none;
+}
+
+/* --------------------------------------------------------------------------
+   4. Logo officiel, en haut à gauche du bandeau
+   -------------------------------------------------------------------------- */
+.site-header {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  padding-block: 3px;
+}
+
+.site-logo {
+  display: inline-flex;
+  height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.site-logo img {
+  display: block;
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 180ms ease;
+}
+
+.site-logo:hover img,
+.site-logo:focus-visible img {
+  transform: scale(1.05);
+}
+
+.site-logo:focus-visible {
+  outline: 2px solid #1d9bf0;
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.ticker-label {
+  flex: 0 0 auto;
+  min-height: 38px;
+}
+
+.ticker-viewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 38px;
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    min-height: 52px;
+    gap: 8px;
+    padding-block: 5px;
+  }
+
+  .site-logo {
+    height: 32px;
+  }
+
+  .ticker-label,
+  .ticker-viewport {
+    min-height: 32px;
+    font-size: 11px;
+  }
+
+  .ticker-label {
+    padding-inline: 0 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-logo {
+    height: 30px;
+  }
+
+  .ticker-label {
+    padding-inline: 0 7px;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Footer : surface mate, texte calme
+   -------------------------------------------------------------------------- */
+.site-footer {
+  border-top: 1px solid var(--hairline);
+  background: transparent;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   6. Ajustements mesurés après la bascule dark
+   -------------------------------------------------------------------------- */
+
+/* Le compteur : l'animation de « glissement » des chiffres laissait le doublon
+   sortant visible une fraction de seconde sous la ligne (on voyait « 20 s »
+   sous « 13 h 47 m »). Elle est supprimée : le chiffre change, point. */
+.schedule-card--refresh .schedule-countdown-ghost {
+  display: none !important;
+}
+
+.schedule-card--refresh .schedule-countdown-digits.is-ticking,
+.schedule-card--refresh .schedule-countdown-chunk:has(.is-ticking) .schedule-countdown-ghost {
+  animation: none !important;
+}
+
+.schedule-card--refresh .schedule-countdown-digits {
+  overflow: visible;
+}
+
+/* Sur téléphone, quatre jours ne tiennent pas dans la largeur : on passe sur
+   deux rangées de deux, ce qui laisse « MERCREDI » et « DIMANCHE » entiers. */
+@media (max-width: 760px) {
+  .schedule-card--refresh .schedule-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 8px;
+  }
+}
+
+/* La pastille de bascule du carrousel passait au travers du texte de la carte
+   Discord : on la sort du flux, alignée sur le bord bas de la carte. */
+.welcome-actions .creator-carousel-dots {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+}
+
+.welcome-actions .creator-carousel {
+  position: relative;
+}
+
+/* La barre de compte : fond un peu plus clair que le Hero pour rester lisible
+   sans halo, bordure fine. */
+.welcome-account-bar {
+  background-color: #171a23 !important;
+}
+
+/* Sur les cartes colorées, le petit lien d'invitation doit rester lisible. */
+.welcome-actions .creator-carousel .discord-invite,
+.welcome-actions .creator-carousel .discord-community-meta {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
