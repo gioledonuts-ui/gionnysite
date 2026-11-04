@@ -12,10 +12,30 @@
     root.style.setProperty("--qg-visual-viewport-top", `${top}px`);
   };
 
+  // Téléphone : la conversation plein écran suit le clavier au pixel. L'en-tête
+  // ne bouge jamais (il reste à `offsetTop`) et seule la hauteur du conteneur
+  // diminue, ce qui fait remonter la barre de saisie juste au-dessus du clavier.
+  const syncMobileChatViewport = () => {
+    const root = document.documentElement;
+    const widget = document.querySelector("[data-contact-widget]");
+    if (!root || !widget) return;
+    const viewport = window.visualViewport;
+    const height = Math.max(1, Math.round(viewport?.height || window.innerHeight || root.clientHeight));
+    const top = Math.max(0, Math.round(viewport?.offsetTop || 0));
+    widget.style.setProperty("--qg-chat-height", `${height}px`);
+    widget.style.setProperty("--qg-chat-top", `${top}px`);
+  };
+
   syncVisualViewportBounds();
+  syncMobileChatViewport();
   window.addEventListener("resize", syncVisualViewportBounds, { passive: true });
+  window.addEventListener("resize", syncMobileChatViewport, { passive: true });
   window.visualViewport?.addEventListener("resize", syncVisualViewportBounds, { passive: true });
   window.visualViewport?.addEventListener("scroll", syncVisualViewportBounds, { passive: true });
+  window.visualViewport?.addEventListener("resize", syncMobileChatViewport, { passive: true });
+  window.visualViewport?.addEventListener("scroll", syncMobileChatViewport, { passive: true });
+  document.addEventListener("focusin", syncMobileChatViewport);
+  document.addEventListener("focusout", () => window.setTimeout(syncMobileChatViewport, 120));
 
   const lockBackgroundScroll = (owner) => {
     if (!owner || pageScrollLockOwners.has(owner)) return;

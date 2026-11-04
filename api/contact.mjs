@@ -141,7 +141,11 @@ function authenticationFailure(response, reason) {
     return response.status(404).json({ error: "Compte introuvable. Crée-le avec « S’inscrire ».", reason });
   }
   if (reason === "exists") {
-    return response.status(409).json({ error: "Ce pseudo est déjà pris. Choisis-en un autre ou connecte-toi.", reason });
+    // Unicité stricte : jamais de second compte sur le même pseudo.
+    return response.status(409).json({
+      error: "Ce pseudo est déjà pris. Connecte-toi avec ton mot de passe.",
+      reason,
+    });
   }
   if (reason === "password_invalid") {
     return response.status(400).json({ error: "Le mot de passe doit contenir entre 8 et 128 caractères.", reason });

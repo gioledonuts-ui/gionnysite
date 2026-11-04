@@ -122,14 +122,12 @@ const postComposer = (() => {
   return html.slice(start, end);
 })();
 
-test("le composeur offre les quatre attachements, réservés à l'Hôte et aux Validés", () => {
+test("le composeur offre trois attachements, réservés à l'Hôte et aux Validés", () => {
   for (const hook of [
     "data-x-post-input",
     "data-x-post-submit",
-    "data-x-post-image",
-    "data-x-post-image-input",
-    "data-x-post-video",
-    "data-x-post-video-input",
+    "data-x-post-media",
+    "data-x-post-media-input",
     "data-x-post-vocal",
     "data-x-post-emoji",
     "data-x-emoji-panel",
@@ -140,8 +138,12 @@ test("le composeur offre les quatre attachements, réservés à l'Hôte et aux V
     assert.match(postComposer, new RegExp(hook, "u"), `attendu : ${hook}`);
   }
 
+  // Un SEUL bouton multimédia (photo + vidéo), plus d'icône vidéo séparée.
+  assert.doesNotMatch(postComposer, /data-x-post-image|data-x-post-video/u);
+  assert.match(postComposer, /accept="image\/\*,video\/\*"/u);
+
   // Le droit de publier est le même pour le texte et pour les médias.
-  assert.match(xApp, /\[data-x-post-image\], \[data-x-post-video\], \[data-x-post-vocal\], \[data-x-post-emoji\]/u);
+  assert.match(xApp, /\[data-x-post-media\], \[data-x-post-vocal\], \[data-x-post-emoji\]/u);
   assert.match(xApp, /const canPost = Boolean\(user && \(user\.isHost \|\| user\.isVerified\)\)/u);
   // Aucun média ne part sans passer par les limites annoncées.
   assert.match(xApp, /const MEDIA_LIMITS = \{ image: 60 \* 1024, vocal: 200 \* 1024, video: 2 \* 1024 \* 1024 \}/u);
@@ -165,8 +167,12 @@ test("likes, reposts et notifications restent branchés sur les mêmes routes", 
   assert.match(xApp, /action: "notifications-read"/u);
   assert.match(xApp, /url\.searchParams\.set\("notifications", "1"\)/u);
   assert.match(xApp, /notificationsFilter === "verified"/u);
-  for (const mode of ["all", "follows", "verified", "reposts"]) {
+  // Deux onglets seulement depuis la remise à neuf : Pour toi et Suivis.
+  for (const mode of ["all", "follows"]) {
     assert.match(html, new RegExp(`data-x-feed-tab="${mode}"`, "u"));
+  }
+  for (const mode of ["verified", "reposts"]) {
+    assert.doesNotMatch(html, new RegExp(`data-x-feed-tab="${mode}"`, "u"));
   }
   // Le badge de la nav reçoit le compte réel, plafonné à 9+.
   assert.match(xApp, /count > 9 \? "9\+"/u);

@@ -78,7 +78,8 @@ function isIdentifier(value) {
 async function resolveMemberId(pseudo) {
   const wanted = String(pseudo || "").replace(/^@+/u, "").trim().toLowerCase();
   if (!wanted) return null;
-  const aliases = ["gionny", "7gionny"].includes(wanted) ? new Set(["gionny", "7gionny"]) : new Set([wanted]);
+  // Un seul compte par pseudo, en minuscules : aucune alias n'est nécessaire.
+  const aliases = new Set([wanted]);
   const page = await listVisitorAccounts("").catch(() => ({ members: [] }));
   const member = (Array.isArray(page.members) ? page.members : []).find(
     (entry) => aliases.has(String(entry.pseudo || "").trim().toLowerCase())

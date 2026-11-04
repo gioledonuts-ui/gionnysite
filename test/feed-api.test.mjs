@@ -79,6 +79,12 @@ test.before(async () => {
   assert.equal(host.ok, true);
   hostCookie = accountCookie(host.sessionToken || "");
   adminPseudo = host.account?.pseudo || "Gionny";
+  // La couronne ne vient plus du pseudo : elle est attribuée en base, comme
+  // depuis le panneau /admin.
+  const hostRecord = (await inbox.listVisitorAccounts("", undefined)).members
+    .find((entry) => entry.pseudo === adminPseudo);
+  assert.ok(hostRecord, "le compte Hôte doit exister");
+  assert.equal((await inbox.setVisitorAccountRole(hostRecord.id, "host", undefined)).ok, true);
 
   const member = await inbox.registerVisitorAccount({ pseudo: "FanValide", password: "member-password-2026" });
   assert.equal(member.ok, true);

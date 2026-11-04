@@ -122,7 +122,7 @@ test("la fonctionnalité de l'étape 3 reste branchée", () => {
   // Composeur, onglets du fil, notifications et actions de post : intacts.
   assert.match(html, /data-x-composer/u);
   assert.match(html, /Quoi de neuf dans le QG \?/u);
-  for (const tab of ["all", "follows", "verified", "reposts"]) {
+  for (const tab of ["all", "follows"]) {
     assert.ok(html.includes(`data-x-feed-tab="${tab}"`), `onglet ${tab} absent`);
   }
   assert.match(html, /data-x-nav="notifications"/u);

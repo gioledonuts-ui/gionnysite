@@ -76,6 +76,10 @@ test.before(async () => {
   store.resetState();
   host = await inbox.registerVisitorAccount({ pseudo: "Gionny", password: "host-password-2026" });
   assert.equal(host.ok, true);
+  // Rôle Hôte attribué en base (panneau /admin), jamais d'après le pseudo.
+  const hostRecord = (await inbox.listVisitorAccounts("", undefined)).members
+    .find((entry) => entry.pseudo === host.account.pseudo);
+  assert.equal((await inbox.setVisitorAccountRole(hostRecord.id, "host", undefined)).ok, true);
   const fan = await inbox.registerVisitorAccount({ pseudo: "FanLie", password: "fan-password-2026" });
   assert.equal(fan.ok, true);
   member = fan;

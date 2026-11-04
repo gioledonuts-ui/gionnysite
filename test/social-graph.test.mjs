@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { registerVisitorAccount, setVisitorAccountBadges } from "../lib/contact-inbox.mjs";
+import {
+  listVisitorAccounts,
+  registerVisitorAccount,
+  setVisitorAccountBadges,
+  setVisitorAccountRole,
+} from "../lib/contact-inbox.mjs";
 import {
   canMessage,
   createPost,
@@ -71,42 +76,62 @@ const register = async (store, pseudo) => {
   return created;
 };
 
+// Le rôle Hôte vient UNIQUEMENT de la base (panneau /admin), jamais du pseudo.
+const promoteToHost = async (store, pseudo) => {
+  const { members } = await listVisitorAccounts("", store);
+  const member = members.find((entry) => entry.pseudo === pseudo);
+  assert.ok(member, `compte ${pseudo} introuvable`);
+  const result = await setVisitorAccountRole(member.id, "host", store);
+  assert.equal(result.ok, true);
+  return result.member;
+};
+
+// L'Hôte du QG tel qu'il existe en production : un compte, un rôle en base.
+const registerHost = async (store, pseudo = "ChefDuQG") => {
+  const created = await register(store, pseudo);
+  await promoteToHost(store, created.account.pseudo);
+  return created;
+};
+
 test("every new account follows the host automatically", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "NouveauVenu");
   const ensured = await ensureHostFollowFor("NouveauVenu", store);
   assert.equal(ensured.ok, true);
 
-  const host = await getPublicProfile("Gionny", { viewer: "NouveauVenu" }, store);
+  const host = await getPublicProfile("ChefDuQG", { viewer: "NouveauVenu" }, store);
   assert.equal(host.ok, true);
   assert.equal(host.profile.isHost, true);
   assert.ok(host.profile.followersCount >= 1);
   assert.equal(host.profile.isFollowing, true);
 
   const member = await getProfileRecord("NouveauVenu", store);
-  assert.deepEqual(member.following, ["Gionny"]);
+  assert.deepEqual(member.following, ["ChefDuQG"]);
 });
 
 test("ensureEveryAccountFollowsHost catches accounts created before the rule", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "AncienMembre");
   await register(store, "AutreAncien");
   await ensureEveryAccountFollowsHost(store);
   await ensureEveryAccountFollowsHost(store);
 
-  const host = await getPublicProfile("Gionny", {}, store);
+  const host = await getPublicProfile("ChefDuQG", {}, store);
   assert.equal(host.profile.followersCount, 2);
   const second = await getProfileRecord("AutreAncien", store);
-  assert.equal(second.following.filter((entry) => entry === "Gionny").length, 1);
+  assert.equal(second.following.filter((entry) => entry === "ChefDuQG").length, 1);
 });
 
 test("the host cannot be unfollowed: the rule wins", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "Fidele");
-  const result = await setFollow({ pseudo: "Fidele", target: "Gionny", follow: false }, store);
+  const result = await setFollow({ pseudo: "Fidele", target: "ChefDuQG", follow: false }, store);
   assert.equal(result.ok, true);
   assert.equal(result.locked, true);
-  const host = await getPublicProfile("Gionny", { viewer: "Fidele" }, store);
+  const host = await getPublicProfile("ChefDuQG", { viewer: "Fidele" }, store);
   assert.equal(host.profile.isFollowing, true);
 });
 
@@ -129,6 +154,7 @@ test("following and unfollowing a member updates both counters", async () => {
 
 test("blocking removes both follows and hides the contact", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "Carla");
   await register(store, "David");
   await setFollow({ pseudo: "Carla", target: "David", follow: true }, store);
@@ -154,7 +180,7 @@ test("blocking removes both follows and hides the contact", async () => {
   assert.equal(retry.reason, "blocked");
 
   // The host itself can never be blocked.
-  const hostBlock = await setBlock({ pseudo: "Carla", target: "Gionny", blocked: true }, store);
+  const hostBlock = await setBlock({ pseudo: "Carla", target: "ChefDuQG", blocked: true }, store);
   assert.equal(hostBlock.ok, false);
   assert.equal(hostBlock.reason, "host");
 });
@@ -236,6 +262,7 @@ test("verified badge is what allows member to member messaging", async () => {
 
 test("only the host and verified members publish, everybody can like", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "SimpleMembre");
   await register(store, "MembreValide");
   const { members } = await import("../lib/contact-inbox.mjs").then((module) =>
@@ -248,7 +275,7 @@ test("only the host and verified members publish, everybody can like", async () 
   assert.equal(refused.ok, false);
   assert.equal(refused.reason, "not_allowed");
 
-  const hostPost = await createPost({ pseudo: "Gionny", text: "Salut le QG" }, store);
+  const hostPost = await createPost({ pseudo: "ChefDuQG", text: "Salut le QG" }, store);
   assert.equal(hostPost.ok, true);
   const verifiedPost = await createPost({ pseudo: "MembreValide", text: "Premier post validé" }, store);
   assert.equal(verifiedPost.ok, true);
@@ -271,7 +298,7 @@ test("only the host and verified members publish, everybody can like", async () 
   const removed = await deletePost({ pseudo: "SimpleMembre", postId: hostPost.post.id }, store);
   assert.equal(removed.ok, false);
   assert.equal(removed.reason, "forbidden");
-  const byHost = await deletePost({ pseudo: "Gionny", postId: verifiedPost.post.id }, store);
+  const byHost = await deletePost({ pseudo: "ChefDuQG", postId: verifiedPost.post.id }, store);
   assert.equal(byHost.ok, true);
   assert.equal((await listFeed({ mode: "all" }, store)).length, 1);
 });
@@ -434,32 +461,33 @@ test("les filtres du fil : suivis, reposts et j'aime", async () => {
 
 test("seul l'Hôte épingle, et un seul post reste en tête du QG", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "Epingleur");
   const { listVisitorAccounts } = await import("../lib/contact-inbox.mjs");
   const { members } = await listVisitorAccounts("", store);
   await setVisitorAccountBadges(members.find((m) => m.pseudo === "Epingleur").id, ["verified"], store);
 
   const first = await createPost({ pseudo: "Epingleur", text: "Annonce 1" }, store);
-  const second = await createPost({ pseudo: "Gionny", text: "Annonce 2" }, store);
+  const second = await createPost({ pseudo: "ChefDuQG", text: "Annonce 2" }, store);
 
   // Un membre ne peut pas épingler.
   const refused = await setPinned({ pseudo: "Epingleur", postId: first.post.id, pinned: true }, store);
   assert.equal(refused.ok, false);
   assert.equal(refused.reason, "forbidden");
 
-  const pinnedFirst = await setPinned({ pseudo: "Gionny", postId: first.post.id, pinned: true }, store);
+  const pinnedFirst = await setPinned({ pseudo: "ChefDuQG", postId: first.post.id, pinned: true }, store);
   assert.equal(pinnedFirst.ok, true);
   let feed = await listFeed({ mode: "all" }, store);
   assert.equal(feed[0].id, first.post.id);
   assert.equal(feed[0].pinned, true);
 
   // Épingler un autre post retire l'épinglage du précédent.
-  await setPinned({ pseudo: "Gionny", postId: second.post.id, pinned: true }, store);
+  await setPinned({ pseudo: "ChefDuQG", postId: second.post.id, pinned: true }, store);
   feed = await listFeed({ mode: "all" }, store);
   assert.equal(feed[0].id, second.post.id);
   assert.equal(feed.filter((post) => post.pinned).length, 1);
 
-  await setPinned({ pseudo: "Gionny", postId: second.post.id, pinned: false }, store);
+  await setPinned({ pseudo: "ChefDuQG", postId: second.post.id, pinned: false }, store);
   feed = await listFeed({ mode: "all" }, store);
   assert.equal(feed.filter((post) => post.pinned).length, 0);
   // Sans épinglage, le plus récent reprend la tête.
@@ -487,10 +515,11 @@ test("suivre un membre le notifie une seule fois", async () => {
 
 test("un post de l'Hôte est annoncé à toute la communauté, pas à lui-même", async () => {
   const store = new MemoryBlobStore();
+  await registerHost(store, "ChefDuQG");
   await register(store, "MembreUn");
   await register(store, "MembreDeux");
 
-  const hostPost = await createPost({ pseudo: "Gionny", text: "Le live démarre 🎥" }, store);
+  const hostPost = await createPost({ pseudo: "ChefDuQG", text: "Le live démarre 🎥" }, store);
   assert.equal(hostPost.ok, true);
 
   for (const pseudo of ["MembreUn", "MembreDeux"]) {
@@ -500,9 +529,9 @@ test("un post de l'Hôte est annoncé à toute la communauté, pas à lui-même"
     assert.equal(announced[0].postId, hostPost.post.id);
     assert.equal(announced[0].actors[0].isHost, true);
   }
-  assert.equal((await listNotifications({ viewer: "Gionny" }, store)).length, 0);
+  assert.equal((await listNotifications({ viewer: "ChefDuQG" }, store)).length, 0);
 
   // Supprimer le post retire l'annonce de toutes les boîtes.
-  await deletePost({ pseudo: "Gionny", postId: hostPost.post.id }, store);
+  await deletePost({ pseudo: "ChefDuQG", postId: hostPost.post.id }, store);
   assert.equal((await listNotifications({ viewer: "MembreUn" }, store)).length, 0);
 });

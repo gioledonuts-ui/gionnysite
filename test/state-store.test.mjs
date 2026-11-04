@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -60,35 +61,106 @@ test("state lives in RAM and is snapshotted to the state file", async () => {
   assert.equal(await store.sharedBlobStore.get("gionny/test/hello.json"), null);
 });
 
-test("the owner account is seeded without a password and only opens once claimed", async () => {
+test("no account is created by the server and no pseudo is a free pass", async () => {
   store.resetState();
-  const owner = await inbox.ensureOwnerAccountSeeded();
-  assert.equal(owner.pseudo, "Gionny");
-  assert.equal(owner.role, "host");
-  assert.equal(owner.passwordHash, "");
+  // La remise à zéro : plus de compte semé automatiquement, plus de pseudo
+  // réservé, plus de couronne offerte à l'inscription.
+  assert.equal(await inbox.ensureOwnerAccountSeeded(), null);
 
-  // No bypass: the name alone never opens anything.
-  for (const pseudo of ["Gionny", "  gionny ", "7gionny", "@7gionny"]) {
+  // Le nom seul n'ouvre rien, quelle que soit l'écriture.
+  for (const pseudo of ["Gionny", "  gionny ", "7gionny", "@7gionny", "GIONNY"]) {
     const login = await inbox.loginVisitorAccount({ pseudo, password: "un-mot-de-passe" });
     assert.deepEqual(login, { ok: false, reason: "not_found" }, `login opened for ${pseudo}`);
   }
 
-  // The first registration claims it, then the exact password is required.
+  // Le premier compte qui porte ce pseudo l'obtient SANS aucun rôle.
   const claimed = await inbox.registerVisitorAccount({ pseudo: "Gionny", password: "un-mot-de-passe" });
   assert.equal(claimed.ok, true);
-  assert.equal(claimed.account.isAdmin, true);
-  assert.equal(claimed.account.isHost, true);
-  assert.equal(await isAdminRequest(credentials(claimed.sessionToken)), true);
+  assert.equal(claimed.account.role, "member");
+  assert.equal(claimed.account.isHost, undefined);
+  assert.equal(claimed.account.isAdmin, undefined);
+  assert.equal(await isAdminRequest(credentials(claimed.sessionToken)), false);
 
-  for (const pseudo of ["Gionny", "  gionny ", "7gionny", "@7gionny"]) {
-    const login = await inbox.loginVisitorAccount({ pseudo, password: "un-mot-de-passe" });
-    assert.equal(login.ok, true, `login refused for ${pseudo}`);
-    assert.equal(login.account.pseudo, "Gionny");
-    assert.equal(login.account.isAdmin, true);
+  // Unicité stricte : impossible de recréer le compte, même autrement écrit.
+  for (const pseudo of ["Gionny", "  gionny ", "7gionny", "@7gionny", "GIONNY"]) {
+    assert.deepEqual(
+      await inbox.registerVisitorAccount({ pseudo, password: "autre-mot-de-passe" }),
+      { ok: false, reason: "exists" },
+      `doublon accepté pour ${pseudo}`,
+    );
   }
+
+  // La connexion reste stricte : le bon mot de passe ouvre, l'autre non.
+  const login = await inbox.loginVisitorAccount({ pseudo: "  GIONNY ", password: "un-mot-de-passe" });
+  assert.equal(login.ok, true);
+  assert.equal(login.account.role, "member");
   assert.deepEqual(
     await inbox.loginVisitorAccount({ pseudo: "Gionny", password: "mauvais-mot-de-passe" }),
     { ok: false, reason: "password" },
+  );
+
+  // Seul le panneau /admin attribue la couronne, et il peut la retirer.
+  const member = (await inbox.listVisitorAccounts("")).members.find((entry) => entry.pseudo === "Gionny");
+  assert.equal((await inbox.setVisitorAccountRole(member.id, "host")).ok, true);
+  const promoted = await inbox.loginVisitorAccount({ pseudo: "Gionny", password: "un-mot-de-passe" });
+  assert.equal(promoted.account.isHost, true);
+  assert.equal(promoted.account.isAdmin, true);
+  assert.equal((await inbox.setVisitorAccountRole(member.id, "member")).ok, true);
+  const demoted = await inbox.loginVisitorAccount({ pseudo: "Gionny", password: "un-mot-de-passe" });
+  assert.equal(demoted.account.isHost, undefined);
+});
+
+test("legacy duplicate accounts on the same pseudo are merged into one", async () => {
+  store.resetState();
+  // On fabrique deux fiches historiques du même pseudo, avec la même clé et
+  // un doublon écrit différemment (majuscules). La fusion doit en garder UNE.
+  const older = {
+    version: 1,
+    id: "0f8b1c62-1111-4111-8111-111111111111",
+    keyHash: "",
+    pseudo: "Doublon",
+    passwordSalt: "AAAAAAAAAAAAAAAAAAAAAA",
+    passwordHash: "",
+    conversationId: null,
+    createdAt: "2025-01-01T10:00:00.000Z",
+    lastUsernameChange: null,
+    role: "member",
+    status: "active",
+    discordId: "284759123456789012",
+    discordUsername: "doublon",
+    discordLinkedAt: "2025-01-02T10:00:00.000Z",
+    updatedAt: "2025-01-01T10:00:00.000Z",
+  };
+  const hash = createHash("sha256").update("doublon").digest("hex");
+  await store.sharedBlobStore.put(`gionny/visitor-accounts/${hash}.json`, JSON.stringify({ ...older, keyHash: hash }), {
+    access: "private",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+  });
+  const aliasHash = createHash("sha256").update("Doublon").digest("hex");
+  await store.sharedBlobStore.put(`gionny/visitor-accounts/${aliasHash}.json`, JSON.stringify({
+    ...older,
+    keyHash: aliasHash,
+    id: "0f8b1c62-2222-4222-8222-222222222222",
+    badges: ["verified"],
+    createdAt: "2025-02-01T10:00:00.000Z",
+  }), { access: "private", addRandomSuffix: false, allowOverwrite: true });
+
+  const result = await inbox.deduplicateAccounts();
+  assert.equal(result.removed, 1);
+
+  const { members } = await inbox.listVisitorAccounts("");
+  const merged = members.filter((entry) => String(entry.pseudo).toLowerCase() === "doublon");
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0].id, "0f8b1c62-1111-4111-8111-111111111111");
+  // Les informations utiles des doublons sont conservées, pas perdues.
+  assert.deepEqual(merged[0].badges, ["verified"]);
+  assert.equal(merged[0].discordId, "284759123456789012");
+
+  // Et le pseudo reste unique : impossible d'en recréer un.
+  assert.deepEqual(
+    await inbox.registerVisitorAccount({ pseudo: "DOUBLON", password: "un-mot-de-passe" }),
+    { ok: false, reason: "exists" },
   );
 });
 
@@ -214,7 +286,10 @@ test("the planning and the member roles survive a restart through their own mirr
 
   const host = await inbox.registerVisitorAccount({ pseudo: "Gionny", password: "couronne123" });
   assert.equal(host.ok, true);
-  assert.equal(host.account.role, "host");
+  assert.equal(host.account.role, "member");
+  // La couronne est attribuée en base, depuis le panneau /admin.
+  const created = (await inbox.listVisitorAccounts("")).members.find((entry) => entry.pseudo === "Gionny");
+  assert.equal((await inbox.setVisitorAccountRole(created.id, "host")).ok, true);
 
   const config = makeDefaultSiteConfig();
   config.schedule.tuesday = { enabled: true, time: "20:30" };

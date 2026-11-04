@@ -204,39 +204,53 @@ test("a snapshot write failure never blocks the login (signed session fallback)"
   assert.equal(sent.message.pseudo, "MembreQuota");
 });
 
-test("the owner pseudo is claimed once by registering it, then needs its password", async () => {
+test("the owner pseudo is claimed once by registering it, without any role", async () => {
   const store = new MemoryBlobStore();
-  // Nothing opens by name alone any more, whatever the spelling.
+  // Rien ne s'ouvre par le nom seul, quelle que soit l'écriture.
   for (const pseudo of ["Gionny", "  GIONNY  ", "7gionny", "@7gionny", "@7GIONNY"]) {
     const login = await loginVisitorAccount({ pseudo, password: "nimporte-quoi" }, store);
     assert.deepEqual(login, { ok: false, reason: "not_found" }, `login opened for ${pseudo}`);
   }
 
-  // The first registration on the owner pseudo claims it and receives the crown.
+  // La première inscription sur ce pseudo le prend… sans couronne.
   const claimed = await registerVisitorAccount({ pseudo: "Gionny", password: "correct-horse-battery" }, store);
   assert.equal(claimed.ok, true);
   assert.equal(claimed.account.pseudo, "Gionny");
-  assert.equal(claimed.account.role, "host");
-  assert.equal(claimed.account.isHost, true);
-  assert.equal(claimed.account.isAdmin, true);
-  assert.ok(claimed.account.badges.includes("verified"));
-  assert.equal(await isAdminRequest(credentials(claimed.sessionToken), store), true);
-  assert.equal((await getHostAccountIdentityFromSession(claimed.sessionToken, store))?.pseudo, "Gionny");
+  assert.equal(claimed.account.role, "member");
+  assert.equal(claimed.account.isHost, undefined);
+  assert.equal(claimed.account.isAdmin, undefined);
+  assert.equal(await isAdminRequest(credentials(claimed.sessionToken), store), false);
+  assert.equal(await getHostAccountIdentityFromSession(claimed.sessionToken, store), null);
 
-  // It cannot be claimed twice.
-  const second = await registerVisitorAccount({ pseudo: "7gionny", password: "another-correct-passphrase" }, store);
-  assert.deepEqual(second, { ok: false, reason: "exists" });
+  // Unicité stricte : aucun doublon, même autrement orthographié.
+  for (const pseudo of ["Gionny", "7gionny", "  GIONNY  ", "@7gionny"]) {
+    assert.deepEqual(
+      await registerVisitorAccount({ pseudo, password: "another-correct-passphrase" }, store),
+      { ok: false, reason: "exists" },
+      `doublon accepté pour ${pseudo}`,
+    );
+  }
 
-  // The exact password works (any spelling of the name), a wrong one is refused.
+  // Le mot de passe exact ouvre (toute écriture du nom), un autre non.
   for (const pseudo of ["Gionny", "  GIONNY  ", "7gionny", "@7gionny"]) {
     const login = await loginVisitorAccount({ pseudo, password: "correct-horse-battery" }, store);
     assert.equal(login.ok, true, `login refused for ${pseudo}`);
-    assert.equal(login.account.role, "host");
+    assert.equal(login.account.role, "member");
   }
   assert.deepEqual(
     await loginVisitorAccount({ pseudo: "Gionny", password: "mauvais-mot-de-passe" }, store),
     { ok: false, reason: "password" },
   );
+
+  // Seul /admin attribue (puis retire) la couronne : le pseudo n'y est pour rien.
+  const member = (await listVisitorAccounts("", store)).members.find((entry) => entry.pseudo === "Gionny");
+  assert.equal((await setVisitorAccountRole(member.id, "host", store)).ok, true);
+  const promoted = await loginVisitorAccount({ pseudo: "Gionny", password: "correct-horse-battery" }, store);
+  assert.equal(promoted.account.isHost, true);
+  assert.equal((await setVisitorAccountRole(member.id, "member", store)).ok, true);
+  const demoted = await loginVisitorAccount({ pseudo: "Gionny", password: "correct-horse-battery" }, store);
+  assert.equal(demoted.account.isHost, undefined);
+  assert.deepEqual(demoted.account.badges, []);
 });
 
 test("an unknown pseudo is refused on login and only created by registering", async () => {

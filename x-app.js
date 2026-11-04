@@ -603,12 +603,12 @@
   /* ------------------------------------------------------------------------
      Onglets du fil et des notifications
      ---------------------------------------------------------------------- */
+  // Deux onglets seulement, comme sur X : « Pour toi » et « Suivis ».
   const FEED_COPY = {
     all: "Les posts publics de Gionny et des membres Validés s’affichent ici.",
     follows: "Les posts des membres que tu suis apparaissent ici.",
-    verified: "Seuls les posts de Gionny et des membres Validés apparaissent ici.",
-    reposts: "Les posts que le QG a repostés apparaissent ici.",
   };
+  const FEED_MODES = ["all", "follows"];
   const feedState = $("[data-x-feed-state]");
 
   let feedMode = "all";
@@ -619,7 +619,7 @@
         other.setAttribute("aria-selected", String(other === tab))
       );
       const wanted = String(tab.dataset.xFeedTab || "all");
-      feedMode = ["all", "follows", "verified", "reposts"].includes(wanted) ? wanted : "all";
+      feedMode = FEED_MODES.includes(wanted) ? wanted : "all";
       if (feedState) feedState.textContent = FEED_COPY[feedMode] || FEED_COPY.all;
       void loadFeed({ mode: feedMode });
     });
@@ -787,8 +787,8 @@
   const attachmentName = $("[data-x-composer-attachment-name]");
   const attachmentMeta = $("[data-x-composer-attachment-meta]");
   const attachmentRemove = $("[data-x-composer-attachment-remove]");
-  const imageInput = $("[data-x-post-image-input]");
-  const videoInput = $("[data-x-post-video-input]");
+  // Un seul sélecteur pour la photo et la vidéo (accept="image/*,video/*").
+  const mediaInput = $("[data-x-post-media-input]");
   const vocalButton = $("[data-x-post-vocal]");
   const emojiButton = $("[data-x-post-emoji]");
   const emojiPanel = $("[data-x-emoji-panel]");
@@ -878,12 +878,20 @@
       "Seuls Gionny et les membres Validés publient des posts publics. Tu peux liker et reposter les posts dès maintenant.";
   };
 
-  // Image
-  $("[data-x-post-image]")?.addEventListener("click", () => imageInput?.click());
-  imageInput?.addEventListener("change", async () => {
-    const file = imageInput.files?.[0];
-    imageInput.value = "";
+  // Média : UN bouton, l'image et la vidéo passent par le même entonnoir.
+  $("[data-x-post-media]")?.addEventListener("click", () => mediaInput?.click());
+  mediaInput?.addEventListener("change", async () => {
+    const file = mediaInput.files?.[0];
+    mediaInput.value = "";
     if (!file) return;
+    if (String(file.type || "").startsWith("video/")) {
+      await addVideoDraft(file);
+      return;
+    }
+    await addImageDraft(file);
+  });
+
+  async function addImageDraft(file) {
     mediaBusy = true;
     syncComposerState();
     setComposerNote("Compression de l’image…");
@@ -899,14 +907,9 @@
       mediaBusy = false;
       syncComposerState();
     }
-  });
+  }
 
-  // Vidéo
-  $("[data-x-post-video]")?.addEventListener("click", () => videoInput?.click());
-  videoInput?.addEventListener("change", async () => {
-    const file = videoInput.files?.[0];
-    videoInput.value = "";
-    if (!file) return;
+  async function addVideoDraft(file) {
     mediaBusy = true;
     syncComposerState();
     setComposerNote("Compression de la vidéo… (garde l’onglet ouvert)");
@@ -937,7 +940,7 @@
       mediaBusy = false;
       syncComposerState();
     }
-  });
+  }
 
   attachmentRemove?.addEventListener("click", () => {
     clearDraftMedia();
@@ -1043,12 +1046,20 @@
     return composerRecorder;
   };
 
+  // Le micro démarre VRAIMENT l'enregistrement au clic (getUserMedia → barre
+  // rouge animée + chrono + Stop, puis pré-écoute et ajout au post).
   vocalButton?.addEventListener("click", () => {
     const recorder = ensureComposerRecorder();
     if (!recorder) {
       setComposerNote("Ce navigateur ne peut pas enregistrer de vocal. Tu peux publier un texte ou une image.");
       return;
     }
+    if (recorder.mode && recorder.mode !== "idle") {
+      recorder.cancel();
+      return;
+    }
+    setComposerNote("");
+    void recorder.start();
   });
 
   /* --- Publication ------------------------------------------------------ */
@@ -2335,7 +2346,7 @@
       ? "Quoi de neuf dans le QG ?"
       : "Seuls Gionny et les membres Validés publient des posts publics";
     // Les outils d'attachement suivent exactement le droit de publier.
-    $$("[data-x-post-image], [data-x-post-video], [data-x-post-vocal], [data-x-post-emoji]").forEach(
+    $$("[data-x-post-media], [data-x-post-vocal], [data-x-post-emoji]").forEach(
       (button) => {
         button.disabled = !canPost;
       }

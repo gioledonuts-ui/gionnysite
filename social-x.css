@@ -1714,6 +1714,15 @@ body {
   font-weight: 700;
 }
 
+/* L'icône de message de la ligne de conversation : ni écrasée, ni rognée. */
+.x-dm-thread {
+  overflow: visible;
+}
+
+.x-dm-thread > .x-dm-open-icon {
+  margin-left: auto;
+}
+
 .x-dm-note {
   margin: 0;
   color: var(--x-muted);
@@ -5288,5 +5297,351 @@ body {
 
   .x-settings-button {
     flex: 1 1 auto;
+  }
+}
+
+/* ==========================================================================
+   ÉTAPE 5 · Remise à neuf : accueil, composeur, messagerie plein écran
+   --------------------------------------------------------------------------
+   Six corrections de fond, dans la même palette (#070b14 / #0e1525 / #1e293b)
+   et sans jamais réintroduire zoom, transform sur la page, ni bordure claire.
+   ========================================================================== */
+
+/* --- 1. Accueil : deux onglets, une ligne d'état, la présentation en bas ---- */
+/* Le rail de navigation du fil ne peut plus accueillir que « Pour toi » et
+   « Suivis » : la grille est figée sur deux colonnes. */
+.x-feed-tabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* La barre d'état du compte n'est plus un bloc de boutons au milieu du fil :
+   juste une ligne discrète, sans bordure ni fond. */
+.x-account-bar {
+  margin: 12px 16px 0;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  min-height: 0;
+}
+
+.x-account-bar .member-access-actions--connected {
+  display: none !important;
+}
+
+.x-account-bar .member-access-actions {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.x-account-bar .member-profile-pseudo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.x-account-bar .member-visitor {
+  font-size: 13px;
+}
+
+/* La présentation de Gionny ferme la colonne, sous le fil. */
+.welcome-panel .welcome-identity {
+  margin: 18px 16px 28px;
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-radius);
+  background: var(--x-surface);
+}
+
+/* --- 2. Composeur « Quoi de neuf ? » : champ totalement fondu ------------- */
+.x-composer {
+  border-bottom: 1px solid var(--x-line);
+  background: var(--x-bg);
+}
+
+.x-composer-field,
+.x-composer-field textarea,
+.x-composer-body textarea,
+[data-x-post-input] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  resize: none;
+  padding: 2px 0 !important;
+}
+
+.x-composer-field textarea:focus,
+.x-composer-field textarea:focus-visible,
+.x-composer-body textarea:focus,
+.x-composer-body textarea:focus-visible,
+[data-x-post-input]:focus,
+[data-x-post-input]:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000;
+}
+
+/* --- 3. Enregistreur vocal du composeur : barre rouge animée + chrono ----- */
+.x-composer-recorder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(240, 82, 92, 0.32);
+  border-radius: 14px;
+  background: rgba(240, 82, 92, 0.06);
+}
+
+.x-composer-recorder[hidden] {
+  display: none !important;
+}
+
+.x-recorder-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.x-recorder-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--x-danger);
+  animation: qg-recorder-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes qg-recorder-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.82); }
+}
+
+.x-recorder-timer {
+  min-width: 42px;
+  color: var(--x-danger);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.x-recorder-wave {
+  display: flex;
+  height: 26px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.x-voice-bar {
+  width: 3px;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--x-danger);
+  transform: scaleY(0.12);
+  transform-origin: center;
+}
+
+.x-recorder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.x-recorder-status {
+  margin: 0;
+  color: var(--x-muted);
+  font-size: 12px;
+}
+
+.x-recorder-status[data-kind="error"] {
+  color: var(--x-danger);
+}
+
+.x-recorder-status:empty {
+  display: none;
+}
+
+/* --- 4. Icône « message » : vectorielle, centrée, jamais rognée ----------- */
+.x-rail-icon--message,
+.x-dm-thread .x-rail-icon--message {
+  overflow: visible;
+}
+
+.x-dm-open-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  overflow: visible;
+  color: var(--x-muted);
+}
+
+.x-dm-thread:hover .x-dm-open-icon,
+.x-dm-thread:focus-visible .x-dm-open-icon {
+  color: var(--x-accent);
+}
+
+/* --- 5. Messagerie téléphone : vraie page plein écran -------------------- */
+/* Sur ordinateur, la discussion reste un tiroir : rien ne change. */
+.contact-widget {
+  --qg-chat-top: 0px;
+  --qg-chat-height: 100dvh;
+}
+
+@media (max-width: 639px) {
+  /* Aucune modale flottante : la conversation EST la page. */
+  .contact-widget,
+  .contact-widget[data-open-context="top"],
+  .contact-widget[data-open-context="launcher"] {
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    top: var(--qg-chat-top, 0px) !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: 0 !important;
+    display: flex;
+    width: 100% !important;
+    max-width: none;
+    height: var(--qg-chat-height, 100dvh) !important;
+    max-height: var(--qg-chat-height, 100dvh) !important;
+    flex-direction: column;
+    border: 0;
+    border-radius: 0;
+    background: #070b14;
+    box-shadow: none;
+    transform: none !important;
+    animation: none;
+  }
+
+  .contact-widget .contact-dialog-card {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: #070b14;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  /* En-tête immobile : il ne bouge jamais, même clavier ouvert. */
+  .contact-widget .contact-dialog-topline {
+    display: flex;
+    height: 56px;
+    min-height: 56px;
+    flex: 0 0 56px;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    border-bottom: 1px solid #1e293b;
+    background: #070b14;
+  }
+
+  .contact-widget .contact-dialog-topline .contact-header-context strong,
+  .contact-widget .contact-dialog-topline .contact-header-context span {
+    font-size: 11px;
+  }
+
+  /* Zone des messages : elle prend toute la hauteur restante et défile. */
+  .contact-widget .contact-thread {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .contact-widget .contact-thread-messages,
+  .contact-widget .conversation-history {
+    min-height: 0;
+    flex: 1 1 auto;
+    gap: 10px;
+    padding: 12px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Barre de saisie collée en bas, juste au-dessus du clavier. */
+  .contact-widget .contact-reply-form.contact-chat-composer,
+  .contact-widget .contact-form.contact-chat-composer,
+  .contact-widget .contact-thread-closed {
+    flex: 0 0 auto;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #1e293b;
+    background: #070b14;
+  }
+
+  /* La vue « nouvelle discussion » et la connexion occupent la page entière. */
+  .contact-widget .contact-auth,
+  .contact-widget .contact-new-view {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* Aucun scrim, aucune ombre : la page est opaque. */
+  .contact-widget.is-closing {
+    animation: none;
+    opacity: 1;
+  }
+
+  .contact-scrim {
+    display: none;
+  }
+}
+
+/* Flèche de retour : visible uniquement sur téléphone (plein écran). */
+.contact-close-mobile {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  .contact-close-desktop {
+    display: none;
+  }
+
+  .contact-close-mobile {
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+
+  /* La flèche passe à gauche de l'en-tête, comme dans une vraie app. */
+  .contact-widget .contact-dialog-close {
+    order: -1;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    margin-right: 4px;
+  }
+
+  .contact-widget .contact-header-identity {
+    min-width: 0;
+    flex: 1 1 auto;
+    text-align: left;
+  }
+}
+
+/* Sur téléphone, la discussion occupe l'écran : le lanceur rond s'efface pour
+   ne jamais flotter au-dessus d'une vraie page (il revient dès la fermeture). */
+@media (max-width: 639px) {
+  body:has(.contact-widget:not([hidden])) .contact-launcher,
+  body:has(.contact-widget:not([hidden])) .x-mobile-nav {
+    display: none !important;
   }
 }

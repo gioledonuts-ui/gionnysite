@@ -192,7 +192,7 @@
               <span class="x-rail-label">Notifications</span>
             </button>
             <button class="x-rail-link" type="button" data-x-nav="messages" aria-label="Messages">
-              <svg class="x-rail-icon x-rail-icon--message" viewBox="-1.6 -1.6 27.2 27.2" aria-hidden="true"><path class="x-icon-line" d="M3.4 6.6A2.2 2.2 0 0 1 5.6 4.4h12.8a2.2 2.2 0 0 1 2.2 2.2v8.2a2.2 2.2 0 0 1-2.2 2.2H9.4l-4.4 3.2a.6.6 0 0 1-1-.5Z" /><circle class="x-rail-dot" cx="19.2" cy="4.6" r="3.2" data-x-badge="messages" hidden /></svg>
+              <svg class="x-rail-icon x-rail-icon--message" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path class="x-icon-line" d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" /><circle class="x-rail-dot" cx="20.6" cy="3.4" r="2.6" data-x-badge="messages" hidden /></svg>
               <span class="x-rail-label">Messages</span>
             </button>
             <button class="x-rail-link" type="button" data-x-nav="profile" aria-label="Profil">
@@ -253,8 +253,6 @@
             <div class="x-feed-tabs" role="tablist" aria-label="Navigation du fil">
               <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="all" aria-selected="true" aria-controls="x-feed">Pour toi</button>
               <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="follows" aria-selected="false" aria-controls="x-feed">Suivis</button>
-              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="verified" aria-selected="false" aria-controls="x-feed">Officiel &amp; Validés</button>
-              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="reposts" aria-selected="false" aria-controls="x-feed">Reposts</button>
             </div>
             <div class="x-feed-header-row">
               <div class="x-feed-headline">
@@ -266,7 +264,11 @@
               </span>
             </div>
             <p class="welcome-copy">La commu, les lives et les meilleurs moments sont ici.</p>
-            <div class="x-account-bar" data-member-access role="group" aria-label="Accès au compte">
+            <!-- État de connexion : une ligne discrète, AUCUN bouton ici.
+                 « Mon profil », « Admin » et « Déconnexion » vivent dans la
+                 colonne de gauche (rail) et dans Paramètres, pas au milieu du
+                 fil. Les nœuds cachés alimentent les scripts existants. -->
+            <div class="x-account-bar" data-member-access role="group" aria-label="État du compte">
               <div class="welcome-account-identity">
                 <span class="member-visitor" data-member-visitor><svg class="qg-icon member-visitor-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-user"></use></svg> Non connecté</span>
                 <span class="member-identity" data-member-identity hidden>
@@ -286,14 +288,12 @@
                 <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
                 <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
               </div>
+              <!-- Miroir caché : les gestionnaires historiques (profil, admin,
+                   déconnexion) restent branchés sur ces trois nœuds. -->
               <div class="member-access-actions member-access-actions--connected" data-member-logged-in hidden>
-                <button
-                  class="member-access-button member-access-button--profile"
-                  type="button"
-                  data-x-profile-open
-                ><svg class="qg-icon host-crown-icon member-profile-crown" data-x-profile-crown aria-hidden="true" hidden><use href="#qg-crown-symbol"></use></svg><span>Mon Profil</span></button>
-                <a class="x-auth-button x-admin-link" href="/gestion-qg/" data-x-admin hidden><svg class="qg-icon member-admin-shield" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg><span>Admin</span></a>
-                <button class="x-auth-button x-auth-button--quiet" type="button" data-contact-logout><span>Déconnexion</span></button>
+                <button class="member-access-button member-access-button--profile" type="button" data-x-profile-open hidden aria-hidden="true" tabindex="-1"><svg class="qg-icon host-crown-icon member-profile-crown" data-x-profile-crown aria-hidden="true" hidden><use href="#qg-crown-symbol"></use></svg><span>Mon Profil</span></button>
+                <a class="x-auth-button x-admin-link" href="/gestion-qg/" data-x-admin hidden aria-hidden="true" tabindex="-1"><span>Admin</span></a>
+                <button class="x-auth-button x-auth-button--quiet" type="button" data-contact-logout hidden aria-hidden="true" tabindex="-1"><span>Déconnexion</span></button>
               </div>
             </div>
           </div>
@@ -304,34 +304,6 @@
             <div class="x-guest-actions">
               <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
               <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
-            </div>
-          </div>
-
-          <div class="welcome-identity" data-x-member-only hidden>
-            <button
-              class="x-identity-avatar-button"
-              type="button"
-              data-open-about
-              aria-haspopup="dialog"
-              aria-expanded="false"
-              aria-controls="about-dialog"
-              aria-label="Qui suis-je ? Découvre la présentation de Gionny"
-            >
-              <span class="profile-frame" data-profile-frame>
-                <span class="profile-frame-glow" aria-hidden="true"></span>
-                <img
-                  class="profile-avatar"
-                  src="/assets/gionny-profile.jpg"
-                  data-profile-image
-                  alt="Gionny"
-                />
-              </span>
-              <span class="profile-tooltip" aria-hidden="true">Qui suis-je ?</span>
-            </button>
-            <div class="welcome-intro" data-x-profile-link="Gionny" role="button" tabindex="0">
-              <p class="x-identity-name">Gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></p>
-              <p class="x-identity-copy">Présentation, parcours, ce qu’il faut savoir sur le QG.</p>
-              <p class="x-identity-link">Voir la présentation <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg></p>
             </div>
           </div>
 
@@ -360,11 +332,9 @@
               <!-- Barre d'outils d'attachement + bouton Poster -->
               <div class="x-composer-tools">
                 <div class="x-composer-attach" role="group" aria-label="Ajouter un média">
-                  <button class="x-composer-tool" type="button" data-x-post-image aria-label="Ajouter une image" title="Image">
+                  <!-- UN seul bouton multimédia : photo ET vidéo, même entonnoir. -->
+                  <button class="x-composer-tool" type="button" data-x-post-media aria-label="Ajouter une photo ou une vidéo" title="Photo ou vidéo">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3.4" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="8.6" cy="9.6" r="1.7" fill="currentColor" /><path d="m4.4 17.4 4.5-4.6a1.8 1.8 0 0 1 2.6 0l2.1 2.2 1.8-1.9a1.8 1.8 0 0 1 2.6 0l1.6 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                  </button>
-                  <button class="x-composer-tool" type="button" data-x-post-video aria-label="Ajouter une vidéo" title="Vidéo">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.6" y="5.6" width="13.2" height="12.8" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m16.4 11.2 4-2.4v6.4l-4-2.4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
                   </button>
                   <button class="x-composer-tool" type="button" data-x-post-vocal aria-label="Enregistrer un vocal" title="Vocal" aria-pressed="false">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.8" width="6" height="11.4" rx="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M5.6 11.6a6.4 6.4 0 0 0 12.8 0M12 18v3.2M9 21.2h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
@@ -372,8 +342,7 @@
                   <button class="x-composer-tool" type="button" data-x-post-emoji aria-label="Ajouter un emoji" title="Emoji" aria-expanded="false">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M8.4 14.2a4.2 4.2 0 0 0 7.2 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="9.2" cy="9.8" r="1.15" fill="currentColor" /><circle cx="14.8" cy="9.8" r="1.15" fill="currentColor" /></svg>
                   </button>
-                  <input type="file" accept="image/*" data-x-post-image-input hidden />
-                  <input type="file" accept="video/*" data-x-post-video-input hidden />
+                  <input type="file" accept="image/*,video/*" data-x-post-media-input hidden />
                 </div>
                 <span class="x-composer-count" data-x-post-count hidden>0/500</span>
                 <button class="x-composer-post" type="button" data-x-post-submit disabled>Poster</button>
@@ -419,6 +388,36 @@
               <p class="x-feed-state" data-x-feed-state>Les posts publics de Gionny et des membres Validés s’affichent ici.</p>
             </div>
           </div>
+
+          <!-- Présentation de Gionny : tout en bas de la colonne, jamais avant le fil. -->
+          <div class="welcome-identity" data-x-member-only hidden>
+            <button
+              class="x-identity-avatar-button"
+              type="button"
+              data-open-about
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="about-dialog"
+              aria-label="Qui suis-je ? Découvre la présentation de Gionny"
+            >
+              <span class="profile-frame" data-profile-frame>
+                <span class="profile-frame-glow" aria-hidden="true"></span>
+                <img
+                  class="profile-avatar"
+                  src="/assets/gionny-profile.jpg"
+                  data-profile-image
+                  alt="Gionny"
+                />
+              </span>
+              <span class="profile-tooltip" aria-hidden="true">Qui suis-je ?</span>
+            </button>
+            <div class="welcome-intro" data-x-profile-link="Gionny" role="button" tabindex="0">
+              <p class="x-identity-name">Gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></p>
+              <p class="x-identity-copy">Présentation, parcours, ce qu’il faut savoir sur le QG.</p>
+              <p class="x-identity-link">Voir la présentation <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg></p>
+            </div>
+          </div>
+
 
         </section>
 
@@ -705,11 +704,11 @@
           <header class="x-view-header">
             <h2 id="x-messages-title">Messages</h2>
             <button class="x-icon-button" type="button" data-x-messages-open aria-label="Ouvrir la discussion en grand">
-              <svg viewBox="-1.6 -1.6 27.2 27.2" aria-hidden="true"><path d="M4 17V7.6A2.6 2.6 0 0 1 6.6 5h10.8A2.6 2.6 0 0 1 20 7.6V17" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /><path d="m4 9 8 5 8-5" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
             </button>
           </header>
           <div class="x-guest-panel" data-x-guest-panel hidden>
-            <svg class="x-guest-icon" viewBox="-1.6 -1.6 27.2 27.2" aria-hidden="true"><path d="M3.4 6.6A2.2 2.2 0 0 1 5.6 4.4h12.8a2.2 2.2 0 0 1 2.2 2.2v8.2a2.2 2.2 0 0 1-2.2 2.2H9.4l-4.4 3.2a.6.6 0 0 1-1-.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+            <svg class="x-guest-icon" viewBox="0 0 24 24" width="48" height="48" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
             <h3>Connecte-toi pour discuter</h3>
             <p>Ta discussion privée avec Gionny et tes messages apparaissent ici.</p>
             <div class="x-guest-actions">
@@ -727,6 +726,7 @@
                 <span class="x-dm-snippet" data-x-dm-snippet>Ta discussion privée avec Gionny</span>
               </span>
               <span class="x-dm-badge" data-x-dm-badge hidden>0</span>
+              <svg class="x-dm-open-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
             </button>
             <p class="x-dm-note">Le tiroir de discussion reste dispo en bas à droite sur ordinateur.</p>
           </div>
@@ -1095,7 +1095,7 @@
           <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M12 3.2a5.9 5.9 0 0 1 5.9 5.9v3.4l1.7 3.3a.7.7 0 0 1-.6 1H4.9a.7.7 0 0 1-.6-1l1.7-3.3V9.1A5.9 5.9 0 0 1 12 3.2Z" /><path class="x-icon-line" d="M9.6 20.2a2.6 2.6 0 0 0 4.8 0" /><circle class="x-rail-dot" cx="18.4" cy="5.6" r="3.1" data-x-badge="notifications" hidden /></svg>
         </button>
         <button class="x-mobile-nav-link" type="button" data-x-nav="messages" aria-label="Messages">
-          <svg class="x-rail-icon x-rail-icon--message" viewBox="-1.6 -1.6 27.2 27.2" aria-hidden="true"><path class="x-icon-line" d="M4.2 6.4A2.4 2.4 0 0 1 6.6 4h10.8a2.4 2.4 0 0 1 2.4 2.4v8.1a2.4 2.4 0 0 1-2.4 2.4H9.9l-3.4 2.7a.6.6 0 0 1-1-.47v-2.5a2.4 2.4 0 0 1-1.3-2.13Z" /><circle class="x-rail-dot" cx="18.6" cy="5.4" r="3.1" data-x-badge="messages" hidden /></svg>
+          <svg class="x-rail-icon x-rail-icon--message" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path class="x-icon-line" d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" /><circle class="x-rail-dot" cx="20.6" cy="3.4" r="2.6" data-x-badge="messages" hidden /></svg>
         </button>
         <button class="x-mobile-nav-link" type="button" data-x-nav="profile" aria-label="Profil et paramètres">
           <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><circle class="x-icon-line" cx="12" cy="8.2" r="4.1" /><path class="x-icon-line" d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" /></svg>
@@ -1170,8 +1170,10 @@
             <strong>Connexion requise</strong>
             <span>Connecte-toi pour écrire à Gionny</span>
           </div>
-          <button class="contact-dialog-close" type="button" data-minimize-contact aria-label="Réduire la discussion">
-            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chevron-down"></use></svg>
+          <button class="contact-dialog-close" type="button" data-minimize-contact aria-label="Revenir en arrière">
+            <svg class="qg-icon contact-close-desktop" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chevron-down"></use></svg>
+            <!-- Téléphone : une vraie flèche de retour, comme dans une page. -->
+            <svg class="qg-icon contact-close-mobile" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5.6 4.6 12 11 18.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
         </div>
 

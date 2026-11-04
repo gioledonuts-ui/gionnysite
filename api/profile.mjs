@@ -113,10 +113,10 @@ function rateLimited(key, limit = MAX_REPORTS_PER_WINDOW, windowMs = RATE_WINDOW
   return state.count > limit;
 }
 
-// L'Hôte est reconnu par son rôle (source de vérité : le compte), avec le
-// pseudo comme filet de sécurité pour les installations historiques.
+// L'Hôte est reconnu UNIQUEMENT par le rôle stocké sur son compte. Aucun
+// pseudo ne donne de couronne : le panneau /admin est le seul à l'attribuer.
 function isHostAccount(account) {
-  return account?.role === "host" || ["gionny", "7gionny"].includes(String(account?.pseudo || "").trim().toLowerCase());
+  return account?.role === "host";
 }
 
 function isVerified(account) {
@@ -136,7 +136,8 @@ function publicIdentity(account, isHost) {
 function findIdentity(accounts, pseudo) {
   const wanted = String(pseudo || "").replace(/^@+/u, "").trim().toLowerCase();
   if (!wanted) return null;
-  const alias = ["gionny", "7gionny"].includes(wanted) ? ["gionny", "7gionny"] : [wanted];
+  // Identité normalisée en minuscules : un seul compte par pseudo.
+  const alias = [wanted];
   return accounts.find((account) => alias.includes(account.pseudo.trim().toLowerCase())) || null;
 }
 
