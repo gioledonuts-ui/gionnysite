@@ -703,8 +703,8 @@
         <section class="x-view" data-x-view="messages" aria-labelledby="x-messages-title" hidden>
           <header class="x-view-header">
             <h2 id="x-messages-title">Messages</h2>
-            <button class="x-icon-button" type="button" data-x-messages-open aria-label="Ouvrir la discussion en grand">
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
+            <button class="x-icon-button x-new-thread-button" type="button" data-x-new-thread aria-label="Nouvelle conversation">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" /><path d="M17.6 4.6v5M15.1 7.1h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
             </button>
           </header>
           <div class="x-guest-panel" data-x-guest-panel hidden>
@@ -718,7 +718,7 @@
           </div>
           <div class="x-dm" data-x-dm data-x-member-only>
             <button class="x-dm-thread" type="button" data-x-dm-open>
-              <span class="x-rail-avatar x-dm-avatar" aria-hidden="true">
+              <span class="x-rail-avatar x-dm-avatar" data-x-dm-profile="Gionny" aria-hidden="true" title="Voir le profil de Gionny">
                 <img src="/assets/gionny-profile.jpg" alt="" />
               </span>
               <span class="x-dm-copy">
@@ -726,7 +726,6 @@
                 <span class="x-dm-snippet" data-x-dm-snippet>Ta discussion privée avec Gionny</span>
               </span>
               <span class="x-dm-badge" data-x-dm-badge hidden>0</span>
-              <svg class="x-dm-open-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5.6A2.6 2.6 0 0 1 6.6 3h10.8A2.6 2.6 0 0 1 20 5.6v8.3a2.6 2.6 0 0 1-2.6 2.6H9.9l-3.6 2.9a.7.7 0 0 1-1.1-.55V16.2A2.6 2.6 0 0 1 4 13.9Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /></svg>
             </button>
             <p class="x-dm-note">Le tiroir de discussion reste dispo en bas à droite sur ordinateur.</p>
           </div>
@@ -1163,16 +1162,15 @@
       <div class="contact-dialog-card">
         <div class="contact-dialog-topline">
           <img class="contact-header-avatar" src="/assets/gionny-profile.jpg" alt="" />
-          <div class="contact-header-identity">
+          <div class="contact-header-identity" role="button" tabindex="0" data-contact-open-profile aria-label="Voir le profil de Gionny">
             <strong id="contact-widget-title"><span class="contact-header-name">Gionny</span><span class="contact-header-badges"><svg class="qg-icon host-crown-icon" role="img" aria-label="Compte Hôte"><use href="#qg-crown-symbol"></use></svg><svg class="qg-icon verified-badge-icon" role="img" aria-label="Membre vérifié"><use href="#qg-verified-symbol"></use></svg></span></strong>
           </div>
           <div class="contact-header-context">
             <strong>Connexion requise</strong>
             <span>Connecte-toi pour écrire à Gionny</span>
           </div>
+          <!-- Une seule flèche, toujours : retour en arrière. -->
           <button class="contact-dialog-close" type="button" data-minimize-contact aria-label="Revenir en arrière">
-            <svg class="qg-icon contact-close-desktop" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chevron-down"></use></svg>
-            <!-- Téléphone : une vraie flèche de retour, comme dans une page. -->
             <svg class="qg-icon contact-close-mobile" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5M11 5.6 4.6 12 11 18.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </button>
         </div>

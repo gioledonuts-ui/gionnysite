@@ -5645,3 +5645,157 @@ body {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   ÉTAPE 6 · Retours de terrain (téléphone + bureau)
+   ========================================================================== */
+
+/* 1. Pseudo de la barre de compte : lisible en entier avant les points de
+   suspension. Les anciennes largeurs (52–74 px) coupaient « Gionny » dès le
+   sixième caractère ; on laisse la place au texte, il ne se tronque que sur
+   les écrans réellement étroits. */
+.x-account-bar .member-profile-pseudo,
+.welcome-account-bar .member-profile-pseudo {
+  max-width: min(46vw, 210px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .x-account-bar .member-profile-pseudo,
+  .welcome-account-bar .member-profile-pseudo {
+    max-width: min(52vw, 190px);
+  }
+}
+
+@media (max-width: 360px) {
+  .x-account-bar .member-profile-pseudo,
+  .welcome-account-bar .member-profile-pseudo {
+    max-width: min(60vw, 150px);
+  }
+}
+
+/* 2. Photo de profil : le bandeau ne doit jamais passer au-dessus de la photo.
+   L'avatar vit dans un contexte d'empilement supérieur au bandeau. */
+.x-profile {
+  position: relative;
+  isolation: isolate;
+}
+
+.x-profile-banner {
+  position: relative;
+  z-index: 0;
+}
+
+.x-profile-head {
+  position: relative;
+  z-index: 2;
+}
+
+.x-profile-avatar {
+  position: relative;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.x-profile-avatar img {
+  border-radius: 50%;
+}
+
+/* 3. « Retrouve-moi ici » : aucun survol fantôme au doigt. Sur téléphone, un
+   scroll qui passe devant une carte ne doit jamais la présélectionner. */
+@media (hover: none), (pointer: coarse) {
+  .x-widget--networks .network-card:hover,
+  .x-widget--networks .network-card:focus-visible,
+  .x-widget--networks .networks-panel .network-card:hover,
+  .x-widget--networks .networks-panel .network-card:focus-visible {
+    background: transparent !important;
+    filter: none !important;
+  }
+
+  .x-widget--networks .network-card,
+  .x-widget--networks .networks-panel .network-card {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* 4. Ligne de conversation : le contour bleu et le texte en gras signent les
+   messages non lus, sans icône superflue à droite. */
+.x-dm-thread {
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--x-line);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.x-dm-thread[data-unread="true"] {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.28);
+  background: #0d1a2b;
+}
+
+.x-dm-thread[data-unread="true"] .x-dm-snippet {
+  color: #e8eefb;
+  font-weight: 700;
+}
+
+.x-dm-thread[data-unread="true"] .x-dm-name {
+  color: #ffffff;
+}
+
+.x-dm-snippet {
+  font-size: 14px;
+}
+
+/* Un compteur net, dans le bleu du QG. */
+.x-dm-badge {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--x-accent);
+  color: #04121f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.x-dm-badge[hidden] {
+  display: none !important;
+}
+
+/* Le bouton « nouvelle conversation » de l'en-tête Messages. */
+.x-new-thread-button {
+  color: var(--x-accent);
+}
+
+.x-new-thread-button:hover,
+.x-new-thread-button:focus-visible {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+/* L'avatar d'une conversation est un lien vers le profil. */
+.x-dm-avatar[data-x-dm-profile] {
+  cursor: pointer;
+}
+
+/* 5. L'en-tête d'une conversation mène au profil de la personne. */
+.contact-header-identity[data-contact-open-profile] {
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background-color 140ms ease;
+}
+
+.contact-header-identity[data-contact-open-profile]:hover,
+.contact-header-identity[data-contact-open-profile]:focus-visible {
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.contact-header-identity[data-contact-open-profile]:focus-visible {
+  outline: 2px solid var(--x-accent);
+  outline-offset: 2px;
+}

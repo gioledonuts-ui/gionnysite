@@ -136,10 +136,14 @@ test("3 ter. le micro démarre réellement l'enregistrement", () => {
 // ---------------------------------------------------------------------------
 test("4. l'icône de message est neuve et ne peut pas être rognée", () => {
   assert.doesNotMatch(html, /viewBox="-1\.6 -1\.6 27\.2 27\.2"/u);
-  const icons = [...html.matchAll(/<svg[^>]*viewBox="0 0 24 24"[^>]*aria-hidden="true">\s*<path d="M4 5\.6A2\.6 2\.6 0 0 1 6\.6 3h10\.8/gu)];
+  const icons = [...html.matchAll(/<path(?:\s+class="[^"]*")?\s+d="M4 5\.6A2\.6 2\.6 0 0 1 6\.6 3h10\.8/gu)];
   assert.ok(icons.length >= 3, "au moins trois bulles de message propres");
-  assert.match(html, /class="x-dm-open-icon" viewBox="0 0 24 24"/u);
-  assert.match(css, /\.x-dm-open-icon \{[\s\S]*?overflow: visible;/u);
+  // La ligne de conversation n'affiche plus d'icône à droite : une ligne = une
+  // seule icône utile (le compteur bleu). L'icône « + » de l'en-tête Messages
+  // sert, elle, à créer une conversation / un groupe.
+  assert.doesNotMatch(html, /class="x-dm-open-icon"/u);
+  assert.match(html, /class="x-icon-button x-new-thread-button" type="button" data-x-new-thread/u);
+  assert.match(css, /\.x-dm-thread\[data-unread="true"\]/u);
   // Le tracé reste entre 3 et 21.
   const path = html.match(/M4 5\.6A2\.6 2\.6 0 0 1 6\.6 3h10\.8A2\.6 2\.6 0 0 1 20 5\.6v8\.3/u);
   assert.ok(path);

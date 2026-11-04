@@ -46,6 +46,7 @@
       target?.setAttribute("tabindex", "-1");
       target?.focus({ preventScroll: true });
     }
+    if (view !== "home") resetPageScrollSoon();
     if (view === "profile") renderProfileView();
     // Ouvrir l'onglet Notifications marque tout comme lu (badge remis à zéro).
     if (view === "notifications") void refreshNotifications({ markRead: true });
@@ -300,16 +301,30 @@
     }
     const cleaned = String(pseudo || "").replace(/^@+/u, "").trim();
     if (!cleaned) return;
+    if (activeView && activeView !== "profile") profileReturnView = activeView;
     viewedProfilePseudo = cleaned;
     viewedProfile = null;
     if (typeof setMobileView === "function" && shell.dataset.mobileView === "social") setMobileView("feed");
     setActiveView("profile");
   }
 
+  // La flèche « Retour » ramène d'où l'on vient : un profil ouvert depuis les
+  // messages rend la conversation, pas la page « Mon profil ».
+  let profileReturnView = "";
+  // Point d'entrée public : depuis la conversation (script.js), un clic sur
+  // l'en-tête ouvre la même page de profil que depuis le fil.
+  window.qgOpenProfile = (pseudo) => openPublicProfile(pseudo);
+
   const closePublicProfile = () => {
     viewedProfilePseudo = "";
     viewedProfile = null;
     const user = currentUser();
+    if (profileReturnView === "messages") {
+      profileReturnView = "";
+      setActiveView("messages");
+      return;
+    }
+    profileReturnView = "";
     if (user) {
       setActiveView("profile");
       return;
@@ -2253,8 +2268,35 @@
     if (!forward("[data-open-contact]")) forward("[data-member-login]");
   };
 
-  $$("[data-x-compose-open], [data-x-compose-focus], [data-x-dm-open], [data-x-messages-open]").forEach(
+  $$("[data-x-compose-open], [data-x-compose-focus], [data-x-dm-open]").forEach(
     (button) => button.addEventListener("click", openLogger)
+  );
+
+  // L'icône de l'en-tête Messages n'ouvre plus le tiroir : elle sert à démarrer
+  // une nouvelle conversation (groupe à venir). Le tiroir, lui, s'ouvre en
+  // cliquant sur la ligne de conversation.
+  $$("[data-x-new-thread]").forEach((button) =>
+    button.addEventListener("click", () => {
+      if (!isSignedIn()) {
+        forward("[data-member-login]");
+        return;
+      }
+      openLogger();
+      const newThread = document.querySelector("[data-new-conversation]");
+      if (newThread && !newThread.hidden) {
+        newThread.click();
+        return;
+      }
+      showToast("Une seule conversation à la fois : écris ton message dans ce fil.");
+    })
+  );
+
+  // La photo d'une conversation ouvre le profil de la personne.
+  $$("[data-x-dm-profile]").forEach((node) =>
+    node.addEventListener("click", (event) => {
+      event.stopPropagation();
+      void openPublicProfile(node.dataset.xDmProfile || "Gionny");
+    })
   );
 
   $$("[data-x-login]").forEach((button) => button.addEventListener("click", () => forward("[data-member-login]")));
@@ -2432,15 +2474,29 @@
   const syncMessagesNow = () => {
     const badge = $("[data-contact-badge]");
     const count = badge && !badge.hidden ? (badge.textContent || "").trim() : "";
+    const hasUnread = Boolean(count) && count !== "0";
     if (dmBadge) {
-      dmBadge.hidden = !count || count === "0";
+      dmBadge.hidden = !hasUnread;
       setText(dmBadge, count || "");
     }
     messagesBadges.forEach((node) => {
       node.toggleAttribute("hidden", !count || count === "0");
     });
+    // La ligne de conversation se signe elle-même : contour bleu + texte en
+    // gras tant qu'il reste des messages non lus.
+    $$("[data-x-dm]").forEach((row) => {
+      row.dataset.unread = String(hasUnread);
+    });
+    $$(".x-dm-thread").forEach((row) => {
+      row.dataset.unread = String(hasUnread);
+    });
     if (dmSnippet) {
-      setText(dmSnippet, count ? `${count} nouveau${count === "1" ? "" : "x"} message${count === "1" ? "" : "s"} de Gionny` : "Ta discussion privée avec Gionny");
+      setText(
+        dmSnippet,
+        hasUnread
+          ? `${count} nouveau${count === "1" ? "" : "x"} message${count === "1" ? "" : "s"} de Gionny`
+          : "Ta discussion privée avec Gionny"
+      );
     }
   };
 
@@ -2512,6 +2568,43 @@
   );
   shell.dataset.mobileView = "feed";
   setMobileView("feed");
+
+  /* ------------------------------------------------------------------------
+     Une page doit toujours s'ouvrir en haut : on se connecte, on quitte une
+     conversation, on revient sur une vue… jamais en bas de page.
+     ---------------------------------------------------------------------- */
+  const chatIsOpen = () => Boolean(document.querySelector("[data-contact-widget]:not([hidden])"));
+  const resetPageScroll = () => {
+    // Une conversation plein écran a son propre fil : ne pas déplacer la page
+    // derrière elle (sinon on la retrouverait ailleurs en revenant).
+    if (chatIsOpen()) return;
+    const root = document.scrollingElement || document.documentElement;
+    if (root) root.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  };
+  const resetPageScrollSoon = () => {
+    resetPageScroll();
+    window.requestAnimationFrame(resetPageScroll);
+  };
+
+  // La connexion fait apparaître la barre d'identité et disparaître l'invite :
+  // la hauteur de page change, on repart du haut.
+  const memberIdentityNode = $("[data-member-identity]");
+  if (memberIdentityNode) {
+    new MutationObserver(resetPageScrollSoon).observe(memberIdentityNode, {
+      attributes: true,
+      attributeFilter: ["hidden"],
+    });
+  }
+
+  // Sur téléphone, refermer la conversation plein écran rend l'accueil en haut.
+  const chatWidgetNode = $("[data-contact-widget]");
+  if (chatWidgetNode) {
+    new MutationObserver(() => {
+      if (chatWidgetNode.hidden && window.matchMedia?.("(max-width: 639px)").matches) resetPageScrollSoon();
+    }).observe(chatWidgetNode, { attributes: true, attributeFilter: ["hidden"] });
+  }
 
   /* ------------------------------------------------------------------------
      Accessibilité : Échap ramène à l'accueil, jamais de piège de focus

@@ -888,6 +888,7 @@
   const contactLauncher = document.querySelector("[data-open-contact]");
   const contactWidget = document.querySelector("[data-contact-widget]");
   const contactHeaderSubject = document.querySelector("[data-contact-header-subject]");
+  const contactHeaderProfile = document.querySelector("[data-contact-open-profile]");
   const minimizeContactButton = document.querySelector("[data-minimize-contact]");
   const contactAuth = document.querySelector("[data-contact-auth]");
   const authForm = document.querySelector("[data-auth-form]");
@@ -1501,8 +1502,16 @@
     }
   };
 
+  // Téléphone : la conversation est une vraie page. On fige la page derrière
+  // (position conservée puis restaurée) pour qu'un focus sur le clavier ne
+  // fasse jamais « sauter » l'accueil ni le fil en bas de page.
+  const MOBILE_CHAT_QUERY = "(max-width: 639px)";
+  const chatPageIsFullScreen = () =>
+    typeof window.matchMedia === "function" && window.matchMedia(MOBILE_CHAT_QUERY).matches;
+
   const openContactWidget = ({ context = "launcher", trigger = contactLauncher } = {}) => {
     if (!contactWidget) return;
+    if (chatPageIsFullScreen()) lockBackgroundScroll("contact-widget");
     const opensAtHero = context === "top";
     lastContactTrigger = trigger || contactLauncher;
     contactWidget.dataset.openContext = opensAtHero ? "top" : "launcher";
@@ -1543,6 +1552,7 @@
   const finishContactClose = () => {
     if (!contactWidget) return;
     contactWidget.hidden = true;
+    unlockBackgroundScroll("contact-widget");
     contactWidget.classList.remove("is-closing", "is-open");
     delete contactWidget.dataset.openContext;
     contactLauncher?.setAttribute("aria-expanded", "false");
@@ -1556,6 +1566,7 @@
     voiceControlStates.forEach((state) => state.cancel());
     contactWidget.classList.remove("is-open");
     contactWidget.classList.add("is-closing");
+    unlockBackgroundScroll("contact-widget");
     contactLauncher?.setAttribute("aria-expanded", "false");
     memberLoginButton?.setAttribute("aria-expanded", "false");
     memberRegisterButton?.setAttribute("aria-expanded", "false");
@@ -2276,6 +2287,24 @@
       }
     });
     minimizeContactButton?.addEventListener("click", minimizeContactWidget);
+
+    // L'en-tête (photo + pseudo) de la conversation mène au profil de Gionny :
+    // le tiroir se referme, puis la page de profil s'ouvre.
+    const openContactProfile = () => {
+      minimizeContactWidget();
+      window.setTimeout(() => {
+        if (typeof window.qgOpenProfile === "function") window.qgOpenProfile("Gionny");
+        else document.querySelector("[data-x-dm-profile]")?.click();
+      }, CONTACT_CLOSE_MS + 40);
+    };
+    if (contactHeaderProfile) {
+      contactHeaderProfile.addEventListener("click", openContactProfile);
+      contactHeaderProfile.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        openContactProfile();
+      });
+    }
 
     document.addEventListener("keydown", (event) => {
       if (contactWidget.hidden || document.querySelector("dialog[open]")) return;
