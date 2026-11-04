@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="/layout-2026.css" />
     <link rel="stylesheet" href="/dark-mode.css" />
     <link rel="stylesheet" href="/social-x.css" />
+    <link rel="stylesheet" href="/visual-fixes.css" />
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -256,12 +257,8 @@
               <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="reposts" aria-selected="false" aria-controls="x-feed">Reposts</button>
             </div>
             <div class="x-feed-header-row">
-              <button class="x-feed-avatar" type="button" data-x-profile-link="Gionny" aria-label="Ouvrir le profil de Gionny">
-                <img src="/assets/gionny-profile.jpg" alt="" />
-              </button>
               <div class="x-feed-headline">
-                <h1 id="welcome-title" data-intro-title aria-label="Bienvenue dans le QG de Gionny">Bienvenue dans le <span class="heading-accent">QG</span> <span class="welcome-tail">de Gionny</span></h1>
-                <p class="x-feed-handle">@7gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></p>
+                <h1 id="welcome-title" data-intro-title aria-label="Bienvenue dans le QG">Bienvenue dans le <span class="heading-accent">QG</span></h1>
               </div>
               <span class="site-presence" data-site-presence hidden aria-live="polite">
                 <span class="site-presence-dot" aria-hidden="true"></span>
@@ -302,9 +299,8 @@
           </div>
 
           <div class="x-guest-card" data-x-guest-card>
-            <img class="x-guest-card-logo" src="/assets/logo-qg.png" width="512" height="512" alt="Logo officiel du QG de Gionny" decoding="async" />
             <h2 class="x-guest-card-title">Bienvenue dans le QG</h2>
-            <p class="x-guest-card-copy">La commu, les lives et les meilleurs moments de Gionny. Crée ton compte pour poster, suivre Gionny et discuter avec la commu.</p>
+            <p class="x-guest-card-copy">La commu, les lives et les meilleurs moments sont ici.</p>
             <div class="x-guest-actions">
               <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
               <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
@@ -635,9 +631,8 @@
         <div class="x-widget x-widget--schedule">
           <div class="x-widget-head">
             <h2 class="x-widget-title">Les prochains lives</h2>
-            <span class="x-widget-time" data-schedule-time aria-label="Horaire habituel : 22 heures">22H00</span>
           </div>
-          <p class="x-widget-sub"><span class="schedule-live-indicator" aria-hidden="true"></span>Rendez-vous fixe · Heure française</p>
+          <p class="x-widget-sub"><span class="schedule-live-indicator" aria-hidden="true"></span><span data-schedule-time aria-label="Horaire habituel : 22 heures">Rendez-vous fixe · 22h00 (heure FR)</span></p>
           <ul class="schedule-days" data-schedule-days aria-label="Jours de live">
             <li data-schedule-day="tuesday">
               <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>

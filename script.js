@@ -758,15 +758,17 @@
     daysList.dataset.layout = layout;
     daysList.replaceChildren();
 
+    // L'horaire vit dans le sous-titre, plus dans une pastille à part : la
+    // ligne reste courte et l'en-tête du widget ne porte que son titre.
     if (sameTime) {
       const time = schedule[activeDays[0].key].time;
-      timeDisplay.textContent = formatScheduleTimeBadge(time);
-      timeDisplay.setAttribute("aria-label", `Horaire commun : ${formatScheduleTimeBadge(time)}`);
+      timeDisplay.textContent = `Rendez-vous fixe · ${formatScheduleTimeBadge(time)} (heure FR)`;
+      timeDisplay.setAttribute("aria-label", `Horaire commun : ${formatScheduleTimeBadge(time)}, heure française`);
     } else if (activeDays.length > 0) {
-      timeDisplay.textContent = "HORAIRES VARIÉS";
-      timeDisplay.setAttribute("aria-label", "Horaires variables selon le jour");
+      timeDisplay.textContent = "Horaires variés cette semaine · heure FR";
+      timeDisplay.setAttribute("aria-label", "Horaires variables selon le jour, heure française");
     } else {
-      timeDisplay.textContent = "—";
+      timeDisplay.textContent = "Aucun live programmé pour le moment";
       timeDisplay.setAttribute("aria-label", "Aucun live programmé");
     }
 

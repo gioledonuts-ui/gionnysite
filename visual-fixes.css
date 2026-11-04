@@ -1,0 +1,605 @@
+/* ==========================================================================
+   CORRECTIFS VISUELS PC — 6 points
+   --------------------------------------------------------------------------
+   Couche chargée en dernier (après social-x.css). Elle ne touche à AUCUNE
+   fonctionnalité : seulement la mise en page et les tailles.
+
+     1. bandeau « À la une » : badge sobre, capsules courtes, icônes alignées ;
+     2. carte « Bienvenue dans le QG » : minimaliste, sans avatar ni badge ;
+     3. logo du QG : survol circulaire, collé au logo (style X) ;
+     4. carrousel : contenu interne calibré en px, rien ne dépasse du carré ;
+     5. planning : l'horaire vit dans le sous-titre, plus de badge flottant ;
+     6. échelle PC : colonnes élargies (~110 % de surface), sans `zoom` ni
+        `transform: scale()` sur html/body (qui cassaient les modales).
+
+   Règle d'or : jamais `zoom`, jamais `transform: scale()` sur un ancêtre des
+   modales. On n'élargit que les largeurs, et on garde le carrousel en px.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Bandeau « À LA UNE »
+   --------------------------------------------------------------------------
+   Le badge perd son fond rouge et devient une capsule bleue du QG ; les
+   annonces se touchent (gap court), et chaque capsule aligne son icône et son
+   texte sur une seule ligne, centrée verticalement.
+   -------------------------------------------------------------------------- */
+
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticker-label,
+.site-header .ticker-label {
+  display: inline-flex;
+  min-height: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 4px 10px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 999px;
+  background: rgba(29, 155, 240, 0.15);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 14px;
+  text-transform: uppercase;
+  box-shadow: none;
+  filter: none;
+  text-shadow: none;
+}
+
+/* Aucun halo, aucun dégradé, aucune barre héritée derrière le badge. */
+.ticker-label::before,
+.ticker-label::after {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.ticker-viewport {
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ticker-track,
+.ticker-set {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+}
+
+/* Espace court et régulier entre deux annonces (gap-4 / mr-4). */
+.site-header .ticker-set {
+  column-gap: 0;
+  row-gap: 0;
+  padding: 0;
+}
+
+.site-header .ticker-item,
+.site-header .ticker-item + .ticker-item {
+  display: inline-flex;
+  min-height: 0;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-right: 16px;
+  padding: 0;
+  border: 0;
+  border-left: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--x-muted);
+  font-size: 13px;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-header .ticker-item:last-child {
+  margin-right: 0;
+}
+
+.site-header .ticker-item:hover,
+.site-header .ticker-item:focus-visible {
+  color: var(--x-text);
+  background: none;
+}
+
+/* L'icône occupe un carré fixe : elle ne bouge plus par rapport au texte. */
+.site-header .ticker-icon,
+.site-header .ticker-item .ticker-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.site-header .ticker-icon svg,
+.site-header .ticker-icon .brand-mark {
+  display: block;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+.site-header .ticker-copy,
+.site-header .ticker-item .ticker-copy {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.site-header .ticker-eyebrow {
+  color: var(--x-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.site-header .ticker-message {
+  color: var(--x-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+}
+
+.site-header .ticker-live-dot {
+  width: 6px;
+  height: 6px;
+  margin-left: 0;
+  border-radius: 50%;
+  background: var(--x-danger);
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   2. Carte « Bienvenue dans le QG »
+   --------------------------------------------------------------------------
+   Plus de photo, plus de @7gionny, plus de couronne ni de badge : un titre,
+   une phrase, et les boutons alignés.
+   -------------------------------------------------------------------------- */
+
+.x-guest-card {
+  gap: 8px;
+  margin: 12px 16px 8px;
+  padding: 18px 20px;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  background: #0e1525;
+  text-align: left;
+}
+
+.x-guest-card-logo {
+  display: none !important;
+}
+
+.x-guest-card .x-guest-card-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Outfit", var(--x-font);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 26px;
+}
+
+.x-guest-card .x-guest-card-copy {
+  max-width: none;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 20px;
+  text-wrap: balance;
+}
+
+.x-guest-card .x-guest-actions {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.x-guest-card .x-guest-actions .x-auth-button {
+  min-width: 132px;
+  justify-content: center;
+}
+
+/* L'ancienne ligne d'en-tête (avatar + @pseudo + badges) a disparu du HTML :
+   on neutralise ses anciennes boîtes si une feuille les ressuscite. */
+.x-feed-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 0;
+}
+
+.x-feed-header-row .x-feed-avatar,
+.x-feed-header-row .x-feed-handle {
+  display: none !important;
+}
+
+/* Sur mobile, la carte garde les mêmes proportions. */
+@media (max-width: 639px) {
+  .x-guest-card {
+    margin: 10px 12px 6px;
+    padding: 16px;
+  }
+
+  .x-guest-card .x-guest-card-title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+
+  .x-guest-card .x-guest-card-copy {
+    font-size: 13px;
+    line-height: 19px;
+  }
+
+  .x-guest-card .x-guest-actions .x-auth-button {
+    min-width: 0;
+    flex: 1 1 130px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Logo du QG (rail de gauche) : survol circulaire strict
+   --------------------------------------------------------------------------
+   La boîte cliquable fait exactement la taille du logo (48 px) : plus de long
+   rectangle arrondi qui s'étire vers la droite, même à partir de 1280 px où
+   les libellés apparaissent.
+   -------------------------------------------------------------------------- */
+
+.x-left-rail .x-rail-logo,
+.x-rail-top .x-rail-logo {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  max-width: 48px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 6px;
+  padding: 8px;
+  border-radius: 999px;
+  overflow: visible;
+  background: none;
+  transition: background-color 160ms ease;
+}
+
+.x-left-rail .x-rail-logo img,
+.x-rail-top .x-rail-logo img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.x-left-rail .x-rail-logo:hover,
+.x-left-rail .x-rail-logo:focus-visible,
+.x-rail-top .x-rail-logo:hover,
+.x-rail-top .x-rail-logo:focus-visible {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.x-left-rail .x-rail-logo:hover img {
+  transform: none;
+}
+
+.x-left-rail .x-rail-logo:focus-visible,
+.x-rail-top .x-rail-logo:focus-visible {
+  outline: 2px solid var(--x-accent);
+  outline-offset: -2px;
+}
+
+@media (min-width: 1280px) {
+  .x-left-rail .x-rail-logo,
+  .x-rail-top .x-rail-logo {
+    width: 48px;
+    max-width: 48px;
+    justify-content: center;
+    margin-left: 2px;
+    padding: 8px;
+  }
+
+  .x-left-rail .x-rail-logo img,
+  .x-rail-top .x-rail-logo img {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Carrousel (Discord / Twitch / YouTube) : calibrage interne en px
+   --------------------------------------------------------------------------
+   Le carré extérieur ne bouge pas ; tout l'intérieur est exprimé en px, avec
+   des tailles réduites d'environ 12 %, pour que la ligne du bas (@pseudo ou
+   discord.gg/…) tienne intégralement, sans jamais être coupée.
+   -------------------------------------------------------------------------- */
+
+.x-widget--carousel .creator-carousel {
+  overflow: hidden;
+}
+
+/* Le carré garde sa taille sur PC (le mobile a la sienne, plus haute). */
+@media (min-width: 1024px) {
+  .x-widget--carousel .creator-carousel {
+    height: 264px !important;
+    min-height: 264px !important;
+    max-height: 264px !important;
+  }
+}
+
+.x-widget--carousel .creator-carousel .discord-cta,
+.x-widget--carousel .creator-carousel .creator-slide {
+  padding: 16px;
+}
+
+.x-widget--carousel .discord-content {
+  gap: 5px;
+  padding: 0;
+}
+
+.x-widget--carousel .creator-slide-topline,
+.x-widget--carousel .discord-topline {
+  min-height: 20px;
+  gap: 6px;
+  margin: 0;
+}
+
+.x-widget--carousel .discord-badge-group {
+  gap: 6px;
+}
+
+.x-widget--carousel .discord-community-pill,
+.x-widget--carousel .discord-online-badge,
+.x-widget--carousel .creator-state-pill {
+  padding: 3px 8px;
+  font-size: 9px;
+  line-height: 12px;
+}
+
+.x-widget--carousel .discord-community-icon,
+.x-widget--carousel .creator-pill-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.x-widget--carousel .discord-copy {
+  gap: 2px;
+  min-height: 0;
+}
+
+.x-widget--carousel .discord-overline {
+  font-size: 9px;
+  line-height: 12px;
+  letter-spacing: 0.08em;
+}
+
+.x-widget--carousel .discord-copy strong {
+  gap: 7px;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 24px;
+}
+
+.x-widget--carousel .discord-title-mark,
+.x-widget--carousel .creator-title-mark {
+  width: 20px;
+  height: 20px;
+}
+
+.x-widget--carousel .discord-detail,
+.x-widget--carousel .creator-slide .discord-detail {
+  display: -webkit-box;
+  max-height: 30px;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  line-height: 16px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.x-widget--carousel .discord-footer,
+.x-widget--carousel .creator-slide-footer.discord-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 2px;
+}
+
+.x-widget--carousel .discord-action {
+  width: auto;
+  height: auto;
+}
+
+.x-widget--carousel .discord-action-default {
+  height: 32px;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 32px;
+  white-space: nowrap;
+}
+
+.x-widget--carousel .discord-action .qg-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.x-widget--carousel .discord-community-meta,
+.x-widget--carousel .creator-slide-footer .discord-community-meta {
+  display: flex;
+  width: auto;
+  max-width: 100%;
+  flex: 0 0 auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+.x-widget--carousel .discord-invite,
+.x-widget--carousel .discord-member-count {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.86) !important;
+  font-family: var(--x-font);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.x-widget--carousel .discord-member-count {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.x-widget--carousel .creator-carousel-dots {
+  right: 12px;
+  bottom: 10px;
+}
+
+/* Écrans PC un peu courts : la même échelle interne, dans un carré plus bas. */
+@media (min-width: 1024px) and (max-height: 780px) {
+  .x-widget--carousel .creator-carousel {
+    height: 232px !important;
+    min-height: 232px !important;
+    max-height: 232px !important;
+  }
+
+  .x-widget--carousel .discord-copy strong {
+    font-size: 18px;
+    line-height: 22px;
+  }
+
+  .x-widget--carousel .discord-detail {
+    max-height: 16px;
+    -webkit-line-clamp: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Planning « Les prochains lives »
+   --------------------------------------------------------------------------
+   Le badge d'horaire flottant disparaît ; l'horaire s'écrit dans la ligne de
+   sous-titre, alignée avec la pastille. L'en-tête ne garde que son titre.
+   -------------------------------------------------------------------------- */
+
+.x-widget--schedule .x-widget-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  padding: 14px 16px 0;
+}
+
+.x-widget--schedule .x-widget-title {
+  margin: 0;
+  font-size: 17px;
+  line-height: 22px;
+}
+
+/* L'ancienne pastille d'horaire n'existe plus dans le HTML : on la masque par
+   sécurité si un ancien cache la restituait. */
+.x-widget-time {
+  display: none !important;
+}
+
+.x-widget--schedule .x-widget-sub {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  margin: 5px 0 0;
+  padding: 0 16px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.x-widget--schedule .x-widget-sub .schedule-live-indicator {
+  flex: 0 0 auto;
+}
+
+.x-widget--schedule .x-widget-sub [data-schedule-time] {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   6. Échelle PC (~110 %) : colonnes plus larges, jamais de `zoom`
+   --------------------------------------------------------------------------
+   On élargit le shell et les deux colonnes de la même proportion. Les tailles
+   de police restent en px : rien n'est mis à l'échelle par un ancêtre, donc
+   les modales restent centrées et le carrousel (px fixes) reste cadré.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .x-shell {
+    max-width: 1380px;
+  }
+
+  .x-main {
+    max-width: 650px;
+    flex-basis: 650px;
+  }
+
+  .x-right-rail {
+    width: 380px;
+    flex: 0 0 380px;
+    padding: 12px 0 24px 24px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .x-left-rail {
+    width: 260px;
+    flex-basis: 260px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .x-shell {
+    max-width: 1420px;
+  }
+}
