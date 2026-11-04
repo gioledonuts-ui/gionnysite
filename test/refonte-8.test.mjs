@@ -79,6 +79,24 @@ test("3. l'admin a les quatre sections attendues", () => {
   assert.match(adminHtml, /Planning &amp; à la une/u);
 });
 
+test("3 bis. l'onglet DISCUSSIONS (DM) affiche liste + chat complet", () => {
+  assert.match(adminHtml, /data-admin-tab="dm"[^>]*aria-label="Discussions directes"/u);
+  assert.match(adminHtml, /Discussions \(DM\)/u);
+  assert.match(adminHtml, /data-dm-list role="list"/u);
+  assert.match(adminHtml, /data-dm-history role="log"/u);
+  assert.match(adminHtml, /data-dm-form/u);
+  assert.match(adminJs, /\/api\/admin-messages\?view=dm-threads/u);
+  assert.match(adminJs, /\/api\/admin-messages\?view=dm-thread&id=/u);
+  assert.match(adminJs, /ticks\.textContent = "✓✓"/u);
+});
+
+test("3 ter bis. l'API admin des DM ne sert que les fils de Gionny", async () => {
+  const adminMessages = await read("api/admin-messages.mjs");
+  assert.match(adminMessages, /view === "dm-threads"/u);
+  assert.match(adminMessages, /listInbox\(\{ pseudo: "Gionny" \}\)/u);
+  assert.match(adminMessages, /getThreadForMember\(\{ pseudo: "Gionny", threadId \}\)/u);
+});
+
 test("3 bis. chaque membre lié montre son pseudo et son ID Discord", () => {
   assert.match(adminJs, /`Discord : @\$\{member\.discordUsername\}`|Discord : @\$\{member\.discordUsername\}/u);
   assert.match(adminJs, /· ID : \$\{member\.discordId\}/u);

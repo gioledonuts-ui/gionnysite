@@ -3934,3 +3934,349 @@ body.admin-body {
 .planning-save {
   margin-left: auto;
 }
+
+/* ==========================================================================
+   ÉTAPE 7 · DISCUSSIONS (DM) — liste à gauche, chat complet à droite
+   ========================================================================== */
+.dm-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dm-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+@media (max-width: 860px) {
+  .dm-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.dm-sidebar {
+  min-width: 0;
+  border: 1px solid rgba(183, 210, 249, 0.13);
+  border-radius: 16px;
+  background: rgba(14, 21, 37, 0.6);
+  overflow: hidden;
+}
+
+.dm-list {
+  display: flex;
+  max-height: 60vh;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.dm-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid rgba(183, 210, 249, 0.1);
+  background: transparent;
+  color: #e2e8f0;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.dm-row:hover,
+.dm-row:focus-visible {
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.dm-row[data-unread="true"] {
+  box-shadow: inset 2px 0 0 #38bdf8;
+}
+
+.dm-row[data-unread="true"] .dm-row-snippet {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.dm-list-avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #16233b;
+  color: #dbeafe;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dm-list-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dm-row-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dm-row-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dm-row-tag {
+  padding: 1px 6px;
+  border: 1px solid rgba(183, 210, 249, 0.22);
+  border-radius: 999px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dm-row-snippet {
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-row-badge {
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #38bdf8;
+  color: #04121f;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dm-detail {
+  display: flex;
+  min-width: 0;
+  min-height: 320px;
+  flex-direction: column;
+  border: 1px solid rgba(183, 210, 249, 0.13);
+  border-radius: 16px;
+  background: rgba(14, 21, 37, 0.6);
+  overflow: hidden;
+}
+
+.dm-empty {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 32px 20px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.dm-empty strong {
+  color: #e2e8f0;
+  font-size: 15px;
+}
+
+.dm-empty p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.dm-content {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+.dm-content[hidden],
+.dm-empty[hidden] {
+  display: none;
+}
+
+.dm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(183, 210, 249, 0.13);
+}
+
+.dm-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #16233b;
+  color: #dbeafe;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dm-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dm-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.dm-identity strong {
+  overflow: hidden;
+  color: #e2e8f0;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-identity span {
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-history {
+  display: flex;
+  min-height: 200px;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.dm-bubble {
+  position: relative;
+  display: flex;
+  max-width: min(78%, 460px);
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 12px 14px;
+  border: 1px solid rgba(183, 210, 249, 0.13);
+  border-radius: 16px 16px 16px 6px;
+  background: rgba(8, 13, 24, 0.75);
+}
+
+.dm-bubble.is-mine {
+  align-self: flex-end;
+  border-color: rgba(56, 189, 248, 0.4);
+  border-radius: 16px 16px 6px 16px;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.dm-bubble-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.dm-bubble-head strong {
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.dm-bubble-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dm-bubble-body p {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.dm-bubble-body img {
+  display: block;
+  max-width: 100%;
+  border-radius: 10px;
+}
+
+.dm-bubble-body audio {
+  width: 100%;
+  max-width: 240px;
+  height: 32px;
+}
+
+/* Accusés de lecture : deux coches bleues, sans halo. */
+.dm-ticks {
+  position: absolute;
+  right: 10px;
+  bottom: 2px;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+}
+
+.dm-reply-status {
+  margin: 0;
+  padding: 0 14px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.dm-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(183, 210, 249, 0.13);
+}
+
+.dm-composer textarea {
+  min-height: 38px;
+  flex: 1 1 auto;
+  padding: 9px 12px;
+  border: 1px solid rgba(183, 210, 249, 0.18);
+  border-radius: 14px;
+  background: rgba(8, 13, 24, 0.9);
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 14px;
+  resize: none;
+}
+
+.dm-composer textarea:focus-visible {
+  border-color: #38bdf8;
+  outline: none;
+}
+
+.dm-send {
+  flex: 0 0 auto;
+}

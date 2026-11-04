@@ -48,6 +48,7 @@
 
           <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist" aria-orientation="vertical" hidden>
             <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations" aria-label="Discussions"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-discussions"></use></svg> Discussions<span class="admin-tab-unread-count" data-admin-unread-count hidden>0</span></button>
+            <button class="admin-tab" id="admin-tab-dm" type="button" role="tab" aria-selected="false" aria-controls="dm-panel" data-admin-tab="dm" tabindex="-1" aria-label="Discussions directes"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussions (DM)</button>
             <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-users"></use></svg> Membres</button>
             <button class="admin-tab" id="admin-tab-reports" type="button" role="tab" aria-selected="false" aria-controls="reports-panel" data-admin-tab="reports" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Signalements<span class="admin-tab-unread-count" data-admin-reports-count hidden>0</span></button>
             <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-settings"></use></svg> Réglages</button>
@@ -266,6 +267,48 @@
           </div>
           </form>
         </div>
+
+        <section class="settings-section dm-section admin-tab-panel" id="dm-panel" role="tabpanel" aria-labelledby="admin-tab-dm" data-admin-tab-panel="dm" hidden>
+          <div class="section-heading dm-heading">
+            <span class="section-number">06</span>
+            <div>
+              <h3 id="dm-title">Discussions (DM)</h3>
+              <p>Les conversations privées reçues par Gionny. Réponds ici, en texte, image ou vocal.</p>
+            </div>
+            <button class="quiet-button dm-refresh" type="button" data-dm-refresh>Actualiser</button>
+          </div>
+          <p class="dm-status" data-dm-status role="status" aria-live="polite">Chargement des discussions…</p>
+          <div class="dm-layout">
+            <section class="dm-sidebar" aria-label="Discussions reçues">
+              <div class="dm-list" data-dm-list role="list"></div>
+            </section>
+            <section class="dm-detail" aria-label="Conversation sélectionnée">
+              <div class="dm-empty" data-dm-empty>
+                <strong>Choisis une discussion</strong>
+                <p>Les messages et tes réponses s’afficheront ici.</p>
+              </div>
+              <div class="dm-content" data-dm-content hidden>
+                <header class="dm-toolbar">
+                  <span class="dm-avatar" data-dm-avatar aria-hidden="true"></span>
+                  <div class="dm-identity">
+                    <strong data-dm-title>Discussion</strong>
+                    <span data-dm-subtitle></span>
+                  </div>
+                </header>
+                <div class="dm-history" data-dm-history role="log" aria-live="polite"></div>
+                <p class="dm-reply-status" data-dm-reply-status role="status" aria-live="polite"></p>
+                <form class="dm-composer" data-dm-form>
+                  <input type="file" accept="image/*" data-dm-image hidden />
+                  <button class="quiet-button dm-attach" type="button" data-dm-attach aria-label="Joindre une image">
+                    <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg>
+                  </button>
+                  <textarea rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse" data-dm-input></textarea>
+                  <button class="primary-button dm-send" type="submit" data-dm-send>Envoyer</button>
+                </form>
+              </div>
+            </section>
+          </div>
+        </section>
 
         <section class="settings-section members-section admin-tab-panel" id="members-panel" role="tabpanel" aria-labelledby="admin-tab-members" data-admin-tab-panel="members" hidden>
           <div class="section-heading members-heading">

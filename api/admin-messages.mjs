@@ -20,6 +20,12 @@ import {
   ensureOwnerAccountSeeded,
 } from "../lib/contact-inbox.mjs";
 import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
+import {
+  getThreadForMember,
+  listInbox,
+  DM_LIMITS,
+  toPublicMessage,
+} from "../lib/direct-messages.mjs";
 
 const MAX_BODY_BYTES = 6000;
 
@@ -144,6 +150,46 @@ export default async function handler(request, response) {
         return response.status(200).json({
           ...result,
           ...(Number.isInteger(unreadCount) ? { unreadCount } : {}),
+        });
+      }
+      // ÉTAPE 7 · DISCUSSIONS (DM) vues par l'hôte : uniquement les fils
+      // auxquels Gionny participe (jamais les conversations privées entre
+      // membres). Lecture seule + droit de réponse via /api/messages.
+      if (view === "dm-threads") {
+        const inbox = await listInbox({ pseudo: "Gionny" }).catch(() => null);
+        if (!inbox?.ok) return response.status(200).json({ inbox: [], requests: [], viewer: "Gionny" });
+        return response.status(200).json({
+          viewer: inbox.viewer,
+          inbox: inbox.inbox.map((thread) => ({
+            id: thread.id,
+            kind: thread.kind,
+            title: thread.title,
+            subtitle: thread.subtitle,
+            unread: thread.unread,
+            requestState: thread.requestState,
+            lastMessage: thread.lastMessage,
+            updatedAt: thread.updatedAt,
+          })),
+          requests: inbox.requests.map((thread) => ({
+            id: thread.id,
+            title: thread.title,
+            subtitle: thread.subtitle,
+            requestState: thread.requestState,
+            lastMessage: thread.lastMessage,
+          })),
+          limits: DM_LIMITS,
+        });
+      }
+      if (view === "dm-thread") {
+        const threadId = queryValue(request, "id");
+        if (!/^[0-9a-f-]{36}$/iu.test(String(threadId || ""))) {
+          return response.status(400).json({ error: "Cette discussion est introuvable." });
+        }
+        const opened = await getThreadForMember({ pseudo: "Gionny", threadId });
+        if (!opened?.ok) return response.status(404).json({ error: "Cette discussion n’existe plus." });
+        return response.status(200).json({
+          thread: opened.thread,
+          messages: opened.messages.map(toPublicMessage),
         });
       }
       if (view === "conversation") {

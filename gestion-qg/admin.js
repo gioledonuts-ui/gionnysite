@@ -1112,7 +1112,7 @@
   reportsRefreshButton?.addEventListener("click", () => void loadReports({ quiet: false }));
 
   const setAdminTab = (tabName, { focus = false, refresh = true } = {}) => {
-    const validTab = ["settings", "members", "conversations", "reports", "planning"].includes(tabName) ? tabName : "settings";
+    const validTab = ["settings", "members", "conversations", "reports", "planning", "dm"].includes(tabName) ? tabName : "settings";
     const previousTab = activeAdminTab;
     activeAdminTab = validTab;
     if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
@@ -1123,6 +1123,7 @@
       conversations: "Discussions",
       reports: "Signalements",
       planning: "Planning & à la une",
+      dm: "Discussions (DM)",
     };
     adminTabs.forEach((tab) => {
       const selected = tab.dataset.adminTab === validTab;
@@ -1139,6 +1140,9 @@
     }
     if (validTab === "reports" && !adminPanel.hidden && !reportsLoaded) {
       void loadReports({ quiet: false });
+    }
+    if (validTab === "dm" && !adminPanel.hidden && !dmLoaded) {
+      void loadDmThreads({ quiet: false });
     }
     if (validTab === "planning" && !adminPanel.hidden && !planningLoaded) {
       void loadPlanning({ quiet: false });
@@ -2436,6 +2440,267 @@
     });
     updateDayInputState(day);
   }
+
+  // -------------------------------------------------------------------------
+  // ÉTAPE 7 · DISCUSSIONS (DM)
+  // Les fils où Gionny est participant : liste à gauche, chat complet à droite
+  // (texte, images, notes vocales 60 FPS, accusés bleus ✓✓).
+  // -------------------------------------------------------------------------
+
+  const dmListNode = document.querySelector("[data-dm-list]");
+  const dmStatus = document.querySelector("[data-dm-status]");
+  const dmEmpty = document.querySelector("[data-dm-empty]");
+  const dmContent = document.querySelector("[data-dm-content]");
+  const dmTitleNode = document.querySelector("[data-dm-title]");
+  const dmSubtitleNode = document.querySelector("[data-dm-subtitle]");
+  const dmAvatarNode = document.querySelector("[data-dm-avatar]");
+  const dmHistoryNode = document.querySelector("[data-dm-history]");
+  const dmReplyStatus = document.querySelector("[data-dm-reply-status]");
+  const dmForm = document.querySelector("[data-dm-form]");
+  const dmInput = document.querySelector("[data-dm-input]");
+  const dmImageInput = document.querySelector("[data-dm-image]");
+  const dmRefreshButton = document.querySelector("[data-dm-refresh]");
+
+  let dmLoaded = false;
+  let dmLoading = false;
+  let activeDmThread = null;
+  let activeDmMessages = [];
+
+  const dmAvatarFor = (thread) => {
+    const holder = document.createElement("span");
+    holder.className = "dm-list-avatar";
+    const participants = Array.isArray(thread?.participants) ? thread.participants : [];
+    const other = participants.find((person) => person.pseudo !== "Gionny" && person.avatarData)
+      || participants.find((person) => person.avatarData);
+    if (other?.avatarData) {
+      const image = document.createElement("img");
+      image.src = other.avatarData;
+      image.alt = "";
+      holder.append(image);
+    } else {
+      holder.textContent = String(thread?.title || "?").trim().charAt(0).toUpperCase();
+      holder.dataset.fallback = "true";
+    }
+    return holder;
+  };
+
+  const createDmRow = (thread) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "dm-row";
+    row.dataset.dmThreadId = thread.id;
+    row.dataset.unread = thread.unread > 0 ? "true" : "false";
+    row.setAttribute("role", "listitem");
+    row.append(dmAvatarFor(thread));
+
+    const copy = document.createElement("span");
+    copy.className = "dm-row-copy";
+    const name = document.createElement("span");
+    name.className = "dm-row-name";
+    name.textContent = thread.title || "Discussion";
+    if (thread.kind === "group") {
+      const tag = document.createElement("span");
+      tag.className = "dm-row-tag";
+      tag.textContent = "Groupe";
+      name.append(tag);
+    }
+    const snippet = document.createElement("span");
+    snippet.className = "dm-row-snippet";
+    snippet.textContent = thread.lastMessage?.text || "Aucun message";
+    copy.append(name, snippet);
+    row.append(copy);
+
+    if (thread.unread > 0) {
+      const badge = document.createElement("span");
+      badge.className = "dm-row-badge";
+      badge.textContent = thread.unread > 99 ? "99+" : String(thread.unread);
+      row.append(badge);
+    }
+    row.addEventListener("click", () => void openDmThread(thread.id));
+    return row;
+  };
+
+  const paintDmHistory = () => {
+    if (!dmHistoryNode) return;
+    dmHistoryNode.replaceChildren(
+      ...activeDmMessages.map((message) => {
+        const bubble = document.createElement("article");
+        bubble.className = `dm-bubble${message.senderPseudo === "Gionny" ? " is-mine" : ""}`;
+        bubble.dataset.kind = message.kind || "text";
+
+        const head = document.createElement("header");
+        head.className = "dm-bubble-head";
+        const who = document.createElement("strong");
+        who.textContent = message.senderPseudo;
+        const time = document.createElement("time");
+        time.dateTime = message.createdAt;
+        time.textContent = formatInboxTime(message.createdAt);
+        head.append(who, time);
+
+        const body = document.createElement("div");
+        body.className = "dm-bubble-body";
+        if (message.kind === "image" && message.mediaUrl) {
+          const image = document.createElement("img");
+          image.src = message.mediaUrl;
+          image.alt = "Image envoyée";
+          image.loading = "lazy";
+          body.append(image);
+        }
+        if (message.kind === "audio" && message.mediaUrl) {
+          const audio = document.createElement("audio");
+          audio.controls = true;
+          audio.preload = "metadata";
+          audio.src = message.mediaUrl;
+          body.append(audio);
+        }
+        if (message.text) {
+          const text = document.createElement("p");
+          text.textContent = message.text;
+          body.append(text);
+        }
+        if (message.senderPseudo === "Gionny") {
+          const ticks = document.createElement("span");
+          ticks.className = "dm-ticks";
+          ticks.textContent = "✓✓";
+          ticks.title = "Lu";
+          bubble.append(head, body, ticks);
+          return bubble;
+        }
+        bubble.append(head, body);
+        return bubble;
+      })
+    );
+    dmHistoryNode.scrollTop = dmHistoryNode.scrollHeight;
+  };
+
+  const openDmThread = async (threadId) => {
+    if (!threadId) return;
+    setStatus(dmReplyStatus, "");
+    try {
+      const response = await fetch(`/api/admin-messages?view=dm-thread&id=${encodeURIComponent(threadId)}`, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(dmStatus, data.error || "Cette discussion n’a pas pu être ouverte.", "error");
+        return;
+      }
+      activeDmThread = data.thread;
+      activeDmMessages = Array.isArray(data.messages) ? data.messages : [];
+      if (dmEmpty) dmEmpty.hidden = true;
+      if (dmContent) dmContent.hidden = false;
+      if (dmTitleNode) dmTitleNode.textContent = activeDmThread?.title || "Discussion";
+      if (dmSubtitleNode) dmSubtitleNode.textContent = activeDmThread?.subtitle || "";
+      if (dmAvatarNode) {
+        dmAvatarNode.replaceChildren(...dmAvatarFor(activeDmThread).childNodes);
+      }
+      paintDmHistory();
+      setStatus(dmStatus, "");
+    } catch {
+      setStatus(dmStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    }
+  };
+
+  const sendDmReply = async ({ data = "", mimeType = "" } = {}) => {
+    if (!activeDmThread) return;
+    const text = String(dmInput?.value || "").trim();
+    if (!text && !data) return;
+    if (dmInput) dmInput.value = "";
+    setStatus(dmReplyStatus, "Envoi…");
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "send", threadId: activeDmThread.id, text, data, mimeType }),
+      });
+      const payload = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(dmReplyStatus, payload.error || "Le message n’a pas pu être envoyé.", "error");
+        if (text && dmInput) dmInput.value = text;
+        return;
+      }
+      if (payload.message) {
+        activeDmMessages.push(payload.message);
+        paintDmHistory();
+      }
+      setStatus(dmReplyStatus, "Message envoyé.");
+      void loadDmThreads({ quiet: true });
+    } catch {
+      setStatus(dmReplyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    }
+  };
+
+  const loadDmThreads = async ({ quiet = false } = {}) => {
+    if (!dmListNode || dmLoading) return;
+    dmLoading = true;
+    if (dmRefreshButton) dmRefreshButton.disabled = true;
+    if (!quiet) setStatus(dmStatus, "Chargement des discussions…");
+    try {
+      const response = await fetch("/api/admin-messages?view=dm-threads", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(dmStatus, data.error || "Les discussions n’ont pas pu être chargées.", "error");
+        return;
+      }
+      const threads = [...(data.inbox || []), ...(data.requests || [])];
+      dmLoaded = true;
+      dmListNode.replaceChildren(...threads.map(createDmRow));
+      setStatus(
+        dmStatus,
+        threads.length
+          ? `${threads.length} discussion${threads.length > 1 ? "s" : ""} reçue${threads.length > 1 ? "s" : ""}.`
+          : "Aucune discussion pour le moment."
+      );
+    } catch {
+      setStatus(dmStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      dmLoading = false;
+      if (dmRefreshButton) dmRefreshButton.disabled = false;
+    }
+  };
+
+  dmForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void sendDmReply();
+  });
+  dmInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendDmReply();
+    }
+  });
+  document.querySelector("[data-dm-attach]")?.addEventListener("click", () => dmImageInput?.click());
+  dmImageInput?.addEventListener("change", () => {
+    const file = dmImageInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      void sendDmReply({ data: String(reader.result || ""), mimeType: file.type || "image/jpeg" });
+    });
+    reader.readAsDataURL(file);
+    dmImageInput.value = "";
+  });
+  dmRefreshButton?.addEventListener("click", () => void loadDmThreads({ quiet: true }));
 
   // -------------------------------------------------------------------------
   // ÉTAPE 7 · PLANNING & À LA UNE
