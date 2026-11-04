@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#07111f" />
+    <meta name="theme-color" content="#000000" />
     <meta
       name="description"
       content="Bienvenue dans le QG de Gionny : retrouve la communauté, les réseaux et les prochains lives."
@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="/chat-x.css" />
     <link rel="stylesheet" href="/layout-2026.css" />
     <link rel="stylesheet" href="/dark-mode.css" />
+    <link rel="stylesheet" href="/social-x.css" />
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
@@ -37,7 +38,9 @@
     <script src="/icons.js" defer></script>
     <script src="/audio-player.js" defer></script>
     <script src="/voice-recorder.js" defer></script>
+    <script src="/twemoji.js" defer></script>
     <script src="/script.js" defer></script>
+    <script src="/x-app.js" defer></script>
   </head>
   <body>
   <svg class="qg-inline-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -70,18 +73,9 @@
 
     <a class="skip-link" href="#main">Aller au contenu</a>
 
-    <div class="site-shell" id="top">
+    <div class="x-shell" id="top">
+      <!-- Bandeau du haut : « À la une » + présence -->
       <header class="site-header">
-        <a class="site-logo" href="#top" aria-label="QG2GIONNY — retour en haut de la page">
-          <img
-            src="/assets/logo-qg.png"
-            width="512"
-            height="512"
-            alt="Logo officiel du QG de Gionny"
-            decoding="async"
-            fetchpriority="high"
-          />
-        </a>
         <span class="ticker-label" aria-hidden="true">À LA UNE</span>
         <div
           class="ticker-viewport"
@@ -159,50 +153,155 @@
             </div>
           </div>
         </div>
+        <span class="site-presence site-presence--top" data-site-presence hidden aria-live="polite">
+          <span class="site-presence-dot site-presence-dot--top" aria-hidden="true"></span>
+          <span class="site-presence-text"><strong data-site-presence-count>0</strong>&nbsp;en ligne</span>
+        </span>
       </header>
 
-      <main class="hub-layout" id="main">
-        <section class="welcome-panel" aria-labelledby="welcome-title">
-          <div class="welcome-account-bar" data-member-access role="group" aria-label="Accès au compte">
-            <div class="welcome-account-identity">
-              <span class="member-visitor" data-member-visitor><svg class="qg-icon member-visitor-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-user"></use></svg> Non connecté</span>
-              <span class="member-identity" data-member-identity hidden>
-                <span class="member-profile-avatar" aria-hidden="true">
-                  <img class="member-avatar-image" data-member-avatar alt="" hidden />
-                  <svg viewBox="0 0 40 40" fill="none">
-                    <circle cx="20" cy="20" r="19" />
-                    <circle cx="20" cy="15" r="6" />
-                    <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
-                  </svg>
+      <!-- Barre mobile : logo + bascule Fil / Lives & réseaux -->
+      <div class="x-mobile-bar">
+        <a class="x-mobile-logo" href="#top" aria-label="QG2GIONNY — retour en haut">
+          <img src="/assets/logo-qg.png" width="512" height="512" alt="Logo officiel du QG de Gionny" decoding="async" />
+        </a>
+        <button class="x-mobile-switch" type="button" data-x-mobile-switch aria-pressed="false">
+          <span class="x-mobile-switch-label" data-x-mobile-switch-label>Lives &amp; réseaux</span>
+          <svg class="x-mobile-switch-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+        <button class="x-mobile-account" type="button" data-x-mobile-account aria-label="Mon compte">
+          <img data-x-mobile-account-avatar src="/assets/gionny-profile.jpg" alt="" />
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.2" r="4.1" /><path d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" /></svg>
+        </button>
+      </div>
+
+      <div class="x-columns">
+      <!-- Colonne de gauche : navigation principale -->
+      <div class="x-left-rail">
+        <div class="x-rail-top">
+          <a class="x-rail-logo" href="#top" aria-label="QG2GIONNY — retour en haut de la page">
+            <img src="/assets/logo-qg.png" width="512" height="512" alt="Logo officiel du QG de Gionny" decoding="async" fetchpriority="high" />
+          </a>
+          <nav class="x-rail-nav" aria-label="Navigation principale">
+            <button class="x-rail-link" type="button" data-x-nav="home" aria-current="page" aria-label="Accueil">
+              <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M3.8 10.4 12 3.6l8.2 6.8V20a.9.9 0 0 1-.9.9h-4.6v-6.2H9.3V21H4.7a.9.9 0 0 1-.9-.9Z" /></svg>
+              <span class="x-rail-label">Accueil</span>
+            </button>
+            <button class="x-rail-link" type="button" data-x-nav="notifications" aria-label="Notifications">
+              <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M12 3.2a5.9 5.9 0 0 1 5.9 5.9v3.4l1.7 3.3a.7.7 0 0 1-.6 1H4.9a.7.7 0 0 1-.6-1l1.7-3.3V9.1A5.9 5.9 0 0 1 12 3.2Z" /><path class="x-icon-line" d="M9.6 20.2a2.6 2.6 0 0 0 4.8 0" /><circle class="x-rail-dot" cx="18.4" cy="5.6" r="3.1" data-x-badge="notifications" hidden /></svg>
+              <span class="x-rail-label">Notifications</span>
+            </button>
+            <button class="x-rail-link" type="button" data-x-nav="messages" aria-label="Messages">
+              <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M3.4 6.6A2.2 2.2 0 0 1 5.6 4.4h12.8a2.2 2.2 0 0 1 2.2 2.2v8.2a2.2 2.2 0 0 1-2.2 2.2H9.4l-4.4 3.2a.6.6 0 0 1-1-.5Z" /><circle class="x-rail-dot" cx="19.2" cy="4.6" r="3.2" data-x-badge="messages" hidden /></svg>
+              <span class="x-rail-label">Messages</span>
+            </button>
+            <button class="x-rail-link" type="button" data-x-nav="profile" aria-label="Profil">
+              <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><circle class="x-icon-line" cx="12" cy="8.2" r="4.1" /><path class="x-icon-line" d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" /></svg>
+              <span class="x-rail-label">Profil</span>
+            </button>
+            <button class="x-rail-link" type="button" data-x-nav="settings" aria-label="Paramètres">
+              <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M4 7.4h10.2M18.2 7.4H20M4 16.6h3.8M11.8 16.6H20" /><circle class="x-icon-line" cx="16.2" cy="7.4" r="2.1" /><circle class="x-icon-line" cx="9.8" cy="16.6" r="2.1" /></svg>
+              <span class="x-rail-label">Paramètres</span>
+            </button>
+            <a class="x-rail-link x-rail-link--admin" href="/gestion-qg/" data-host-admin-link hidden aria-label="Admin">
+              <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M12 3.2 19.4 6v6c0 4.3-3 7.6-7.4 8.8C7.6 19.6 4.6 16.3 4.6 12V6Z" /><path class="x-icon-line" d="m9.2 12.1 2 2 3.6-3.9" /></svg>
+              <span class="x-rail-label">Admin</span>
+            </a>
+          </nav>
+          <button class="x-post-button" type="button" data-x-compose-focus>
+            <span class="x-post-label">Poster</span>
+            <svg class="x-post-feather" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L20.2 7.8a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6 4 20Z" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round" /></svg>
+          </button>
+        </div>
+        <div class="x-rail-bottom">
+          <div class="x-rail-account" data-rail-account>
+            <button class="x-rail-account-card" type="button" data-rail-account-card data-member-profile aria-haspopup="dialog" aria-expanded="false" aria-controls="profile-dialog" hidden>
+              <span class="x-rail-avatar" aria-hidden="true">
+                <img data-rail-account-avatar alt="" hidden />
+                <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="19" /><circle cx="20" cy="15" r="6" /><path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" /></svg>
+              </span>
+              <span class="x-rail-account-copy">
+                <span class="x-rail-account-name">
+                  <span data-rail-account-pseudo></span>
+                  <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true" data-rail-account-crown hidden><use href="#qg-crown-symbol"></use></svg>
+                  <svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true" data-rail-account-verified hidden><use href="#qg-verified-symbol"></use></svg>
                 </span>
-                <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg></span>
-                <span class="member-profile-name-line"><span class="member-profile-pseudo" data-member-pseudo></span><span class="verified-badge" data-member-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></span></span>
+                <span class="x-rail-account-handle" data-rail-account-handle>@membre</span>
+              </span>
+              <svg class="x-rail-account-more" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6.2" cy="12" r="1.6" fill="currentColor" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><circle cx="17.8" cy="12" r="1.6" fill="currentColor" /></svg>
+            </button>
+            <div class="x-rail-auth" data-rail-auth>
+              <button class="x-rail-auth-button" type="button" data-member-login aria-label="Se connecter">
+                <svg class="x-rail-auth-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M14.4 3.6H6.8A2.4 2.4 0 0 0 4.4 6v12a2.4 2.4 0 0 0 2.4 2.4h7.6" /><path class="x-icon-line" d="m15.6 8.4 4 3.6-4 3.6M19.2 12h-9.6" /></svg>
+                <span class="x-rail-auth-label">Se connecter</span>
+              </button>
+              <button class="x-rail-auth-button x-rail-auth-button--primary" type="button" data-member-register aria-label="S’inscrire">
+                <svg class="x-rail-auth-icon" viewBox="0 0 24 24" aria-hidden="true"><circle class="x-icon-line" cx="10.4" cy="8" r="4" /><path class="x-icon-line" d="M3.4 20.4a7 7 0 0 1 14 0M18.6 7.4v5M21.1 9.9h-5" /></svg>
+                <span class="x-rail-auth-label">S’inscrire</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Colonne du milieu : le fil social -->
+      <main class="x-main" id="main">
+        <section class="welcome-panel" data-x-view="home" aria-labelledby="welcome-title">
+          <div class="x-feed-header">
+            <div class="x-feed-tabs" role="tablist" aria-label="Navigation du fil">
+              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="all" aria-selected="true" aria-controls="x-feed">Pour vous</button>
+              <button class="x-feed-tab" type="button" role="tab" data-x-feed-tab="verified" aria-selected="false" aria-controls="x-feed">Validés &amp; Officiel</button>
+            </div>
+            <div class="x-feed-header-row">
+              <span class="x-feed-avatar" aria-hidden="true">
+                <img src="/assets/gionny-profile.jpg" alt="" />
+              </span>
+              <div class="x-feed-headline">
+                <h1 id="welcome-title" data-intro-title aria-label="Bienvenue dans le QG de Gionny">Bienvenue <span class="welcome-name" data-welcome-name hidden></span><span class="welcome-name-comma" data-welcome-comma hidden>,</span> dans le <span class="heading-accent">QG</span> <span class="welcome-tail">de Gionny</span></h1>
+                <p class="x-feed-handle">@7gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></p>
+              </div>
+              <span class="site-presence" data-site-presence hidden aria-live="polite">
+                <span class="site-presence-dot" aria-hidden="true"></span>
+                <span class="site-presence-text"><strong data-site-presence-count>0</strong>&nbsp;en ligne</span>
               </span>
             </div>
-            <div class="member-access-actions" data-member-logged-out>
-              <button class="member-access-button" type="button" data-member-login>Se connecter</button>
-              <button class="member-access-button member-access-button--accent" type="button" data-member-register>S’inscrire</button>
+            <p class="welcome-copy">La commu, les lives et les meilleurs moments sont ici.</p>
+            <div class="x-account-bar" data-member-access role="group" aria-label="Accès au compte">
+              <div class="welcome-account-identity">
+                <span class="member-visitor" data-member-visitor><svg class="qg-icon member-visitor-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-user"></use></svg> Non connecté</span>
+                <span class="member-identity" data-member-identity hidden>
+                  <span class="member-profile-avatar" aria-hidden="true">
+                    <img class="member-avatar-image" data-member-avatar alt="" hidden />
+                    <svg viewBox="0 0 40 40" fill="none">
+                      <circle cx="20" cy="20" r="19" />
+                      <circle cx="20" cy="15" r="6" />
+                      <path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3" />
+                    </svg>
+                  </span>
+                  <span class="member-host-crown" data-member-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg></span>
+                  <span class="member-profile-name-line"><span class="member-profile-pseudo" data-member-pseudo></span><span class="verified-badge" data-member-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></span></span>
+                </span>
+              </div>
+              <div class="member-access-actions" data-member-logged-out>
+                <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
+                <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
+              </div>
+              <div class="member-access-actions member-access-actions--connected" data-member-logged-in hidden>
+                <button
+                  class="member-access-button member-access-button--profile"
+                  type="button"
+                  data-x-profile-open
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                  aria-controls="profile-dialog"
+                ><svg class="qg-icon host-crown-icon member-profile-crown" data-x-profile-crown aria-hidden="true" hidden><use href="#qg-crown-symbol"></use></svg><span>Mon Profil</span></button>
+                <a class="x-auth-button x-admin-link" href="/gestion-qg/" data-x-admin hidden><svg class="qg-icon member-admin-shield" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg><span>Admin</span></a>
+                <button class="x-auth-button x-auth-button--quiet" type="button" data-contact-logout><span>Déconnexion</span></button>
+              </div>
             </div>
-            <div class="member-access-actions member-access-actions--connected" data-member-logged-in hidden>
-              <button
-                class="member-access-button member-access-button--profile"
-                type="button"
-                data-member-profile
-                aria-haspopup="dialog"
-                aria-expanded="false"
-                aria-controls="profile-dialog"
-              ><svg class="qg-icon host-crown-icon member-profile-crown" data-member-profile-crown aria-hidden="true" hidden><use href="#qg-crown-symbol"></use></svg><span>Mon Profil</span></button>
-              <a class="member-access-button member-access-button--admin" href="/gestion-qg/" data-host-admin-link hidden><svg class="qg-icon member-admin-shield" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg><span>Admin</span></a>
-              <button class="member-access-button member-access-button--logout" type="button" data-contact-logout><span>Déconnexion</span></button>
-            </div>
-            <span class="site-presence" data-site-presence hidden aria-live="polite">
-              <span class="site-presence-dot" aria-hidden="true"></span>
-              <span class="site-presence-text"><strong data-site-presence-count>0</strong>&nbsp;en ligne</span>
-            </span>
           </div>
+
           <div class="welcome-identity">
             <button
-              class="profile-trigger"
+              class="x-identity-avatar-button"
               type="button"
               data-open-about
               aria-haspopup="dialog"
@@ -216,442 +315,556 @@
                   class="profile-avatar"
                   src="/assets/gionny-profile.jpg"
                   data-profile-image
-                  alt=""
+                  alt="Gionny"
                 />
               </span>
               <span class="profile-tooltip" aria-hidden="true">Qui suis-je ?</span>
-              <span class="creator-handle">@7gionny</span>
             </button>
             <div class="welcome-intro">
-              <h1
-                id="welcome-title"
-                data-intro-title
-                aria-label="Bienvenue dans le QG de Gionny"
-              >Bienvenue <span class="welcome-name" data-welcome-name hidden></span><span class="welcome-name-comma" data-welcome-comma hidden>,</span> dans le <span class="heading-accent">QG</span> <span class="welcome-tail">de Gionny</span></h1>
-              <p class="welcome-copy">
-                La commu, les lives et les meilleurs moments sont ici.
-              </p>
+              <p class="x-identity-name">Gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></p>
+              <p class="x-identity-copy">Présentation, parcours, ce qu’il faut savoir sur le QG.</p>
+              <p class="x-identity-link">Voir la présentation <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg></p>
             </div>
           </div>
 
-          <div class="welcome-actions">
-            <div class="creator-carousel" data-social-carousel role="region" aria-roledescription="carrousel" aria-label="Réseaux principaux de Gionny">
-            <a
-              class="discord-cta creator-slide creator-slide--discord"
-              data-carousel-slide="discord"
-              data-active="true"
-              aria-hidden="false"
-              href="https://discord.gg/nPACfBTnPx"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-network="discord"
-              data-config-link="discord"
-              aria-label="Rejoindre la communauté Discord de Gionny"
-            >
-              <span class="discord-watermark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
+          <div class="x-composer" data-x-composer data-can-post="false">
+            <span class="x-composer-avatar" aria-hidden="true">
+              <img src="/assets/gionny-profile.jpg" data-x-composer-avatar alt="" />
+            </span>
+            <div class="x-composer-body">
+              <button class="x-composer-trigger" type="button" data-x-compose-open aria-haspopup="dialog" aria-expanded="false" aria-controls="contact-widget">
+                <span class="x-composer-placeholder">Quoi de neuf dans le QG ?</span>
+                <span class="x-composer-who">Visible par la commu · post public</span>
+              </button>
+              <div class="x-composer-tools">
+                <div class="x-composer-icons" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.2" fill="none" stroke="currentColor" stroke-width="1.85" /><circle cx="8.6" cy="10" r="1.7" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="m4.6 17.4 4.3-4.1 3.2 2.9 3.1-3 4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  <svg viewBox="0 0 24 24"><rect x="9.1" y="2.8" width="5.8" height="10.4" rx="2.9" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="M6 11.4a6 6 0 0 0 12 0" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /><path d="M12 17.6V21" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.8" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="M8.4 14.1a4.4 4.4 0 0 0 7.2 0" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /><circle cx="9.2" cy="9.8" r="1" fill="currentColor" /><circle cx="14.8" cy="9.8" r="1" fill="currentColor" /></svg>
+                </div>
+                <button class="x-composer-post" type="button" data-x-compose-open>Poster</button>
+              </div>
+              <p class="x-composer-note">Seuls Gionny et les membres Validés <svg class="x-note-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg> publient des posts publics. Tu peux liker et republier dès maintenant.</p>
+            </div>
+          </div>
+
+          <div class="x-feed" id="x-feed" role="tabpanel" aria-label="Fil du QG" data-x-feed>
+            <svg class="x-feed-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3.4" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="M7.4 9.4h9.2M7.4 13h6.4" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>
+            <h2 class="x-feed-title">Le fil arrive à l’étape suivante</h2>
+            <p class="x-feed-state" data-x-feed-state>Les posts publics de Gionny et des membres Validés s’afficheront ici. Les lives et les réseaux sont déjà dans la colonne de droite.</p>
+          </div>
+
+        </section>
+
+        <section class="x-view" data-x-view="notifications" aria-labelledby="x-notifications-title" hidden>
+          <header class="x-view-header">
+            <h2 id="x-notifications-title">Notifications</h2>
+            <div class="x-subtabs" role="tablist" aria-label="Filtrer les notifications">
+              <button class="x-subtab" type="button" role="tab" data-x-notif-tab="all" aria-selected="true">Toutes</button>
+              <button class="x-subtab" type="button" role="tab" data-x-notif-tab="verified" aria-selected="false">Validés</button>
+            </div>
+          </header>
+          <div class="x-empty" data-x-notifications-list>
+            <svg class="x-empty-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a5.9 5.9 0 0 1 5.9 5.9v3.4l1.7 3.3a.7.7 0 0 1-.6 1H4.9a.7.7 0 0 1-.6-1l1.7-3.3V9.1A5.9 5.9 0 0 1 12 3.2Z" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round" /><path d="M9.6 20.2a2.6 2.6 0 0 0 4.8 0" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>
+            <h3 class="x-empty-title">Rien de neuf pour le moment</h3>
+            <p class="x-empty-copy">Dès qu’un live démarre ou qu’un membre Validé publie, ça tombe ici.</p>
+          </div>
+        </section>
+
+        <section class="x-view" data-x-view="profile" aria-labelledby="x-profile-title" hidden>
+          <header class="x-view-header">
+            <h2 id="x-profile-title">Profil</h2>
+            <button class="x-icon-button" type="button" data-x-profile-settings aria-label="Ouvrir mes paramètres">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.4h10.2M18.2 7.4H20M4 16.6h3.8M11.8 16.6H20" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /><circle cx="16.2" cy="7.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.85" /><circle cx="9.8" cy="16.6" r="2.1" fill="none" stroke="currentColor" stroke-width="1.85" /></svg>
+            </button>
+          </header>
+          <div class="x-profile">
+            <div class="x-profile-banner" aria-hidden="true"></div>
+            <div class="x-profile-head">
+              <span class="x-profile-avatar" aria-hidden="true">
+                <img src="/assets/gionny-profile.jpg" data-x-profile-avatar alt="" />
+              </span>
+              <button class="x-outline-button" type="button" data-x-profile-edit>Éditer le profil</button>
+            </div>
+            <div class="x-profile-identity">
+              <h3 class="x-profile-name"><span data-x-profile-name>Gionny</span><svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></h3>
+              <p class="x-profile-handle" data-x-profile-handle>@7gionny</p>
+              <p class="x-profile-bio">La commu, les lives et les meilleurs moments sont ici. On se retrouve sur Discord, Twitch et YouTube.</p>
+              <p class="x-profile-meta"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.6" y="4.8" width="16.8" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.85" /><path d="M8 2.8v4M16 2.8v4M3.6 10h16.8" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /></svg>Mardi, mercredi, samedi et dimanche · 22h</p>
+              <p class="x-profile-follow"><strong>@7gionny</strong> est suivi automatiquement par chaque membre du QG.</p>
+              <div class="x-profile-stats">
+                <span><strong>1</strong> Abonnement</span>
+                <span><strong data-x-profile-followers>0</strong> Abonnés</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-view" data-x-view="settings" aria-labelledby="x-settings-title" hidden>
+          <header class="x-view-header">
+            <h2 id="x-settings-title">Paramètres</h2>
+          </header>
+          <div class="x-settings">
+            <div class="x-setting-row">
+              <div class="x-setting-copy">
+                <p class="x-setting-title">Compte privé</p>
+                <p class="x-setting-copytext">Quand c’est activé, seul Gionny voit tes réponses et ton profil.</p>
+              </div>
+              <button class="x-switch" type="button" role="switch" aria-checked="false" data-x-switch="private" aria-label="Compte privé"><span class="x-switch-knob"></span></button>
+            </div>
+            <div class="x-setting-row">
+              <div class="x-setting-copy">
+                <p class="x-setting-title">Masquer les posts des comptes non-validés</p>
+                <p class="x-setting-copytext">Ton fil ne montre que Gionny et les membres Validés.</p>
+              </div>
+              <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified"><span class="x-switch-knob"></span></button>
+            </div>
+            <div class="x-setting-card">
+              <div class="x-setting-card-head">
+                <svg class="x-discord-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0c-.164-.394-.406-.875-.618-1.25a.077.077 0 0 0-.078-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.01c.12.099.246.198.373.292a.077.077 0 0 1-.007.128c-.6.349-1.22.645-1.873.891a.077.077 0 0 0-.04.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.029ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418Z" fill="currentColor" /></svg>
+                <div class="x-setting-copy">
+                  <p class="x-setting-title">Lier mon compte Discord</p>
+                  <p class="x-setting-copytext">Bientôt : un seul pseudo entre le QG et le serveur Discord.</p>
+                </div>
+              </div>
+              <button class="x-outline-button x-outline-button--disabled" type="button" disabled>Étape suivante</button>
+            </div>
+            <div class="x-setting-row x-setting-row--stack">
+              <div class="x-setting-copy">
+                <p class="x-setting-title">Mon compte</p>
+                <p class="x-setting-copytext">Pseudo, mot de passe et photo de profil.</p>
+              </div>
+              <button class="x-outline-button" type="button" data-x-profile-open aria-haspopup="dialog" aria-expanded="false" aria-controls="profile-dialog">Ouvrir mon profil</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="x-view" data-x-view="messages" aria-labelledby="x-messages-title" hidden>
+          <header class="x-view-header">
+            <h2 id="x-messages-title">Messages</h2>
+            <button class="x-icon-button" type="button" data-x-messages-open aria-label="Ouvrir la discussion en grand">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17V7.6A2.6 2.6 0 0 1 6.6 5h10.8A2.6 2.6 0 0 1 20 7.6V17" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" /><path d="m4 9 8 5 8-5" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </header>
+          <div class="x-dm" data-x-dm>
+            <button class="x-dm-thread" type="button" data-x-dm-open>
+              <span class="x-rail-avatar x-dm-avatar" aria-hidden="true">
+                <img src="/assets/gionny-profile.jpg" alt="" />
+              </span>
+              <span class="x-dm-copy">
+                <span class="x-dm-name">Gionny <svg class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-crown-symbol"></use></svg><svg class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg></span>
+                <span class="x-dm-snippet" data-x-dm-snippet>Ta discussion privée avec Gionny</span>
+              </span>
+              <span class="x-dm-badge" data-x-dm-badge hidden>0</span>
+            </button>
+            <p class="x-dm-note">Le tiroir de discussion reste dispo en bas à droite, même quand tu changes de vue.</p>
+          </div>
+        </section>
+      </main>
+      <!-- Colonne de droite : les widgets du QG -->
+      <aside class="x-right-rail" aria-label="Lives et réseaux de Gionny">
+        <div class="x-widget x-widget--schedule">
+          <div class="x-widget-head">
+            <h2 class="x-widget-title">Les prochains lives</h2>
+            <span class="x-widget-time" data-schedule-time aria-label="Horaire habituel : 22 heures">22H00</span>
+          </div>
+          <p class="x-widget-sub"><span class="schedule-live-indicator" aria-hidden="true"></span>Rendez-vous fixe · Heure française</p>
+          <ul class="schedule-days" data-schedule-days aria-label="Jours de live">
+            <li data-schedule-day="tuesday">
+              <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
+              <span class="schedule-day-name">MARDI</span>
+              <span class="schedule-day-time">22H</span>
+            </li>
+            <li data-schedule-day="wednesday">
+              <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
+              <span class="schedule-day-name">MERCREDI</span>
+              <span class="schedule-day-time">22H</span>
+            </li>
+            <li data-schedule-day="saturday">
+              <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
+              <span class="schedule-day-name">SAMEDI</span>
+              <span class="schedule-day-time">22H</span>
+            </li>
+            <li data-schedule-day="sunday">
+              <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
+              <span class="schedule-day-name">DIMANCHE</span>
+              <span class="schedule-day-time">22H</span>
+            </li>
+          </ul>
+          <div class="schedule-countdown" data-next-live-countdown aria-live="off">
+            <span class="schedule-countdown-label" data-next-live-prefix>Prochain live dans</span>
+            <span class="schedule-countdown-value" data-next-live-value role="timer" aria-label="Temps avant le prochain live">
+              <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-hours>--</span><span class="schedule-countdown-suffix" aria-hidden="true">h</span></span>
+              <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-minutes>--</span><span class="schedule-countdown-suffix" aria-hidden="true">m</span></span>
+              <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-seconds>--</span><span class="schedule-countdown-suffix" aria-hidden="true">s</span></span>
+              <span class="schedule-countdown-empty" data-countdown-empty hidden>Aucun live programmé</span>
+            </span>
+          </div>
+          <p class="schedule-countdown-live" data-current-live role="status" hidden><span class="creator-live-dot" aria-hidden="true"></span> EN DIRECT ACTUELLEMENT</p>
+        </div>
+
+        <div class="x-widget x-widget--carousel">
+        <div class="creator-carousel" data-social-carousel role="region" aria-roledescription="carrousel" aria-label="Réseaux principaux de Gionny">
+        <a
+          class="discord-cta creator-slide creator-slide--discord"
+          data-carousel-slide="discord"
+          data-active="true"
+          aria-hidden="false"
+          href="https://discord.gg/nPACfBTnPx"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-network="discord"
+          data-config-link="discord"
+          aria-label="Rejoindre la communauté Discord de Gionny"
+        >
+          <span class="discord-watermark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+            </svg>
+          </span>
+          <span class="discord-content">
+            <span class="discord-topline creator-slide-topline discord-badge-row">
+              <span class="discord-badge-group">
+              <span class="discord-community-pill">
+                <svg class="discord-community-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="10" cy="7" r="4" />
+                  <path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                LA COMMU
+              </span>
+              <span class="discord-online-badge" data-discord-online hidden>
+                <span class="discord-online-dot" aria-hidden="true"></span>
+                <span class="discord-online-copy"><strong data-discord-online-count>0</strong>&nbsp;en ligne</span>
+              </span>
+              </span>
+              <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
+            </span>
+            <span class="discord-copy">
+              <span class="discord-overline">ON SE RETROUVE SUR</span>
+              <strong>
+                <svg class="discord-title-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
                 </svg>
+                <span>DISCORD</span>
+              </strong>
+              <span class="discord-detail">
+                La commu, même hors live &amp; pour passer en live. Annonces, débats, sessions improvisées et accès prioritaire aux événements du QG.
               </span>
-              <span class="discord-content">
-                <span class="discord-topline creator-slide-topline discord-badge-row">
-                  <span class="discord-badge-group">
-                  <span class="discord-community-pill">
-                    <svg class="discord-community-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="10" cy="7" r="4" />
-                      <path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    LA COMMU
-                  </span>
-                  <span class="discord-online-badge" data-discord-online hidden>
-                    <span class="discord-online-dot" aria-hidden="true"></span>
-                    <span class="discord-online-copy"><strong data-discord-online-count>0</strong>&nbsp;en ligne</span>
-                  </span>
-                  </span>
-                  <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
-                </span>
-                <span class="discord-copy">
-                  <span class="discord-overline">ON SE RETROUVE SUR</span>
-                  <strong>
-                    <svg class="discord-title-mark" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
-                    </svg>
-                    <span>DISCORD</span>
-                  </strong>
-                  <span class="discord-detail">
-                    La commu, même hors live &amp; pour passer en live. Annonces, débats, sessions improvisées et accès prioritaire aux événements du QG.
-                  </span>
-                </span>
-                <span class="discord-footer">
-                  <span class="discord-action">
-                    <span class="discord-action-default">REJOINDRE <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span>
-                  </span>
-                  <span class="discord-community-meta">
-                    <span class="discord-member-count" data-discord-member-count hidden></span>
-                    <span class="discord-invite" data-discord-invite>discord.gg/nPACfBTnPx</span>
-                  </span>
-                </span>
+            </span>
+            <span class="discord-footer">
+              <span class="discord-action">
+                <span class="discord-action-default">REJOINDRE <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span>
               </span>
-            </a>
+              <span class="discord-community-meta">
+                <span class="discord-member-count" data-discord-member-count hidden></span>
+                <span class="discord-invite" data-discord-invite>discord.gg/nPACfBTnPx</span>
+              </span>
+            </span>
+          </span>
+        </a>
+        <a
+          class="discord-cta creator-slide creator-slide--twitch"
+          data-carousel-slide="twitch"
+          data-carousel-twitch
+          hidden
+          data-live="unknown"
+          aria-hidden="true"
+          href="https://www.twitch.tv/7gionny"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-network="twitch"
+          data-config-link="twitch"
+          aria-label="Ouvrir la chaîne Twitch officielle de Gionny, @7gionny"
+        >
+          <span class="discord-watermark creator-watermark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+            </svg>
+          </span>
+          <span class="discord-content">
+            <span class="discord-topline creator-slide-topline" aria-live="polite">
+              <span class="creator-state-pill" data-carousel-twitch-live-label hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Stream live</span>
+              <span class="creator-state-pill creator-state-pill--channel" data-carousel-twitch-channel><svg class="creator-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h17v12l-5 5h-4l-3 3v-3H4V3Zm4 3v8h2V6H8Zm5 0v8h2V6h-2Z"/></svg> CHAÎNE OFFICIELLE</span>
+              <span class="creator-state-pill creator-state-pill--live" data-carousel-twitch-live hidden><span class="creator-live-dot" aria-hidden="true"></span> En direct</span>
+              <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
+            </span>
+            <span class="discord-copy">
+              <span class="discord-overline">ON SE RETROUVE SUR</span>
+              <strong>
+                <svg class="creator-title-mark creator-title-mark--twitch" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                </svg>
+                <span>TWITCH</span>
+              </strong>
+              <span class="discord-detail" data-carousel-twitch-copy>Retrouve-moi en direct pour les streams, les jeux et les bons moments avec la commu.</span>
+            </span>
+            <span class="discord-footer creator-slide-footer">
+              <span class="discord-action">
+                <span class="discord-action-default">REJOINDRE TWITCH <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span>
+              </span>
+              <span class="discord-community-meta"><span class="discord-invite">@7gionny</span></span>
+            </span>
+          </span>
+        </a>
+        <a
+          class="discord-cta creator-slide creator-slide--youtube"
+          data-carousel-slide="youtube"
+          data-carousel-youtube
+          hidden
+          aria-hidden="true"
+          href="https://www.youtube.com/@gionnyyy"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-network="youtube"
+          data-config-link="youtube"
+          aria-label="Voir les vidéos et replays de Gionny sur YouTube, @gionnyyy"
+        >
+          <span class="discord-watermark creator-watermark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+            </svg>
+          </span>
+          <span class="discord-content">
+            <span class="discord-topline creator-slide-topline">
+              <span class="creator-state-pill creator-state-pill--youtube"><svg class="creator-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.2 7a3.2 3.2 0 0 0-2.2-2.3C19.2 4.2 12 4.2 12 4.2s-7.2 0-9 .5A3.2 3.2 0 0 0 .8 7C.3 8.8.3 12 .3 12s0 3.2.5 5a3.2 3.2 0 0 0 2.2 2.3c1.8.5 9 .5 9 .5s7.2 0 9-.5a3.2 3.2 0 0 0 2.2-2.3c.5-1.8.5-5 .5-5s0-3.2-.5-5ZM9.7 15.6V8.4l6.1 3.6-6.1 3.6Z"/></svg> DERNIÈRES VIDÉOS</span>
+              <span class="creator-state-pill creator-state-pill--new" data-youtube-count aria-live="polite" hidden></span>
+              <span class="creator-state-pill creator-state-pill--visited" data-youtube-visited aria-live="polite" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg> Déjà visité</span>
+            </span>
+            <span class="discord-copy">
+              <span class="discord-overline">LES DERNIERS CONTENUS</span>
+              <strong>
+                <svg class="creator-title-mark creator-title-mark--youtube" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+                <span>YOUTUBE</span>
+              </strong>
+              <span class="discord-detail" data-carousel-youtube-detail>Vidéos, replays de live et meilleurs moments sur YouTube.</span>
+            </span>
+            <span class="discord-footer creator-slide-footer">
+              <span class="discord-action"><span class="discord-action-default">VOIR LA CHAÎNE <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span></span>
+              <span class="discord-community-meta"><span class="discord-invite">@gionnyyy</span></span>
+            </span>
+          </span>
+        </a>
+        <button class="creator-carousel-next" type="button" data-carousel-next aria-label="Afficher le réseau suivant">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        </button>
+        <div class="creator-carousel-dots" role="group" aria-label="Choisir un réseau">
+          <button class="creator-carousel-dot" type="button" data-carousel-dot="discord" aria-label="Discord" aria-current="true"></button>
+          <button class="creator-carousel-dot" type="button" data-carousel-dot="twitch" aria-label="Twitch" aria-current="false"></button>
+          <button class="creator-carousel-dot" type="button" data-carousel-dot="youtube" aria-label="YouTube" aria-current="false"></button>
+        </div>
+        </div>
+        </div>
+
+        <div class="x-widget x-widget--networks">
+      <section class="networks-panel" aria-label="Lives et réseaux de Gionny">
+        <section class="live-player-card" data-live-player aria-label="Lecteur du direct Twitch de Gionny" hidden>
+          <div class="live-player-header">
+            <span class="live-player-status"><span class="live-player-dot" aria-hidden="true"></span>EN DIRECT</span>
             <a
-              class="discord-cta creator-slide creator-slide--twitch"
-              data-carousel-slide="twitch"
-              data-carousel-twitch
-              hidden
-              data-live="unknown"
-              aria-hidden="true"
+              class="live-player-chat-link"
+              data-live-chat-link
+              href="https://www.twitch.tv/7gionny"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Rejoindre le chat sur Twitch <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg>
+            </a>
+          </div>
+          <div class="live-player-video" data-twitch-player></div>
+          <p class="live-player-caption" data-live-player-title>Gionny est en direct sur Twitch.</p>
+        </section>
+        <ul class="network-grid" aria-label="Réseaux sociaux">
+    <h3 class="x-widget-title">Retrouve-moi ici</h3>
+          <li class="network-item">
+            <a
+              class="network-card network-card--twitch"
               href="https://www.twitch.tv/7gionny"
               target="_blank"
               rel="noopener noreferrer"
               data-network="twitch"
+              data-twitch-card
               data-config-link="twitch"
-              aria-label="Ouvrir la chaîne Twitch officielle de Gionny, @7gionny"
+              data-live="unknown"
             >
-              <span class="discord-watermark creator-watermark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
+              <span class="network-head">
+                <span class="network-icon" aria-hidden="true">
+                <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
                 </svg>
               </span>
-              <span class="discord-content">
-                <span class="discord-topline creator-slide-topline" aria-live="polite">
-                  <span class="creator-state-pill" data-carousel-twitch-live-label hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-live"></use></svg> Stream live</span>
-                  <span class="creator-state-pill creator-state-pill--channel" data-carousel-twitch-channel><svg class="creator-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h17v12l-5 5h-4l-3 3v-3H4V3Zm4 3v8h2V6H8Zm5 0v8h2V6h-2Z"/></svg> CHAÎNE OFFICIELLE</span>
-                  <span class="creator-state-pill creator-state-pill--live" data-carousel-twitch-live hidden><span class="creator-live-dot" aria-hidden="true"></span> En direct</span>
-                  <span class="visited-badge creator-visited-badge" aria-live="polite" hidden><svg aria-hidden="true" viewBox="0 0 16 16" fill="none"><path d="m3.5 8.2 3 3 6-6.2" /></svg> Déjà visité</span>
-                </span>
-                <span class="discord-copy">
-                  <span class="discord-overline">ON SE RETROUVE SUR</span>
-                  <strong>
-                    <svg class="creator-title-mark creator-title-mark--twitch" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-                    </svg>
-                    <span>TWITCH</span>
-                  </strong>
-                  <span class="discord-detail" data-carousel-twitch-copy>Retrouve-moi en direct pour les streams, les jeux et les bons moments avec la commu.</span>
-                </span>
-                <span class="discord-footer creator-slide-footer">
-                  <span class="discord-action">
-                    <span class="discord-action-default">REJOINDRE TWITCH <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span>
-                  </span>
-                  <span class="discord-community-meta"><span class="discord-invite">@7gionny</span></span>
+                <span class="network-side">
+                <span class="live-badge" data-stream-status role="status" aria-label="En direct" title="En direct" aria-live="polite" hidden>EN LIVE</span>
+                <span class="visited-badge" aria-live="polite" hidden>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
+                    <path d="m3.5 8.2 3 3 6-6.2" />
+                  </svg>
+                  Déjà visité
                 </span>
               </span>
+              </span>
+              <span class="network-copy">
+                <strong>TWITCH</strong>
+                <span>@7gionny</span>
+                <span class="network-info" data-social-info="twitch" hidden></span>
+                <span class="stream-title" data-stream-title hidden></span>
+              </span>
             </a>
-
+          </li>
+          <li class="network-item">
             <a
-              class="discord-cta creator-slide creator-slide--youtube"
-              data-carousel-slide="youtube"
-              data-carousel-youtube
-              hidden
-              aria-hidden="true"
+              class="network-card network-card--tiktok"
+              href="https://www.tiktok.com/@gio_nny"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-network="tiktok"
+              data-config-link="tiktok"
+            >
+              <span class="network-head">
+                <span class="network-icon" aria-hidden="true">
+                  <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+                  </svg>
+                </span>
+                <span class="network-side">
+                  <span class="visited-badge" aria-live="polite" hidden>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
+                    <path d="m3.5 8.2 3 3 6-6.2" />
+                  </svg>
+                  Déjà visité
+                </span>
+                </span>
+              </span>
+              <span class="network-copy">
+                <strong>TIKTOK</strong>
+                <span>@gio_nny</span>
+                <span class="network-info" data-social-info="tiktok" hidden></span>
+              </span>
+            </a>
+          </li>
+          <li class="network-item">
+            <a
+              class="network-card network-card--youtube"
               href="https://www.youtube.com/@gionnyyy"
               target="_blank"
               rel="noopener noreferrer"
               data-network="youtube"
+              data-youtube-card
               data-config-link="youtube"
-              aria-label="Voir les vidéos et replays de Gionny sur YouTube, @gionnyyy"
             >
-              <span class="discord-watermark creator-watermark" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                </svg>
+              <span class="network-head">
+                <span class="network-icon" aria-hidden="true">
+                  <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </span>
+                <span class="network-side">
+                  <span class="youtube-count-badge" data-youtube-count aria-live="polite" hidden>1</span>
+                <span class="visited-badge" data-youtube-visited aria-live="polite" hidden>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
+                    <path d="m3.5 8.2 3 3 6-6.2" />
+                  </svg>
+                  Déjà visité
+                </span>
+                </span>
               </span>
-              <span class="discord-content">
-                <span class="discord-topline creator-slide-topline">
-                  <span class="creator-state-pill creator-state-pill--youtube"><svg class="creator-pill-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.2 7a3.2 3.2 0 0 0-2.2-2.3C19.2 4.2 12 4.2 12 4.2s-7.2 0-9 .5A3.2 3.2 0 0 0 .8 7C.3 8.8.3 12 .3 12s0 3.2.5 5a3.2 3.2 0 0 0 2.2 2.3c1.8.5 9 .5 9 .5s7.2 0 9-.5a3.2 3.2 0 0 0 2.2-2.3c.5-1.8.5-5 .5-5s0-3.2-.5-5ZM9.7 15.6V8.4l6.1 3.6-6.1 3.6Z"/></svg> DERNIÈRES VIDÉOS</span>
-                  <span class="creator-state-pill creator-state-pill--new" data-youtube-count aria-live="polite" hidden></span>
-                  <span class="creator-state-pill creator-state-pill--visited" data-youtube-visited aria-live="polite" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg> Déjà visité</span>
-                </span>
-                <span class="discord-copy">
-                  <span class="discord-overline">LES DERNIERS CONTENUS</span>
-                  <strong>
-                    <svg class="creator-title-mark creator-title-mark--youtube" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                    </svg>
-                    <span>YOUTUBE</span>
-                  </strong>
-                  <span class="discord-detail" data-carousel-youtube-detail>Vidéos, replays de live et meilleurs moments sur YouTube.</span>
-                </span>
-                <span class="discord-footer creator-slide-footer">
-                  <span class="discord-action"><span class="discord-action-default">VOIR LA CHAÎNE <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg></span></span>
-                  <span class="discord-community-meta"><span class="discord-invite">@gionnyyy</span></span>
-                </span>
+              <span class="network-copy">
+                <strong>YOUTUBE</strong>
+                <span>@gionnyyy</span>
+                <span class="network-info" data-social-info="youtube" hidden></span>
               </span>
             </a>
-
-            <button class="creator-carousel-next" type="button" data-carousel-next aria-label="Afficher le réseau suivant">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
-            </button>
-            <div class="creator-carousel-dots" role="group" aria-label="Choisir un réseau">
-              <button class="creator-carousel-dot" type="button" data-carousel-dot="discord" aria-label="Discord" aria-current="true"></button>
-              <button class="creator-carousel-dot" type="button" data-carousel-dot="twitch" aria-label="Twitch" aria-current="false"></button>
-              <button class="creator-carousel-dot" type="button" data-carousel-dot="youtube" aria-label="YouTube" aria-current="false"></button>
-            </div>
-            </div>
-
-            <section class="schedule-card schedule-card--refresh" aria-labelledby="schedule-title">
-              <div class="schedule-topline">
-                <div class="schedule-mark" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4.8" width="18" height="16.2" rx="3.2" />
-                    <path d="M8 2.6v4.2M16 2.6v4.2M3 10h18" />
-                    <path d="M7.6 14h2.2M12 14h2.2M16.4 14h.1M7.6 17.4h2.2M12 17.4h2.2" />
-                  </svg>
-                </div>
-                <div class="schedule-copy">
-                  <h2 id="schedule-title">LES PROCHAINS LIVES</h2>
-                  <p><span class="schedule-live-indicator" aria-hidden="true"></span>Rendez-vous fixe · Heure française</p>
-                </div>
-                <span class="schedule-time" data-schedule-time aria-label="Horaire habituel : 22 heures">22H00</span>
-              </div>
-              <ul class="schedule-days" data-schedule-days aria-label="Jours de live">
-                <li data-schedule-day="tuesday">
-                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
-                  <span class="schedule-day-name">MARDI</span>
-                  <span class="schedule-day-time">22H</span>
-                </li>
-                <li data-schedule-day="wednesday">
-                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
-                  <span class="schedule-day-name">MERCREDI</span>
-                  <span class="schedule-day-time">22H</span>
-                </li>
-                <li data-schedule-day="saturday">
-                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
-                  <span class="schedule-day-name">SAMEDI</span>
-                  <span class="schedule-day-time">22H</span>
-                </li>
-                <li data-schedule-day="sunday">
-                  <span class="schedule-day-next-label" aria-hidden="true">PROCHAIN</span>
-                  <span class="schedule-day-name">DIMANCHE</span>
-                  <span class="schedule-day-time">22H</span>
-                </li>
-              </ul>
-              <div class="schedule-countdown" data-next-live-countdown aria-live="off">
-                <span class="schedule-countdown-label" data-next-live-prefix>Prochain live dans</span>
-                <span class="schedule-countdown-value" data-next-live-value role="timer" aria-label="Temps avant le prochain live">
-                  <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-hours>--</span><span class="schedule-countdown-suffix" aria-hidden="true">h</span></span>
-                  <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-minutes>--</span><span class="schedule-countdown-suffix" aria-hidden="true">m</span></span>
-                  <span class="schedule-countdown-chunk"><span class="schedule-countdown-digits" data-countdown-seconds>--</span><span class="schedule-countdown-suffix" aria-hidden="true">s</span></span>
-                  <span class="schedule-countdown-empty" data-countdown-empty hidden>Aucun live programmé</span>
-                </span>
-              </div>
-              <p class="schedule-countdown-live" data-current-live role="status" hidden><span class="creator-live-dot" aria-hidden="true"></span> EN DIRECT ACTUELLEMENT</p>
-            </section>
-          </div>
-        </section>
-
-        <section class="networks-panel" aria-labelledby="networks-title">
-          <section class="live-player-card" data-live-player aria-label="Lecteur du direct Twitch de Gionny" hidden>
-            <div class="live-player-header">
-              <span class="live-player-status"><span class="live-player-dot" aria-hidden="true"></span>EN DIRECT</span>
-              <a
-                class="live-player-chat-link"
-                data-live-chat-link
-                href="https://www.twitch.tv/7gionny"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Rejoindre le chat sur Twitch <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg>
-              </a>
-            </div>
-            <div class="live-player-video" data-twitch-player></div>
-            <p class="live-player-caption" data-live-player-title>Gionny est en direct sur Twitch.</p>
-          </section>
-          <div class="networks-heading">
-            <h2 id="networks-title">Retrouve-moi ici :</h2>
-          </div>
-
-          <ul class="network-grid" aria-label="Réseaux sociaux">
-            <li class="network-item">
-              <a
-                class="network-card network-card--twitch"
-                href="https://www.twitch.tv/7gionny"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-network="twitch"
-                data-twitch-card
-                data-config-link="twitch"
-                data-live="unknown"
-              >
-                <span class="network-head">
-                  <span class="network-icon" aria-hidden="true">
+          </li>
+          <li class="network-item">
+            <a
+              class="network-card network-card--x"
+              href="https://x.com/nny_gio"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-network="x"
+              data-config-link="x"
+            >
+              <span class="network-head">
+                <span class="network-icon" aria-hidden="true">
                   <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
+                    <path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" />
                   </svg>
                 </span>
-                  <span class="network-side">
-                  <span class="live-badge" data-stream-status role="status" aria-label="En direct" title="En direct" aria-live="polite" hidden>EN LIVE</span>
+                <span class="network-side">
                   <span class="visited-badge" aria-live="polite" hidden>
-                    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-                      <path d="m3.5 8.2 3 3 6-6.2" />
-                    </svg>
-                    Déjà visité
-                  </span>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
+                    <path d="m3.5 8.2 3 3 6-6.2" />
+                  </svg>
+                  Déjà visité
                 </span>
                 </span>
-                <span class="network-copy">
-                  <strong>TWITCH</strong>
-                  <span>@7gionny</span>
-                  <span class="network-info" data-social-info="twitch" hidden></span>
-                  <span class="stream-title" data-stream-title hidden></span>
+              </span>
+              <span class="network-copy">
+                <strong>X</strong>
+                <span>@nny_gio</span>
+                <span class="network-info" data-social-info="x" hidden></span>
+              </span>
+            </a>
+          </li>
+          <li class="network-item">
+            <a
+              class="network-card network-card--instagram"
+              href="https://www.instagram.com/nny_gio/"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-network="instagram"
+              data-config-link="instagram"
+            >
+              <span class="network-head">
+                <span class="network-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle class="camera-dot" cx="17.7" cy="6.6" r="1" />
+                  </svg>
                 </span>
+                <span class="network-side">
+                  <span class="visited-badge" aria-live="polite" hidden>
+                  <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
+                    <path d="m3.5 8.2 3 3 6-6.2" />
+                  </svg>
+                  Déjà visité
+                </span>
+                </span>
+              </span>
+              <span class="network-copy">
+                <strong>INSTAGRAM</strong>
+                <span>@nny_gio</span>
+                <span class="network-info" data-social-info="instagram" hidden></span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </section>
+        </div>
+      </aside>
+      </div>
+      <!-- Barre de navigation mobile -->
+      <nav class="x-mobile-nav" aria-label="Navigation mobile">
+        <button class="x-mobile-nav-link" type="button" data-x-nav="home" aria-current="page" aria-label="Accueil">
+          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M3.8 10.4 12 3.6l8.2 6.8V20a.9.9 0 0 1-.9.9h-4.6v-6.2H9.3V21H4.7a.9.9 0 0 1-.9-.9Z" /></svg>
+        </button>
+        <button class="x-mobile-nav-link" type="button" data-x-mobile-only="social" aria-label="Lives et réseaux">
+          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><rect class="x-icon-line" x="3.4" y="3.4" width="7.2" height="7.2" rx="1.8" /><rect class="x-icon-line" x="13.4" y="3.4" width="7.2" height="7.2" rx="1.8" /><rect class="x-icon-line" x="3.4" y="13.4" width="7.2" height="7.2" rx="1.8" /><rect class="x-icon-line" x="13.4" y="13.4" width="7.2" height="7.2" rx="1.8" /></svg>
+        </button>
+        <button class="x-mobile-nav-link x-mobile-nav-link--post" type="button" data-x-compose-open aria-label="Poster">
+          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L20.2 7.8a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6 4 20Z" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linejoin="round" /></svg>
+        </button>
+        <button class="x-mobile-nav-link" type="button" data-x-nav="notifications" aria-label="Notifications">
+          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><path class="x-icon-line" d="M12 3.2a5.9 5.9 0 0 1 5.9 5.9v3.4l1.7 3.3a.7.7 0 0 1-.6 1H4.9a.7.7 0 0 1-.6-1l1.7-3.3V9.1A5.9 5.9 0 0 1 12 3.2Z" /><path class="x-icon-line" d="M9.6 20.2a2.6 2.6 0 0 0 4.8 0" /><circle class="x-rail-dot" cx="18.4" cy="5.6" r="3.1" data-x-badge="notifications" hidden /></svg>
+        </button>
+        <button class="x-mobile-nav-link" type="button" data-x-nav="profile" aria-label="Profil et paramètres">
+          <svg class="x-rail-icon" viewBox="0 0 24 24" aria-hidden="true"><circle class="x-icon-line" cx="12" cy="8.2" r="4.1" /><path class="x-icon-line" d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" /></svg>
+        </button>
+      </nav>
 
-                <span class="network-watermark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />
-                  </svg></span>
-              </a>
-            </li>
-            <li class="network-item">
-              <a
-                class="network-card network-card--tiktok"
-                href="https://www.tiktok.com/@gio_nny"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-network="tiktok"
-                data-config-link="tiktok"
-              >
-                <span class="network-head">
-                  <span class="network-icon" aria-hidden="true">
-                    <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-                    </svg>
-                  </span>
-                  <span class="network-side">
-                    <span class="visited-badge" aria-live="polite" hidden>
-                    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-                      <path d="m3.5 8.2 3 3 6-6.2" />
-                    </svg>
-                    Déjà visité
-                  </span>
-                  </span>
-                </span>
-                <span class="network-copy">
-                  <strong>TIKTOK</strong>
-                  <span>@gio_nny</span>
-                  <span class="network-info" data-social-info="tiktok" hidden></span>
-                </span>
-
-                <span class="network-watermark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
-                    </svg></span>
-              </a>
-            </li>
-            <li class="network-item">
-              <a
-                class="network-card network-card--youtube"
-                href="https://www.youtube.com/@gionnyyy"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-network="youtube"
-                data-youtube-card
-                data-config-link="youtube"
-              >
-                <span class="network-head">
-                  <span class="network-icon" aria-hidden="true">
-                    <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                    </svg>
-                  </span>
-                  <span class="network-side">
-                    <span class="youtube-count-badge" data-youtube-count aria-live="polite" hidden>1</span>
-                  <span class="visited-badge" data-youtube-visited aria-live="polite" hidden>
-                    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-                      <path d="m3.5 8.2 3 3 6-6.2" />
-                    </svg>
-                    Déjà visité
-                  </span>
-                  </span>
-                </span>
-                <span class="network-copy">
-                  <strong>YOUTUBE</strong>
-                  <span>@gionnyyy</span>
-                  <span class="network-info" data-social-info="youtube" hidden></span>
-                </span>
-
-                <span class="network-watermark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                    </svg></span>
-              </a>
-            </li>
-            <li class="network-item">
-              <a
-                class="network-card network-card--x"
-                href="https://x.com/nny_gio"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-network="x"
-                data-config-link="x"
-              >
-                <span class="network-head">
-                  <span class="network-icon" aria-hidden="true">
-                    <svg class="brand-mark" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" />
-                    </svg>
-                  </span>
-                  <span class="network-side">
-                    <span class="visited-badge" aria-live="polite" hidden>
-                    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-                      <path d="m3.5 8.2 3 3 6-6.2" />
-                    </svg>
-                    Déjà visité
-                  </span>
-                  </span>
-                </span>
-                <span class="network-copy">
-                  <strong>X</strong>
-                  <span>@nny_gio</span>
-                  <span class="network-info" data-social-info="x" hidden></span>
-                </span>
-
-                <span class="network-watermark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z" />
-                    </svg></span>
-              </a>
-            </li>
-            <li class="network-item network-item--instagram">
-              <a
-                class="network-card network-card--instagram"
-                href="https://www.instagram.com/nny_gio/"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-network="instagram"
-                data-config-link="instagram"
-              >
-                <span class="network-head">
-                  <span class="network-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
-                      <circle cx="12" cy="12" r="4" />
-                      <circle class="camera-dot" cx="17.7" cy="6.6" r="1" />
-                    </svg>
-                  </span>
-                  <span class="network-side">
-                    <span class="visited-badge" aria-live="polite" hidden>
-                    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-                      <path d="m3.5 8.2 3 3 6-6.2" />
-                    </svg>
-                    Déjà visité
-                  </span>
-                  </span>
-                </span>
-                <span class="network-copy">
-                  <strong>INSTAGRAM</strong>
-                  <span>@nny_gio</span>
-                  <span class="network-info" data-social-info="instagram" hidden></span>
-                </span>
-
-                <span class="network-watermark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none">
-                      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
-                      <circle cx="12" cy="12" r="4" />
-                      <circle class="camera-dot" cx="17.7" cy="6.6" r="1" />
-                    </svg></span>
-              </a>
-            </li>
-          </ul>
-
-        </section>
-      </main>
       <footer class="site-footer" aria-label="Pied de page">
         <div class="site-footer-brand">
           <p class="site-footer-copyright">Le QG de Gionny — Copyright 2026. Tous droits réservés.</p>

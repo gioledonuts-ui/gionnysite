@@ -23,3 +23,79 @@ test("visitor login and registration bypass browser pseudo patterns and trim bef
   assert.match(submitHandler, /String\(pseudoInput\?\.value \|\| ""\)\.trim\(\)/u);
   assert.doesNotMatch(submitHandler, /reportValidity\(\)/u);
 });
+
+
+// ---------------------------------------------------------------------------
+// Refonte sociale « X » : la structure attendue et les garde-fous d'interface.
+// ---------------------------------------------------------------------------
+
+const socialCss = readFileSync(new URL("../social-x.css", import.meta.url), "utf8");
+const twemoji = readFileSync(new URL("../twemoji.js", import.meta.url), "utf8");
+const xApp = readFileSync(new URL("../x-app.js", import.meta.url), "utf8");
+
+test("la charte X est appliquée : noir pur, surfaces #16181c, dividers #2f3336", () => {
+  assert.match(socialCss, /--x-bg:\s*#000000/u);
+  assert.match(socialCss, /--x-surface:\s*#16181c/u);
+  assert.match(socialCss, /--x-surface-hover:\s*#1d1f23/u);
+  assert.match(socialCss, /--x-line:\s*#2f3336/u);
+  assert.match(socialCss, /--x-text:\s*#e7e9ea/u);
+  assert.match(socialCss, /--x-muted:\s*#71767b/u);
+  assert.match(socialCss, /--x-accent:\s*#1d9bf0/u);
+  // couleur d'accent survolée
+  assert.match(socialCss, /#1a8cd8/u);
+  // surface de page mate, jamais de dégradé sur le body
+  assert.match(socialCss, /body \{[^}]*background: var\(--x-bg\)/su);
+  assert.doesNotMatch(socialCss, /gradient\(/u);
+});
+
+test("l'architecture en trois colonnes et le bandeau « À la une » sont en place", () => {
+  assert.equal((html.match(/class="x-left-rail"/gu) || []).length, 1);
+  assert.equal((html.match(/class="x-main"/gu) || []).length, 1);
+  assert.equal((html.match(/class="x-right-rail"/gu) || []).length, 1);
+  assert.match(html, /class="site-header"[\s\S]{0,400}À LA UNE/u);
+  assert.match(html, /data-site-presence-count/u);
+  // navigation principale complète
+  for (const view of ["home", "notifications", "messages", "profile", "settings"]) {
+    assert.match(html, new RegExp(`data-x-nav="${view}"`, "u"));
+  }
+  // accès admin réservé à l'hôte (masqué par défaut)
+  assert.match(html, /data-x-admin hidden/u);
+});
+
+test("le compteur, le planning et le carrousel restent branchés sur script.js", () => {
+  for (const hook of [
+    "data-next-live-countdown",
+    "data-countdown-hours",
+    "data-countdown-minutes",
+    "data-countdown-seconds",
+    "data-schedule-day",
+    "data-social-carousel",
+    "data-carousel-slide",
+    "data-carousel-dot",
+    "data-member-profile",
+    "data-member-login",
+    "data-member-register",
+    "data-open-contact",
+  ]) {
+    assert.match(html, new RegExp(hook, "u"));
+  }
+  // le compteur n'affiche plus de chiffre fantôme
+  assert.match(socialCss, /\.schedule-countdown-ghost \{\s*display: none !important;/u);
+});
+
+test("les emojis passent par Twemoji, avec un rendu borné", () => {
+  assert.match(twemoji, /cdnjs\.cloudflare\.com\/ajax\/libs\/twemoji\/14\.0\.2\/svg/u);
+  assert.match(twemoji, /\\p\{Extended_Pictographic\}/u);
+  // jamais de motif pouvant correspondre à la chaîne vide (boucle infinie)
+  assert.doesNotMatch(twemoji, /\[\\u\{1F000\}/u);
+  assert.match(twemoji, /emojiRegex = \(\) => new RegExp/u);
+  assert.match(twemoji, /owned/u);
+});
+
+test("la couche d'interface ne surveille pas les attributs qu'elle écrit", () => {
+  assert.doesNotMatch(xApp, /attributeFilter/u);
+  assert.match(xApp, /if \(syncing\) return;/u);
+  // toutes les actions sensibles sont déléguées aux boutons d'origine
+  assert.match(xApp, /forward\("\[data-member-login\]"\)/u);
+  assert.match(xApp, /forward\("\[data-member-profile\]"\)/u);
+});
