@@ -20,6 +20,7 @@ import {
   listFeed,
   listNotifications,
   markNotificationsRead,
+  readPostMedia,
   setPinned,
   setBlock,
   setFollow,
@@ -34,7 +35,8 @@ import {
 // GET  /api/profile?pseudo=…        → profil public + compteurs + relations
 // GET  /api/profile?directory=1     → annuaire léger (pseudo, rôle, badge, photo)
 // POST /api/profile {action:…}      → follow | unfollow | block | unblock |
-//                                     report | details
+//                                     report | details | media
+// GET  /api/profile?media=1&post=…&kind=…  → binaire du média d'un post
 //
 // Aucune donnée privée ne sort d'ici : ni conversation, ni mot de passe, ni
 // adresse. Seuls le pseudo, la bio, le pseudo Discord, le rôle, le badge et la
@@ -48,6 +50,9 @@ const MEDIA_LIMITS = { image: 60 * 1024, vocal: 200 * 1024, video: 2 * 1024 * 10
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const MAX_REPORTS_PER_WINDOW = 10;
 const MAX_DIRECTORY = 120;
+// Les médias sont servis par cette même route (`?media=1`), pas par une fonction
+// dédiée : la limite Hobby de Vercel plafonne un déploiement à 12 fonctions.
+const MEDIA_TYPES = { image: "image/webp", vocal: "audio/webm", video: "video/mp4" };
 const rateLimits = new Map();
 
 function setNoStore(response) {
@@ -158,7 +163,51 @@ async function withDetails(pseudo, member, viewer) {
   };
 }
 
+async function streamToBuffer(stream) {
+  const chunks = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+/**
+ * Sert le binaire d'un post (`GET /api/profile?media=1&post=…&kind=…`).
+ * Lecture seule, type MIME strict, cache privé court : le média n'est jamais
+ * exposé en data-URL dans le JSON du fil.
+ */
+async function servePostMedia(request, response) {
+  const postId = queryValue(request, "post");
+  const kind = queryValue(request, "kind");
+  if (!postId || !MEDIA_TYPES[kind]) {
+    return response.status(400).json({ error: "Ce média n’est pas valide." });
+  }
+  try {
+    const media = await readPostMedia({ postId, kind });
+    if (!media) return response.status(404).json({ error: "Ce média n’existe plus." });
+    const buffer = await streamToBuffer(media.stream);
+    response.setHeader("Content-Type", MEDIA_TYPES[kind]);
+    response.setHeader("Content-Length", String(buffer.length));
+    if (request.method === "HEAD") return response.status(200).end();
+    return response.status(200).send(buffer);
+  } catch {
+    return response.status(502).json({ error: "Ce média ne peut pas être chargé pour le moment." });
+  }
+}
+
 export default async function handler(request, response) {
+  if (queryValue(request, "media")) {
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      response.setHeader("Allow", "GET, HEAD");
+      return response.status(405).json({ error: "Méthode non autorisée." });
+    }
+    response.setHeader("Cache-Control", "private, max-age=120");
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("Vary", "Cookie");
+    await ensureStateLoaded().catch(() => {});
+    return servePostMedia(request, response);
+  }
+
   setNoStore(response);
   await ensureStateLoaded().catch(() => {});
 
@@ -342,7 +391,7 @@ export default async function handler(request, response) {
           reposted: false,
           canDelete: true,
           media: result.post.media
-            ? { ...result.post.media, url: `/api/media?post=${encodeURIComponent(result.post.id)}&kind=${result.post.media.kind}` }
+            ? { ...result.post.media, url: `/api/profile?media=1&post=${encodeURIComponent(result.post.id)}&kind=${result.post.media.kind}` }
             : null,
         },
       });

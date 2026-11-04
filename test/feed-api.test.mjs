@@ -62,7 +62,9 @@ const call = async (handler, { method = "GET", query = {}, body, cookie, extraHe
 };
 
 const profileHandler = (await import("../api/profile.mjs")).default;
-const mediaHandler = (await import("../api/media.mjs")).default;
+const mediaHandler = (await import("../api/profile.mjs")).default;
+// Les médias sont servis par la même fonction (`?media=1`) : le handler est
+// appelé avec ce paramètre pour reproduire la route réelle.
 
 let hostCookie = "";
 let memberCookie = "";
@@ -133,17 +135,17 @@ test("l'Hôte publie un post avec image, la dépose puis la sert avec le bon typ
   });
   assert.equal(upload.status, 201);
 
-  const served = await call(mediaHandler, { query: { post: postId, kind: "image" } });
+  const served = await call(mediaHandler, { query: { media: "1", post: postId, kind: "image" } });
   assert.equal(served.status, 200);
   assert.equal(served.headers["content-type"], "image/webp");
   assert.deepEqual(Buffer.from(served.body), bytes);
 
   // Un média inexistant ne casse rien.
-  const missing = await call(mediaHandler, { query: { post: "00000000-0000-4000-8000-000000000000", kind: "image" } });
+  const missing = await call(mediaHandler, { query: { media: "1", post: "00000000-0000-4000-8000-000000000000", kind: "image" } });
   assert.equal(missing.status, 404);
 
   // Un type de média inconnu est refusé.
-  const badKind = await call(mediaHandler, { query: { post: postId, kind: "gif" } });
+  const badKind = await call(mediaHandler, { query: { media: "1", post: postId, kind: "gif" } });
   assert.equal(badKind.status, 400);
 
   // Le fil expose l'URL, pas le binaire.
@@ -174,7 +176,7 @@ test("un média trop lourd est refusé avant d'écrire quoi que ce soit", async 
   assert.equal(upload.status, 413);
   assert.match(upload.body.error, /2 Mo/u);
 
-  const served = await call(mediaHandler, { query: { post: postId, kind: "video" } });
+  const served = await call(mediaHandler, { query: { media: "1", post: postId, kind: "video" } });
   assert.equal(served.status, 404);
 });
 
