@@ -3736,3 +3736,41 @@ body.admin-body {
   gap: 6px;
   margin-top: 4px;
 }
+
+/* ---------------------------------------------------------------------------
+   ÉTAPE 4 — ligne Discord sous chaque membre (pseudo + ID traçable)
+   ------------------------------------------------------------------------- */
+.member-row-discord {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: #8fb8e8;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.member-row-discord-mark {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: #5865f2;
+}
+
+.member-row-discord-mark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.member-row-discord-copy {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

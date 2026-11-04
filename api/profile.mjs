@@ -6,6 +6,7 @@ import {
   readAccountSessionCookie,
 } from "../lib/contact-inbox.mjs";
 import { ensureStateLoaded, syncStateToSupabase } from "../lib/blob-store.mjs";
+import { handleSettingsRequest } from "../lib/discord-link.mjs";
 import {
   MEDIA_KINDS,
   REPORT_REASONS,
@@ -196,6 +197,19 @@ async function servePostMedia(request, response) {
 }
 
 export default async function handler(request, response) {
+  // Étape 4 : paramètres du compte + OAuth2 Discord. Les chemins publics
+  // (/api/settings, /api/auth/discord[/callback]) arrivent ici par rewrites.
+  if (queryValue(request, "qg") === "settings" || queryValue(request, "qg") === "discord") {
+    if (queryValue(request, "qg") === "discord") {
+      request.query = {
+        ...(request.query || {}),
+        oauth: queryValue(request, "callback") === "1" ? "" : "start",
+        ...(queryValue(request, "callback") === "1" ? { callback: "1" } : {}),
+      };
+    }
+    return handleSettingsRequest(request, response);
+  }
+
   if (queryValue(request, "media")) {
     if (request.method !== "GET" && request.method !== "HEAD") {
       response.setHeader("Allow", "GET, HEAD");
@@ -232,9 +246,10 @@ export default async function handler(request, response) {
       ? requestedMode
       : "all";
     const author = queryValue(request, "author");
+    const hideUnverified = ["1", "true"].includes(queryValue(request, "hideUnverified"));
     if (queryValue(request, "feed") || author) {
       try {
-        const posts = await listFeed({ viewer: viewer?.pseudo || "", mode, author }, undefined);
+        const posts = await listFeed({ viewer: viewer?.pseudo || "", mode, author, hideUnverified }, undefined);
         return response.status(200).json({ posts, viewer: viewer ? viewer.pseudo : null });
       } catch (error) {
         console.error("[profile] feed read failed", {

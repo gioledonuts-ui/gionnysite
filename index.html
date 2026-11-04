@@ -506,6 +506,7 @@
                 <span data-x-profile-name>Gionny</span>
                 <svg data-x-profile-view-crown class="x-rail-crown" viewBox="0 0 24 24" aria-hidden="true" hidden><use href="#qg-crown-symbol"></use></svg>
                 <svg data-x-profile-verified class="x-rail-verified" viewBox="0 0 24 24" aria-hidden="true" hidden><use href="#qg-verified-symbol"></use></svg>
+                <svg data-x-profile-lock class="x-profile-lock" viewBox="0 0 24 24" aria-hidden="true" hidden><title>Compte privé</title><rect x="4.4" y="10.2" width="15.2" height="10.4" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M7.8 10.2V7.6a4.2 4.2 0 0 1 8.4 0v2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
               </h3>
               <p class="x-profile-handle"><span data-x-profile-handle>@7gionny</span> <span class="x-profile-follows-you" data-x-profile-follows-you hidden>te suit</span></p>
               <p class="x-profile-bio" data-x-profile-bio>La commu, les lives et les meilleurs moments sont ici. On se retrouve sur Discord, Twitch et YouTube.</p>
@@ -521,7 +522,9 @@
               </div>
             </div>
 
-            <div class="x-profile-tabs" role="tablist" aria-label="Contenus du profil">
+            <p class="x-profile-private" data-x-profile-private role="status" hidden>Ce compte est privé. Seuls ses abonnés approuvés et le QG peuvent voir son activité.</p>
+
+            <div class="x-profile-tabs" role="tablist" aria-label="Contenus du profil" data-x-profile-tabs>
               <button class="x-subtab" type="button" role="tab" data-x-profile-tab="posts" aria-selected="true">Posts</button>
               <button class="x-subtab" type="button" role="tab" data-x-profile-tab="likes" aria-selected="false">J’aime</button>
             </div>
@@ -535,63 +538,166 @@
           <header class="x-view-header">
             <h2 id="x-settings-title">Paramètres</h2>
           </header>
-          <div class="x-guest-panel" data-x-guest-panel hidden>
-            <svg class="x-guest-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.4h10.2M18.2 7.4H20M4 16.6h3.8M11.8 16.6H20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-            <h3>Connecte-toi pour régler ton compte</h3>
-            <p>Compte privé, profil, Discord et déconnexion : tout ça demande un compte. Le filtre de lecture reste dispo pour tout le monde.</p>
-            <div class="x-guest-actions">
-              <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
-              <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
+
+          <!-- Visiteur : seulement les préférences de lecture + l'invite. -->
+          <div class="x-settings-reader" data-x-settings-reader>
+            <div class="x-setting-card x-settings-card" data-x-settings-card="reader">
+              <div class="x-settings-card-head">
+                <svg class="x-settings-card-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 12S6 5.6 12 5.6 21.4 12 21.4 12 18 18.4 12 18.4 2.6 12 2.6 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
+                <div class="x-settings-card-copy">
+                  <p class="x-settings-card-title">Préférences du fil</p>
+                  <p class="x-settings-card-sub">Réglages de lecture, disponibles sans compte.</p>
+                </div>
+              </div>
+              <div class="x-settings-row">
+                <div class="x-settings-row-copy">
+                  <p class="x-settings-row-title">Masquer l’activité des comptes non-validés</p>
+                  <p class="x-settings-row-sub">Le fil ne montre que Gionny et les membres Validés ✓.</p>
+                </div>
+                <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified" aria-label="Masquer l’activité des comptes non-validés"><span class="x-switch-knob"></span></button>
+              </div>
+            </div>
+
+            <div class="x-guest-panel x-settings-guest" data-x-settings-guest>
+              <svg class="x-guest-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.2" r="4.1" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M4.4 20.4a7.7 7.7 0 0 1 15.2 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              <h3>Connecte-toi pour régler ton compte</h3>
+              <p>Discord, confidentialité, comptes bloqués et mot de passe : tout ça demande un compte. Le réglage de lecture ci-dessus reste dispo pour tout le monde.</p>
+              <div class="x-guest-actions">
+                <button class="x-auth-button" type="button" data-x-login>Se connecter</button>
+                <button class="x-auth-button x-auth-button--primary" type="button" data-x-register>S’inscrire</button>
+              </div>
             </div>
           </div>
-          <div class="x-settings">
-            <div class="x-setting-card x-setting-card--reader">
-              <div class="x-setting-card-head">
-                <svg class="x-setting-reader-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.6 12S6 5.6 12 5.6 21.4 12 21.4 12 18 18.4 12 18.4 2.6 12 2.6 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
-                <div class="x-setting-copy">
-                  <p class="x-setting-title">Filtrer ma lecture</p>
-                  <p class="x-setting-copytext">Réglage de lecture, disponible sans compte.</p>
+
+          <!-- Membre connecté : 4 cartes. -->
+          <div class="x-settings-stack" data-x-member-only hidden>
+
+            <!-- 1. Liaison Discord & statut de validation -->
+            <section class="x-setting-card x-settings-card" data-x-settings-card="discord" aria-labelledby="x-settings-discord-title">
+              <div class="x-settings-card-head">
+                <svg class="x-settings-card-icon x-settings-card-icon--discord" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0c-.164-.394-.406-.875-.618-1.25a.077.077 0 0 0-.078-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.01c.12.099.246.198.373.292a.077.077 0 0 1-.007.128c-.6.349-1.22.645-1.873.891a.077.077 0 0 0-.04.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.029ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418Z" fill="currentColor" /></svg>
+                <div class="x-settings-card-copy">
+                  <h3 class="x-settings-card-title" id="x-settings-discord-title">Liaison Discord &amp; statut</h3>
+                  <p class="x-settings-card-sub">Ton ID Discord reste traçable, même si tu changes de pseudo.</p>
+                </div>
+                <span class="x-settings-state" data-x-settings-discord-state aria-live="polite">Non lié</span>
+              </div>
+
+              <div class="x-settings-status" data-x-settings-status>
+                <span class="x-settings-status-badge" data-x-settings-verified hidden>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#qg-verified-symbol"></use></svg>
+                  Validé ✓
+                </span>
+                <span class="x-settings-status-copy" data-x-settings-verified-copy>Badge Validé accordé par Gionny.</span>
+              </div>
+
+              <div class="x-settings-linked" data-x-settings-discord-linked hidden>
+                <div class="x-settings-linked-row">
+                  <svg class="x-settings-discord-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0c-.164-.394-.406-.875-.618-1.25a.077.077 0 0 0-.078-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.01c.12.099.246.198.373.292a.077.077 0 0 1-.007.128c-.6.349-1.22.645-1.873.891a.077.077 0 0 0-.04.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.029ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418Z" fill="currentColor" /></svg>
+                  <div class="x-settings-linked-copy">
+                    <p class="x-settings-linked-name" data-x-settings-discord-name>@—</p>
+                    <p class="x-settings-linked-meta">
+                      <span>ID Discord : <strong data-x-settings-discord-id>—</strong></span>
+                      <span data-x-settings-discord-date></span>
+                    </p>
+                  </div>
+                  <button class="x-settings-button x-settings-button--ghost" type="button" data-x-discord-unlink>Délier</button>
                 </div>
               </div>
-            </div>
-            <div class="x-setting-row" data-x-member-only hidden>
-              <div class="x-setting-copy">
-                <p class="x-setting-title">Compte privé</p>
-                <p class="x-setting-copytext">Quand c’est activé, seul Gionny voit tes réponses et ton profil.</p>
+
+              <div class="x-settings-linkform" data-x-settings-discord-form>
+                <p class="x-settings-help">
+                  <span data-x-discord-mode-oauth hidden>Liaison officielle Discord : aucune photo ni e-mail n’est importé.</span>
+                  <span data-x-discord-mode-code>Colle ton ID Discord et ton pseudo : l’ID est l’identifiant numérique unique, il ne change jamais.</span>
+                </p>
+                <div class="x-settings-fields">
+                  <label class="x-settings-field">
+                    <span>ID Discord</span>
+                    <input type="text" inputmode="numeric" autocomplete="off" placeholder="ex. 284759123456789012" data-x-discord-id-input maxlength="25" />
+                  </label>
+                  <label class="x-settings-field">
+                    <span>Pseudo Discord</span>
+                    <input type="text" autocomplete="off" placeholder="ex. gionny" data-x-discord-username-input maxlength="32" />
+                  </label>
+                </div>
+                <div class="x-settings-actions">
+                  <button class="x-settings-button" type="button" data-x-discord-oauth hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0c-.164-.394-.406-.875-.618-1.25a.077.077 0 0 0-.078-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.01c.12.099.246.198.373.292a.077.077 0 0 1-.007.128c-.6.349-1.22.645-1.873.891a.077.077 0 0 0-.04.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.029ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418Z" fill="currentColor" /></svg>
+                    <span>Lier avec Discord</span>
+                  </button>
+                  <button class="x-settings-button" type="button" data-x-discord-link>Enregistrer la liaison</button>
+                </div>
+                <p class="x-settings-message" data-x-discord-message role="status" aria-live="polite"></p>
               </div>
-              <button class="x-switch" type="button" role="switch" aria-checked="false" data-x-switch="private" aria-label="Compte privé"><span class="x-switch-knob"></span></button>
-            </div>
-            <div class="x-setting-row">
-              <div class="x-setting-copy">
-                <p class="x-setting-title">Masquer les posts des comptes non-validés</p>
-                <p class="x-setting-copytext">Ton fil ne montre que Gionny et les membres Validés.</p>
+            </section>
+
+            <!-- 2. Confidentialité du profil -->
+            <section class="x-setting-card x-settings-card" data-x-settings-card="privacy" aria-labelledby="x-settings-privacy-title">
+              <div class="x-settings-card-head">
+                <svg class="x-settings-card-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.4" y="10.2" width="15.2" height="10.4" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M7.8 10.2V7.6a4.2 4.2 0 0 1 8.4 0v2.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <div class="x-settings-card-copy">
+                  <h3 class="x-settings-card-title" id="x-settings-privacy-title">Confidentialité du profil</h3>
+                  <p class="x-settings-card-sub">Choisis qui peut voir ton activité dans le QG.</p>
+                </div>
+                <span class="x-settings-state" data-x-settings-privacy-state aria-live="polite">Public</span>
               </div>
-              <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified"><span class="x-switch-knob"></span></button>
-            </div>
-            <div class="x-setting-card" data-x-member-only hidden>
-              <div class="x-setting-card-head">
-                <svg class="x-discord-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0c-.164-.394-.406-.875-.618-1.25a.077.077 0 0 0-.078-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.01c.12.099.246.198.373.292a.077.077 0 0 1-.007.128c-.6.349-1.22.645-1.873.891a.077.077 0 0 0-.04.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.029ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418Z" fill="currentColor" /></svg>
-                <div class="x-setting-copy">
-                  <p class="x-setting-title">Lier mon compte Discord</p>
-                  <p class="x-setting-copytext">Bientôt : un seul pseudo entre le QG et le serveur Discord.</p>
+              <div class="x-settings-row">
+                <div class="x-settings-row-copy">
+                  <p class="x-settings-row-title">Passer mon compte en privé</p>
+                  <p class="x-settings-row-sub">Tes posts et tes J’aime ne seront visibles que par tes abonnés approuvés et par Gionny.</p>
+                </div>
+                <button class="x-switch" type="button" role="switch" aria-checked="false" data-x-switch="private" data-x-switch-server="privacy" aria-label="Passer mon compte en privé"><span class="x-switch-knob"></span></button>
+              </div>
+            </section>
+
+            <!-- 3. Préférences de contenu & comptes bloqués -->
+            <section class="x-setting-card x-settings-card" data-x-settings-card="content" aria-labelledby="x-settings-content-title">
+              <div class="x-settings-card-head">
+                <svg class="x-settings-card-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.4h16M4 12h16M4 17.6h10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /><circle cx="18.4" cy="17.6" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8" /></svg>
+                <div class="x-settings-card-copy">
+                  <h3 class="x-settings-card-title" id="x-settings-content-title">Préférences de contenu</h3>
+                  <p class="x-settings-card-sub">Ce que ton fil met en avant, et qui tu as bloqué.</p>
                 </div>
               </div>
-              <button class="x-outline-button x-outline-button--disabled" type="button" disabled>Étape suivante</button>
-            </div>
-            <div class="x-setting-row x-setting-row--stack x-setting-row--logout" data-x-member-only hidden>
-              <div class="x-setting-copy">
-                <p class="x-setting-title">Déconnexion</p>
-                <p class="x-setting-copytext">Ferme ta session sur cet appareil.</p>
+              <div class="x-settings-row">
+                <div class="x-settings-row-copy">
+                  <p class="x-settings-row-title">Masquer l’activité des comptes non-validés</p>
+                  <p class="x-settings-row-sub">Activé par défaut : uniquement l’officiel et les Validés ✓.</p>
+                </div>
+                <button class="x-switch" type="button" role="switch" aria-checked="true" data-x-switch="hideUnverified" aria-label="Masquer l’activité des comptes non-validés"><span class="x-switch-knob"></span></button>
               </div>
-              <button class="x-outline-button x-outline-button--danger" type="button" data-contact-logout><span>Déconnexion</span></button>
-            </div>
-            <div class="x-setting-row x-setting-row--stack" data-x-member-only hidden>
-              <div class="x-setting-copy">
-                <p class="x-setting-title">Mon compte</p>
-                <p class="x-setting-copytext">Pseudo, mot de passe et photo de profil.</p>
+              <div class="x-settings-blocked">
+                <p class="x-settings-row-title">Comptes bloqués</p>
+                <p class="x-settings-row-sub" data-x-blocked-empty>Aucun compte bloqué pour le moment.</p>
+                <ul class="x-settings-blocked-list" data-x-blocked-list role="list"></ul>
               </div>
-              <button class="x-outline-button" type="button" data-x-profile-open>Ouvrir mon profil</button>
-            </div>
+            </section>
+
+            <!-- 4. Sécurité du compte -->
+            <section class="x-setting-card x-settings-card" data-x-settings-card="security" aria-labelledby="x-settings-security-title">
+              <div class="x-settings-card-head">
+                <svg class="x-settings-card-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2 19.4 6v6c0 4.3-3 7.6-7.4 8.8C7.6 19.6 4.6 16.3 4.6 12V6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" /><path d="m9.2 12.1 2 2 3.6-3.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <div class="x-settings-card-copy">
+                  <h3 class="x-settings-card-title" id="x-settings-security-title">Sécurité du compte</h3>
+                  <p class="x-settings-card-sub">Mot de passe et session sur cet appareil.</p>
+                </div>
+              </div>
+              <div class="x-settings-password">
+                <label class="x-settings-field">
+                  <span>Mot de passe actuel</span>
+                  <input type="password" autocomplete="current-password" data-x-settings-current-password maxlength="128" />
+                </label>
+                <label class="x-settings-field">
+                  <span>Nouveau mot de passe</span>
+                  <input type="password" autocomplete="new-password" data-x-settings-new-password maxlength="128" placeholder="8 caractères minimum" />
+                </label>
+                <div class="x-settings-actions">
+                  <button class="x-settings-button" type="button" data-x-settings-password>Changer mon mot de passe</button>
+                  <button class="x-settings-button x-settings-button--danger" type="button" data-contact-logout>Déconnexion</button>
+                </div>
+                <p class="x-settings-message" data-x-settings-password-message role="status" aria-live="polite"></p>
+              </div>
+            </section>
           </div>
         </section>
 

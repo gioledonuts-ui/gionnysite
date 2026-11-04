@@ -4833,3 +4833,460 @@ body {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   7. ÉTAPE 4 — Page « Paramètres » : quatre cartes sobres
+   ---------------------------------------------------------------------------
+   Chaque carte : bg-[#0e1525] border border-[#1e293b] rounded-2xl p-4.
+   Les boutons n'ont pas de contour et s'éclaircissent de +20 % au survol.
+   ------------------------------------------------------------------------- */
+.x-settings-reader,
+.x-settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.x-settings-reader[hidden],
+.x-settings-stack[hidden] {
+  display: none !important;
+}
+
+.x-settings-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  background: #0e1525;
+}
+
+.x-settings-card-head {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.x-settings-card-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #38bdf8;
+}
+
+.x-settings-card-icon--discord {
+  color: #5865f2;
+}
+
+.x-settings-card-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.x-settings-card-title {
+  margin: 0;
+  color: #e7e9ea;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 21px;
+}
+
+.x-settings-card-sub {
+  margin: 3px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.x-settings-state {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  border: 1px solid #1e293b;
+  border-radius: 999px;
+  background: #131d31;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.x-settings-state[data-state="on"] {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+/* Ligne d'interrupteur */
+.x-settings-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0 0;
+  border-top: 1px solid #1e293b;
+}
+
+.x-settings-row-copy {
+  min-width: 0;
+}
+
+.x-settings-row-title {
+  margin: 0;
+  color: #e7e9ea;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 19px;
+}
+
+.x-settings-row-sub {
+  margin: 3px 0 0;
+  color: #94a3b8;
+  font-size: 12.5px;
+  line-height: 17px;
+}
+
+/* Statut de validation */
+.x-settings-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  background: #131d31;
+}
+
+.x-settings-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px 3px 6px;
+  border-radius: 999px;
+  background: rgba(29, 155, 240, 0.16);
+  color: #cfe9ff;
+  font-size: 11.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.x-settings-status-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.x-settings-status-copy {
+  min-width: 0;
+  color: #94a3b8;
+  font-size: 12.5px;
+  line-height: 17px;
+}
+
+/* Bloc « Discord lié » */
+.x-settings-linked {
+  padding: 12px;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  background: #131d31;
+}
+
+.x-settings-linked-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.x-settings-discord-mark {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  color: #5865f2;
+}
+
+.x-settings-linked-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.x-settings-linked-name {
+  margin: 0;
+  color: #e7e9ea;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 19px;
+  overflow-wrap: anywhere;
+}
+
+.x-settings-linked-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 11.5px;
+  line-height: 16px;
+}
+
+.x-settings-linked-meta strong {
+  color: #94a3b8;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Formulaire de liaison */
+.x-settings-linkform {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.x-settings-help {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.x-settings-fields,
+.x-settings-password {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.x-settings-password {
+  flex-direction: column;
+}
+
+.x-settings-field {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 5px;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.x-settings-field input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  background: #070b14;
+  color: #e7e9ea;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0;
+  outline: none;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.x-settings-field input::placeholder {
+  color: #475569;
+}
+
+.x-settings-field input:focus-visible {
+  border-color: #38bdf8;
+  background: #0b1322;
+}
+
+.x-settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Boutons sans contour : +20 % de luminosité au survol. */
+.x-settings-button {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: #131d31;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease, filter 160ms ease, color 160ms ease;
+}
+
+.x-settings-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.x-settings-button:hover,
+.x-settings-button:focus-visible {
+  background: #1d2c4a;
+  filter: brightness(1.2);
+  outline: none;
+}
+
+.x-settings-button:focus-visible {
+  box-shadow: 0 0 0 2px #38bdf8;
+}
+
+.x-settings-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: none;
+}
+
+.x-settings-button--ghost {
+  height: 30px;
+  padding: 0 12px;
+  background: #1d2c4a;
+  font-size: 12px;
+}
+
+.x-settings-button--danger {
+  background: rgba(240, 82, 92, 0.14);
+  color: #ff9aa1;
+}
+
+.x-settings-button--danger:hover,
+.x-settings-button--danger:focus-visible {
+  background: rgba(240, 82, 92, 0.24);
+  color: #ffd0d3;
+}
+
+.x-settings-message {
+  min-height: 16px;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.x-settings-message[data-state="ok"] {
+  color: #4ade80;
+}
+
+.x-settings-message[data-state="error"] {
+  color: #ff8087;
+}
+
+/* Comptes bloqués */
+.x-settings-blocked {
+  padding: 12px 0 0;
+  border-top: 1px solid #1e293b;
+}
+
+.x-settings-blocked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.x-settings-blocked-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  background: #131d31;
+}
+
+.x-settings-blocked-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #e7e9ea;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.x-settings-unblock {
+  height: 30px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #162238;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.x-settings-unblock:hover,
+.x-settings-unblock:focus-visible {
+  background: #223454;
+}
+
+/* --- Profil public : cadenas + message de compte privé ------------------- */
+.x-profile-lock {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  color: #94a3b8;
+}
+
+.x-profile-private {
+  margin: 16px;
+  padding: 14px 16px;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  background: #131d31;
+  color: #94a3b8;
+  font-size: 13.5px;
+  line-height: 19px;
+}
+
+.x-profile-private[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 639px) {
+  .x-settings-reader,
+  .x-settings-stack {
+    padding: 12px;
+  }
+
+  .x-settings-card {
+    padding: 14px;
+  }
+
+  .x-settings-card-head {
+    flex-wrap: wrap;
+  }
+
+  .x-settings-state {
+    order: 3;
+  }
+
+  .x-settings-field {
+    flex-basis: 100%;
+  }
+
+  .x-settings-button {
+    flex: 1 1 auto;
+  }
+}

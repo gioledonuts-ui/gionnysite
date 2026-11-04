@@ -49,6 +49,8 @@
     if (view === "profile") renderProfileView();
     // Ouvrir l'onglet Notifications marque tout comme lu (badge remis à zéro).
     if (view === "notifications") void refreshNotifications({ markRead: true });
+    // Paramètres : on relit les réglages réels du compte à chaque ouverture.
+    if (view === "settings") void loadSettings({ quiet: true });
     if (view === "home") window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -97,6 +99,9 @@
   const blockLabel = $("[data-x-block-label]");
   const reportButton = $("[data-x-report-button]");
   const profileFeedEmpty = $("[data-x-profile-feed-empty]");
+  const profileLock = $("[data-x-profile-lock]");
+  const profilePrivateNote = $("[data-x-profile-private]");
+  const profileTabsNode = $("[data-x-profile-tabs]");
 
   let viewedProfile = null;      // profil public affiché
   let viewerProfile = null;      // profil du compte connecté (bio, Discord…)
@@ -135,8 +140,24 @@
     if (profileDiscord) {
       const discord = profile?.discordUsername || (isSelf ? viewerProfile?.discordUsername : "") || "";
       profileDiscord.hidden = !discord;
-      setText(profileDiscordName, discord ? `@${discord}` : "");
+      setText(profileDiscordName, discord ? `Discord : @${discord}` : "");
     }
+
+    // Étape 4 · compte privé : cadenas à côté du pseudo, activité masquée.
+    const isPrivate = profile?.isPrivate === true;
+    const canSeeActivity = profile ? profile.canSeeActivity !== false : true;
+    if (profileLock) profileLock.hidden = !isPrivate;
+    if (profilePrivateNote) {
+      profilePrivateNote.hidden = !isPrivate || canSeeActivity;
+      profilePrivateNote.textContent = isPrivate && !canSeeActivity
+        ? profile?.privateMessage || "Ce compte est privé. Seuls ses abonnés approuvés et le QG peuvent voir son activité."
+        : "";
+    }
+    if (profileTabsNode) profileTabsNode.hidden = !canSeeActivity;
+    const profileFeedNodeForPrivacy = $("[data-x-profile-feed]");
+    if (profileFeedNodeForPrivacy) profileFeedNodeForPrivacy.hidden = !canSeeActivity;
+    // Le suivi reste possible (l'abonné verra l'activité), la confidentialité
+    // ne bloque jamais le bouton Suivre.
 
     $$("[data-x-profile-host-details]").forEach((node) => { node.hidden = !isHost; });
     $$("[data-x-profile-self-only]").forEach((node) => { node.hidden = !isSelf; });
@@ -234,6 +255,9 @@
         isFollowing: false,
         followsYou: false,
         isBlocked: false,
+        // Le propriétaire voit toujours son propre profil, même privé.
+        isPrivate: viewerProfile?.isPrivate === true,
+        canSeeActivity: true,
       };
       // Le compteur d'abonnés du profil vient du serveur : on le recharge.
       void loadPublicProfile(user.pseudo).then(() => {
@@ -243,6 +267,7 @@
         if (refreshed) myProfile.followersCount = refreshed.followersCount;
         myProfile.isHost = refreshed?.isHost ?? myProfile.isHost;
         myProfile.badges = refreshed?.badges || myProfile.badges;
+        myProfile.isPrivate = refreshed?.isPrivate ?? myProfile.isPrivate;
         paintProfile(myProfile, { isSelf: true });
       });
       paintProfile(myProfile, { isSelf: true });
@@ -1497,6 +1522,8 @@
       const url = new URL("/api/profile", window.location.origin);
       url.searchParams.set("feed", "1");
       url.searchParams.set("mode", mode);
+      // Préférence « Masquer les comptes non-validés », activée par défaut.
+      if (hideUnverifiedEnabled()) url.searchParams.set("hideUnverified", "1");
       const response = await fetch(url.href, {
         headers: { Accept: "application/json" },
         credentials: "same-origin",
@@ -1858,19 +1885,339 @@
     }
   };
 
+  // `hideUnverifiedContent` est activé par défaut : c'est la préférence qui
+  // décide si le fil met en avant uniquement l'officiel et les Validés ✓.
+  const DEFAULT_PREFS = { hideUnverified: true, hideUnverifiedContent: true };
+  const readPreference = (key) => {
+    const prefs = { ...DEFAULT_PREFS, ...readPrefs() };
+    return typeof prefs[key] === "boolean" ? prefs[key] : false;
+  };
+  const hideUnverifiedEnabled = () =>
+    readPreference("hideUnverified") || readPreference("hideUnverifiedContent");
+
   const switches = $$("[data-x-switch]");
   if (switches.length) {
-    const prefs = readPrefs();
+    const prefs = { ...DEFAULT_PREFS, ...readPrefs() };
     switches.forEach((toggle) => {
       const key = toggle.dataset.xSwitch;
       if (typeof prefs[key] === "boolean") toggle.setAttribute("aria-checked", String(prefs[key]));
       toggle.addEventListener("click", () => {
         const next = toggle.getAttribute("aria-checked") !== "true";
-        toggle.setAttribute("aria-checked", String(next));
+        // Plusieurs interrupteurs peuvent porter la même préférence (visiteur
+        // et membre) : on les garde tous synchronisés.
+        $$(`[data-x-switch="${key}"]`).forEach((other) => other.setAttribute("aria-checked", String(next)));
         writePrefs({ ...readPrefs(), [key]: next });
+        if (key === "hideUnverified" || key === "hideUnverifiedContent") {
+          void loadFeed({ mode: feedMode, quiet: true });
+        }
+        if (key === "private") void savePrivacy(next);
       });
     });
   }
+
+
+  /* ------------------------------------------------------------------------
+     ÉTAPE 4 · Page Paramètres, liaison Discord et confidentialité
+     ------------------------------------------------------------------------
+     • la page montre 4 cartes pour un membre, une seule pour un visiteur ;
+     • `GET /api/settings` remplit les valeurs réelles (Discord, privé, bloqués) ;
+     • changer un réglage écrit tout de suite côté serveur (state + Supabase).
+     ---------------------------------------------------------------------- */
+  const settingsReader = $("[data-x-settings-reader]");
+  const settingsStack = $("[data-x-settings-stack]") || $(".x-settings-stack");
+  const discordStatePill = $("[data-x-settings-discord-state]");
+  const discordLinkedBox = $("[data-x-settings-discord-linked]");
+  const discordForm = $("[data-x-settings-discord-form]");
+  const discordNameNode = $("[data-x-settings-discord-name]");
+  const discordIdNode = $("[data-x-settings-discord-id]");
+  const discordDateNode = $("[data-x-settings-discord-date]");
+  const discordMessage = $("[data-x-discord-message]");
+  const discordIdInput = $("[data-x-discord-id-input]");
+  const discordUsernameInput = $("[data-x-discord-username-input]");
+  const discordOauthButton = $("[data-x-discord-oauth]");
+  const discordOauthHint = $("[data-x-discord-mode-oauth]");
+  const discordCodeHint = $("[data-x-discord-mode-code]");
+  const privacyPill = $("[data-x-settings-privacy-state]");
+  const verifiedPill = $("[data-x-settings-verified]");
+  const verifiedCopy = $("[data-x-settings-verified-copy]");
+  const blockedList = $("[data-x-blocked-list]");
+  const blockedEmpty = $("[data-x-blocked-empty]");
+  const passwordMessage = $("[data-x-settings-password-message]");
+
+  let settingsSnapshot = null;
+
+  const setSettingsMessage = (node, text, state = "") => {
+    if (!node) return;
+    node.textContent = text || "";
+    if (state) node.dataset.state = state;
+    else delete node.dataset.state;
+  };
+
+  const settingsRequest = async (body) => {
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, data };
+  };
+
+  const paintBlockedUsers = (users) => {
+    if (!blockedList) return;
+    const list = Array.isArray(users) ? users : [];
+    blockedList.replaceChildren();
+    list.forEach((pseudo) => {
+      const item = document.createElement("li");
+      item.className = "x-settings-blocked-row";
+      const name = document.createElement("span");
+      name.className = "x-settings-blocked-name";
+      name.textContent = `@${pseudo}`;
+      const button = document.createElement("button");
+      button.className = "x-settings-unblock";
+      button.type = "button";
+      button.textContent = "Débloquer";
+      button.dataset.unblock = pseudo;
+      item.append(name, button);
+      blockedList.append(item);
+    });
+    if (blockedEmpty) blockedEmpty.hidden = list.length > 0;
+  };
+
+  const paintSettings = (snapshot) => {
+    settingsSnapshot = snapshot;
+    const settings = snapshot?.settings || {};
+    const discord = settings.discord || {};
+    const isHost = Boolean(currentUser()?.isHost);
+
+    if (settingsReader) settingsReader.hidden = Boolean(snapshot?.viewer);
+    if (settingsStack) settingsStack.hidden = !snapshot?.viewer;
+
+    // Discord
+    const linked = discord.linked === true;
+    if (discordStatePill) {
+      discordStatePill.textContent = linked ? "Lié" : "Non lié";
+      discordStatePill.dataset.state = linked ? "on" : "";
+    }
+    if (discordLinkedBox) discordLinkedBox.hidden = !linked;
+    if (discordForm) discordForm.hidden = linked;
+    setText(discordNameNode, discord.discordUsername ? `@${discord.discordUsername}` : "");
+    setText(discordIdNode, discord.discordId || "—");
+    if (discordDateNode) {
+      discordDateNode.textContent = discord.discordLinkedAt
+        ? `Lié le ${new Date(discord.discordLinkedAt).toLocaleDateString("fr-FR")}`
+        : "";
+    }
+
+    // Mode de liaison : OAuth si les clés existent, sinon ID + pseudo vérifiés.
+    const oauth = snapshot?.oauth === true;
+    if (discordOauthButton) discordOauthButton.hidden = !oauth;
+    if (discordOauthHint) discordOauthHint.hidden = !oauth;
+    if (discordCodeHint) discordCodeHint.hidden = oauth;
+
+    // Confidentialité
+    const isPrivate = settings.isPrivate === true;
+    if (privacyPill) {
+      privacyPill.textContent = isPrivate ? "Privé" : "Public";
+      privacyPill.dataset.state = isPrivate ? "on" : "";
+    }
+    $$('[data-x-switch="private"]').forEach((node) =>
+      node.setAttribute("aria-checked", String(isPrivate))
+    );
+
+    // Statut de validation (lecture seule ici : c'est l'admin qui décide)
+    const verified = Boolean(currentUser()?.isVerified);
+    if (verifiedPill) verifiedPill.hidden = !verified;
+    if (verifiedCopy) {
+      verifiedCopy.textContent = verified
+        ? "Ton badge Validé ✓ est actif : tu peux publier dans le QG."
+        : isHost
+          ? "Compte Hôte : tu publies et épingles toujours."
+          : "Badge Validé non accordé. Gionny peut l’activer depuis l’admin.";
+    }
+
+    // Comptes bloqués
+    paintBlockedUsers(settings.blockedUsers);
+  };
+
+  const loadSettings = async ({ quiet = false } = {}) => {
+    if (!isSignedIn()) {
+      paintSettings({ viewer: null, settings: {}, oauth: false });
+      return null;
+    }
+    try {
+      const response = await fetch("/api/settings", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return null;
+      paintSettings(data);
+      return data;
+    } catch {
+      if (!quiet) setSettingsMessage(discordMessage, "Les paramètres ne peuvent pas être chargés pour le moment.", "error");
+      return null;
+    }
+  };
+
+  async function savePrivacy(next) {
+    if (!isSignedIn()) return;
+    const { ok, data } = await settingsRequest({ action: "privacy", isPrivate: next });
+    if (!ok) {
+      $$('[data-x-switch="private"]').forEach((node) => node.setAttribute("aria-checked", String(!next)));
+      writePrefs({ ...readPrefs(), private: !next });
+      showToast(data?.error || "Ce réglage n’a pas pu être enregistré.");
+      return;
+    }
+    writePrefs({ ...readPrefs(), private: data.isPrivate === true });
+    if (privacyPill) {
+      privacyPill.textContent = data.isPrivate ? "Privé" : "Public";
+      privacyPill.dataset.state = data.isPrivate ? "on" : "";
+    }
+    showToast(data.isPrivate ? "Compte passé en privé" : "Compte repassé en public");
+    // Le profil affiché peut changer d'état : on le recharge.
+    if (activeView === "profile") void renderProfileView();
+  }
+
+  $("[data-x-discord-link]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const discordId = (discordIdInput?.value || "").trim();
+    const discordUsername = (discordUsernameInput?.value || "").trim();
+    setSettingsMessage(discordMessage, "");
+    if (!/^\d{17,20}$/u.test(discordId)) {
+      setSettingsMessage(discordMessage, "L’identifiant Discord doit être le nombre à 17-20 chiffres (clic droit → Copier l’identifiant).", "error");
+      discordIdInput?.focus();
+      return;
+    }
+    if (!discordUsername) {
+      setSettingsMessage(discordMessage, "Indique aussi ton pseudo Discord.", "error");
+      discordUsernameInput?.focus();
+      return;
+    }
+    button.disabled = true;
+    const { ok, data } = await settingsRequest({ action: "discord-link", discordId, discordUsername });
+    button.disabled = false;
+    if (!ok) {
+      setSettingsMessage(discordMessage, data?.error || "La liaison n’a pas pu être enregistrée.", "error");
+      return;
+    }
+    setSettingsMessage(
+      discordMessage,
+      data.verified
+        ? `Discord lié et vérifié : @${data.discord?.discordUsername || discordUsername}`
+        : `Discord lié : @${data.discord?.discordUsername || discordUsername}`,
+      "ok"
+    );
+    if (discordIdInput) discordIdInput.value = "";
+    if (discordUsernameInput) discordUsernameInput.value = "";
+    await loadSettings({ quiet: true });
+    if (activeView === "profile") void renderProfileView();
+  });
+
+  $("[data-x-discord-oauth]")?.addEventListener("click", () => {
+    window.location.href = "/api/auth/discord";
+  });
+
+  $("[data-x-discord-unlink]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    const { ok, data } = await settingsRequest({ action: "discord-unlink" });
+    button.disabled = false;
+    if (!ok) {
+      setSettingsMessage(discordMessage, data?.error || "La liaison n’a pas pu être retirée.", "error");
+      return;
+    }
+    setSettingsMessage(discordMessage, "Liaison Discord retirée.", "ok");
+    await loadSettings({ quiet: true });
+    if (activeView === "profile") void renderProfileView();
+  });
+
+  // Débloquer depuis la liste des comptes bloqués.
+  blockedList?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-unblock]");
+    if (!button) return;
+    const pseudo = button.dataset.unblock;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ action: "unblock", target: pseudo }),
+      });
+      if (!response.ok) throw new Error("unblock-failed");
+      showToast(`@${pseudo} débloqué`);
+      if (blockLabel && viewedProfile?.pseudo?.toLowerCase() === String(pseudo).toLowerCase()) {
+        setText(blockLabel, `Bloquer @${pseudo}`);
+      }
+      await loadSettings({ quiet: true });
+      void loadFeed({ mode: feedMode, quiet: true });
+    } catch {
+      showToast("Ce compte n’a pas pu être débloqué.");
+      button.disabled = false;
+    }
+  });
+
+  // Changement de mot de passe : passe par la route profile existante.
+  $("[data-x-settings-password]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const currentInput = $("[data-x-settings-current-password]");
+    const nextInput = $("[data-x-settings-new-password]");
+    const currentPassword = currentInput?.value || "";
+    const newPassword = nextInput?.value || "";
+    setSettingsMessage(passwordMessage, "");
+    if (!currentPassword) {
+      setSettingsMessage(passwordMessage, "Saisis ton mot de passe actuel.", "error");
+      currentInput?.focus();
+      return;
+    }
+    if (newPassword.length < 8) {
+      setSettingsMessage(passwordMessage, "Le nouveau mot de passe doit faire 8 caractères minimum.", "error");
+      nextInput?.focus();
+      return;
+    }
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ action: "profile", currentPassword, newPassword }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setSettingsMessage(passwordMessage, data?.error || "Le mot de passe n’a pas pu être modifié.", "error");
+        return;
+      }
+      if (currentInput) currentInput.value = "";
+      if (nextInput) nextInput.value = "";
+      setSettingsMessage(passwordMessage, "Mot de passe mis à jour et enregistré.", "ok");
+      showToast("Mot de passe mis à jour");
+    } catch {
+      setSettingsMessage(passwordMessage, "Le mot de passe n’a pas pu être modifié.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  // Retour d'OAuth Discord : ?discord=linked&discord_username=…
+  (() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("discord");
+    if (!status) return;
+    params.delete("discord");
+    params.delete("discord_username");
+    const url = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", url);
+    setActiveView("settings");
+    if (status === "linked") showToast("Discord lié au QG");
+    else if (status === "unconfigured") showToast("Liaison Discord : le mode ID + pseudo est actif.");
+    else if (status === "taken") showToast("Ce Discord est déjà lié à un autre compte.");
+    else if (status === "login") showToast("Connecte-toi avant de lier ton Discord.");
+    else if (status === "invalid_state" || status === "failed") showToast("La liaison Discord a échoué. Réessaie.");
+  })();
 
   /* ------------------------------------------------------------------------
      Toutes les actions sensibles passent par les boutons d'origine
