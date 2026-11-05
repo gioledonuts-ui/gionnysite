@@ -1,0 +1,2695 @@
+/* Shared SVG badge, player, and X-style composer refinements. */
+
+.qg-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  flex: 0 0 auto;
+  vertical-align: -0.18em;
+}
+
+.verified-badge,
+.member-row-verified-badge,
+.conversation-list-verified-badge,
+.thread-message-verified-badge {
+  display: inline-flex;
+  width: 1.1em;
+  height: 1.1em;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -0.14em;
+}
+
+.verified-badge[hidden],
+.member-row-verified-badge[hidden],
+.conversation-list-verified-badge[hidden],
+.thread-message-verified-badge[hidden] {
+  display: none !important;
+}
+
+.verified-badge-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.member-profile-name-line {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.host-crown-icon {
+  filter: drop-shadow(0 1px 2px rgba(227, 151, 21, 0.38));
+}
+
+.subject-label-icon {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.38em;
+  vertical-align: -0.15em;
+  opacity: 0.82;
+}
+
+.chat-receipt-icon {
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+}
+
+/* The top-right visited marker must coexist with each carousel action. */
+.creator-slide .creator-visited-badge,
+.creator-slide .creator-state-pill--visited {
+  flex: 0 0 auto;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.creator-slide .discord-footer {
+  align-items: flex-end;
+}
+
+.creator-slide .discord-action {
+  justify-content: flex-start;
+}
+
+.creator-slide .discord-action-default {
+  min-height: 42px;
+  padding-inline: 19px;
+  font-size: 11px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.creator-slide .discord-action-default .qg-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.visited-badge,
+.creator-state-pill--visited {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Icon-led labels and compact, uppercase action affordances. */
+.member-access-button,
+.contact-auth-tabs button,
+.contact-send,
+.contact-logout,
+.profile-done-button,
+.profile-logout-button,
+.profile-pseudo-cancel,
+.profile-password-toggle,
+.chat-menu-option,
+.chat-subject-option,
+.contact-thread-state,
+.contact-thread-closed button,
+.legal-admin-button,
+.legal-dialog-done {
+  font-weight: 850;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+.chat-plus-button > .qg-icon,
+.contact-voice-record > .qg-icon,
+.contact-voice-stop > .qg-icon,
+.contact-voice-send > .qg-icon,
+.x-chat-cancel-button > .qg-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.chat-plus-button[disabled],
+.x-chat-cancel-button[disabled],
+.contact-voice-stop[disabled],
+.contact-voice-send[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.x-chat-cancel-button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 112, 128, 0.28);
+  border-radius: 50%;
+  background: rgba(255, 63, 87, 0.12);
+  color: #ffc0c7;
+  cursor: pointer;
+}
+
+.x-chat-cancel-button:hover:not(:disabled) {
+  border-color: rgba(255, 123, 140, 0.55);
+  background: rgba(255, 63, 87, 0.2);
+}
+
+.x-chat-cancel-button[hidden],
+.x-voice-panel[hidden],
+.x-voice-live[hidden],
+.x-voice-preview[hidden],
+.x-voice-send[hidden],
+[data-voice-status][hidden],
+[data-admin-voice-status][hidden] {
+  display: none !important;
+}
+
+.contact-voice.x-voice-panel {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0;
+}
+
+.contact-voice-recorder.x-voice-pill {
+  display: flex;
+  min-width: 0;
+  min-height: 42px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid rgba(111, 165, 244, 0.3);
+  border-radius: 999px;
+  background: linear-gradient(125deg, #153b76, #245ab2 58%, #3275d1);
+  box-shadow: 0 5px 20px rgba(17, 67, 157, 0.2);
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.contact-voice.x-voice-panel[data-state="recording"] .contact-voice-recorder {
+  border-color: rgba(255, 100, 120, 0.4);
+  background: linear-gradient(125deg, #351b2b, #5c202b 56%, #752735);
+  box-shadow: 0 5px 20px rgba(97, 21, 36, 0.22);
+}
+
+.contact-voice-recording-controls.x-voice-live {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  grid-template-columns: 42px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-voice-timer.x-voice-timer {
+  color: #fff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-voice-wave.x-voice-wave {
+  display: flex;
+  min-width: 0;
+  height: 31px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.x-voice-bar {
+  display: block;
+  width: 2px;
+  min-width: 2px;
+  max-width: 4px;
+  height: var(--bar-height, 50%);
+  flex: 1 1 2px;
+  border-radius: 999px;
+  background: rgba(255, 246, 247, 0.54);
+  transform: scaleY(0.12);
+  transform-origin: center;
+  transition: transform 65ms linear, background-color 120ms ease;
+}
+
+.x-voice-panel[data-state="recording"] .x-voice-bar {
+  background: linear-gradient(180deg, #ffc6cb, #ff536b);
+  box-shadow: 0 0 6px rgba(255, 66, 96, 0.16);
+}
+
+.contact-voice-stop.x-voice-stop,
+.contact-voice-send.x-voice-send {
+  display: grid;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.contact-voice-stop.x-voice-stop {
+  border-color: rgba(255, 173, 183, 0.44);
+  background: rgba(255, 51, 77, 0.22);
+}
+
+.contact-voice-send.x-voice-send {
+  background: #fff;
+  color: #1d56a7;
+}
+
+.contact-voice-preview.x-voice-preview {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.contact-voice-preview .qg-voice-player--preview {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  grid-template-columns: 29px minmax(20px, 1fr) auto;
+  gap: 5px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.contact-voice-preview .qg-voice-player-play {
+  width: 28px;
+  min-height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.contact-voice-preview .qg-voice-player-play .qg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.contact-voice-preview .qg-voice-player-wave {
+  height: 27px;
+  padding: 0 3px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 var(--voice-progress, 0%), rgba(255, 255, 255, 0.045) var(--voice-progress, 0%) 100%);
+}
+
+.contact-voice-preview .qg-voice-player-bar {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.contact-voice-preview .qg-voice-player-bar.is-played {
+  background: #fff;
+}
+
+.contact-voice-preview .qg-voice-player-time {
+  min-width: 38px;
+  color: #fff;
+  font-size: 9px;
+}
+
+.contact-voice-send.x-voice-send {
+  flex: 0 0 30px;
+}
+
+.contact-voice-status[data-voice-status] {
+  width: 100%;
+  color: #a9c6e8;
+  font-size: 9px;
+}
+
+.contact-voice-status[data-kind="error"] {
+  color: #ffabb5;
+}
+
+.contact-voice-status[data-kind="success"] {
+  color: #91e6c4;
+}
+
+.qg-voice-player {
+  grid-template-columns: 35px minmax(42px, 1fr) auto;
+}
+
+.contact-chat-message .qg-voice-player--message,
+.thread-message .qg-voice-player--message {
+  border-color: rgba(145, 190, 255, 0.26);
+  background: linear-gradient(135deg, #174b99, #2468c7 62%, #327bda);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-play,
+.thread-message .qg-voice-player--message .qg-voice-player-play {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.17);
+  color: #fff;
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-wave,
+.thread-message .qg-voice-player--message .qg-voice-player-wave {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0 var(--voice-progress, 0%), rgba(255, 255, 255, 0.1) var(--voice-progress, 0%) 100%);
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-bar,
+.thread-message .qg-voice-player--message .qg-voice-player-bar {
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-bar.is-played,
+.thread-message .qg-voice-player--message .qg-voice-player-bar.is-played {
+  background: #fff;
+}
+
+.contact-chat-message .qg-voice-player--message .qg-voice-player-time,
+.thread-message .qg-voice-player--message .qg-voice-player-time {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chat-read-receipt .qg-icon {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.chat-attachment-image > img,
+.thread-attachment-image > img {
+  border-radius: 12px;
+}
+
+.chat-image-preview button .qg-icon,
+.admin-chat-image-preview button .qg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 460px) {
+  .creator-slide .discord-footer {
+    gap: 7px;
+  }
+
+  .creator-slide .discord-action-default {
+    min-height: 38px;
+    padding-inline: 12px;
+    font-size: 9px;
+  }
+
+  .contact-voice-recording-controls.x-voice-live {
+    grid-template-columns: 38px minmax(0, 1fr) 29px;
+    gap: 5px;
+  }
+
+  .contact-voice-timer.x-voice-timer {
+    font-size: 8px;
+  }
+
+  .contact-voice-stop.x-voice-stop,
+  .contact-voice-send.x-voice-send {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+  }
+}
+
+/* Admin companion styles: keep the same shared controller and SVG vocabulary. */
+
+.admin-body button,
+.admin-body .member-action-button,
+.admin-body .admin-tab,
+.admin-body .mail-filter-tab,
+.admin-body .conversation-actions .quiet-button,
+.admin-body .mail-bulk-actions button,
+.admin-body .quiet-button,
+.admin-body .reply-send {
+  font-weight: 850;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+}
+
+.admin-body .member-row-verified-badge,
+.admin-body .conversation-list-verified-badge,
+.admin-body .thread-message-verified-badge {
+  width: 15px;
+  height: 15px;
+}
+
+.admin-body .conversation-list-subject,
+.admin-body .thread-subject {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 3px;
+}
+
+.admin-body .subject-label-icon {
+  width: 12px;
+  height: 12px;
+  margin-right: 1px;
+}
+
+.admin-body .member-action-button--verified {
+  border-color: rgba(74, 164, 255, 0.32);
+  background: rgba(29, 155, 240, 0.1);
+  color: #c8e6ff;
+}
+
+.admin-body .member-action-button--verified:hover:not(:disabled) {
+  border-color: rgba(74, 164, 255, 0.6);
+  background: rgba(29, 155, 240, 0.18);
+  color: #fff;
+}
+
+.admin-body .member-row-name-line,
+.admin-body .conversation-list-head {
+  align-items: center;
+}
+
+.admin-body .member-row-verified-badge .qg-icon,
+.admin-body .conversation-list-verified-badge .qg-icon,
+.admin-body .thread-message-verified-badge .qg-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-body .conversation-host-crown svg,
+.admin-body .conversation-list-host-crown svg,
+.admin-body .thread-message-host-crown svg {
+  width: 15px;
+  height: 15px;
+  filter: drop-shadow(0 1px 2px rgba(227, 151, 21, 0.38));
+}
+
+.admin-body .conversation-list-star .qg-icon,
+.admin-body [data-bulk-favorite] .qg-icon,
+.admin-body .member-row-actions .qg-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-body .conversation-list-star {
+  display: grid;
+  place-items: center;
+}
+
+.admin-body [data-bulk-favorite],
+.admin-body .member-action-button--write {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.admin-body .conversation-list-star[data-favorite="true"] {
+  color: #ffd36f;
+}
+
+.admin-body .admin-chat-compose-row {
+  gap: 8px;
+}
+
+.admin-body .admin-voice-panel.x-voice-panel {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.admin-body .admin-voice-pill.x-voice-pill {
+  display: flex;
+  min-width: 0;
+  min-height: 42px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid rgba(111, 165, 244, 0.3);
+  border-radius: 999px;
+  background: linear-gradient(125deg, #153b76, #245ab2 58%, #3275d1);
+  box-shadow: 0 5px 20px rgba(17, 67, 157, 0.2);
+}
+
+.admin-body .admin-voice-panel[data-state="recording"] .admin-voice-pill {
+  border-color: rgba(255, 100, 120, 0.42);
+  background: linear-gradient(125deg, #351b2b, #5c202b 56%, #752735);
+}
+
+.admin-body .admin-voice-recording-controls.x-voice-live {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  grid-template-columns: 42px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-body .admin-voice-timer.x-voice-timer {
+  color: #fff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-body .admin-voice-wave.x-voice-wave {
+  display: flex;
+  min-width: 0;
+  height: 31px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.admin-body .admin-voice-wave .x-voice-bar {
+  background: rgba(255, 246, 247, 0.54);
+}
+
+.admin-body .admin-voice-panel[data-state="recording"] .admin-voice-wave .x-voice-bar {
+  background: linear-gradient(180deg, #ffc6cb, #ff536b);
+}
+
+.admin-body .admin-voice-stop.x-voice-stop,
+.admin-body .admin-voice-send.x-voice-send {
+  display: grid;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.admin-body .admin-voice-stop.x-voice-stop {
+  border-color: rgba(255, 173, 183, 0.44);
+  background: rgba(255, 51, 77, 0.22);
+}
+
+.admin-body .admin-voice-send.x-voice-send {
+  border-color: #fff;
+  background: #fff;
+  color: #1d56a7;
+}
+
+.admin-body .admin-voice-preview.x-voice-preview {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.admin-body .admin-voice-preview .qg-voice-player--preview {
+  width: 100%;
+  max-width: none;
+  min-height: 36px;
+  grid-template-columns: 29px minmax(20px, 1fr) auto;
+  gap: 5px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-body .admin-voice-preview .qg-voice-player-play {
+  width: 28px;
+  min-height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.admin-body .admin-voice-preview .qg-voice-player-wave {
+  height: 27px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 var(--voice-progress, 0%), rgba(255, 255, 255, 0.045) var(--voice-progress, 0%) 100%);
+}
+
+.admin-body .admin-voice-preview .qg-voice-player-bar {
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.admin-body .admin-voice-preview .qg-voice-player-bar.is-played {
+  background: #fff;
+}
+
+.admin-body .admin-voice-preview .qg-voice-player-time {
+  min-width: 38px;
+  color: #fff;
+  font-size: 9px;
+}
+
+.admin-body .admin-voice-status {
+  min-height: 0;
+  margin: 0;
+  color: #a9c6e8;
+  font-size: 9px;
+}
+
+.admin-body .admin-voice-status[data-kind="error"] {
+  color: #ffabb5;
+}
+
+.admin-body .admin-voice-status[data-kind="success"] {
+  color: #91e6c4;
+}
+
+.admin-body .admin-chat-voice-record .qg-icon,
+.admin-body .admin-chat-plus .qg-icon,
+.admin-body .admin-voice-action .qg-icon,
+.admin-body .x-chat-cancel-button .qg-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.admin-body .admin-chat-voice-record[data-mode="voice"] {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-body .admin-chat-voice-record[data-mode="send"] {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.admin-body .admin-voice-panel[hidden],
+.admin-body .admin-voice-recording-controls[hidden],
+.admin-body .admin-voice-preview[hidden],
+.admin-body .admin-voice-send[hidden],
+.admin-body .admin-voice-status[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 620px) {
+  .admin-body .admin-voice-recording-controls.x-voice-live {
+    grid-template-columns: 38px minmax(0, 1fr) 29px;
+    gap: 5px;
+  }
+
+  .admin-body .admin-voice-timer.x-voice-timer {
+    font-size: 8px;
+  }
+}
+
+.creator-carousel .creator-slide-topline {
+  position: relative;
+  padding-right: 132px;
+}
+
+.creator-carousel .creator-slide-topline > .creator-visited-badge,
+.creator-carousel .creator-slide-topline > .creator-state-pill--visited {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+  min-height: 23px;
+  margin: 0;
+}
+
+.creator-carousel .creator-slide-topline > .creator-visited-badge[hidden],
+.creator-carousel .creator-slide-topline > .creator-state-pill--visited[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 460px) {
+  .creator-carousel .creator-slide-topline {
+    padding-right: 114px;
+  }
+}
+
+.qg-icon[hidden],
+.chat-input-surface[hidden],
+.contact-voice.x-voice-panel[hidden],
+.contact-voice-recording-controls.x-voice-live[hidden],
+.contact-voice-preview.x-voice-preview[hidden],
+.contact-voice-send.x-voice-send[hidden],
+.chat-plus-button[hidden] {
+  display: none !important;
+}
+
+
+/* Normal-scale layout, visual-viewport dialogs, and stable X-style chat. */
+:root {
+  --qg-visual-viewport-height: 100dvh;
+  --qg-visual-viewport-top: 0px;
+}
+
+html,
+body {
+  max-width: 100%;
+}
+
+.site-shell,
+.hub-layout,
+.welcome-panel,
+.networks-panel,
+.creator-carousel,
+.network-grid,
+.contact-widget {
+  min-width: 0;
+}
+
+.member-profile-crown {
+  width: 13px;
+  height: 13px;
+  color: #ffd36f;
+  filter: drop-shadow(0 1px 2px rgba(227, 151, 21, 0.38));
+}
+
+.member-profile-crown[hidden] {
+  display: none !important;
+}
+
+.welcome-account-bar {
+  height: 42px;
+  min-height: 42px;
+  align-items: center;
+  padding-block: 3px;
+}
+
+.welcome-account-identity,
+.member-visitor,
+.member-identity {
+  min-height: 30px;
+  align-items: center;
+}
+
+.member-access-actions {
+  height: 30px;
+  min-height: 30px;
+  flex-shrink: 1;
+  align-items: center;
+}
+
+.member-access-button {
+  display: inline-flex;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.site-presence {
+  min-height: 26px;
+  align-items: center;
+}
+
+/* Native account/legal dialogs stay centered in the visible viewport, including above a mobile keyboard. */
+:is(.about-dialog, .legal-dialog, .profile-dialog)[open] {
+  position: fixed;
+  inset-inline: 0;
+  top: var(--qg-visual-viewport-top, 0px);
+  bottom: max(0px, calc(100vh - var(--qg-visual-viewport-top, 0px) - var(--qg-visual-viewport-height, 100dvh)));
+  margin-block: auto;
+}
+
+.about-dialog {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 720px);
+}
+
+.legal-dialog {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 760px);
+}
+
+.profile-dialog {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 760px);
+}
+
+.profile-dialog-card {
+  max-height: min(calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px), 760px);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.legal-dialog-card {
+  min-height: 0;
+  max-height: inherit;
+}
+
+.legal-dialog-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.legal-dialog-done {
+  width: 100%;
+  min-height: 42px;
+  align-self: stretch;
+  justify-self: stretch;
+}
+
+:is(.about-dialog-close, .legal-dialog-close, .profile-dialog-close, .contact-dialog-close) {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  text-align: center;
+}
+
+:is(.about-dialog-close, .legal-dialog-close, .profile-dialog-close, .contact-dialog-close) > .qg-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Login/register from the account bar opens a centered root-level dialog; launcher chat remains docked. */
+.contact-widget[data-open-context="top"] {
+  position: fixed;
+  top: var(--qg-visual-viewport-top, 0px);
+  right: 0;
+  bottom: max(0px, calc(100vh - var(--qg-visual-viewport-top, 0px) - var(--qg-visual-viewport-height, 100dvh)));
+  left: 0;
+  width: min(430px, calc(100vw - 24px));
+  height: min(620px, calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px));
+  max-height: calc(var(--qg-visual-viewport-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
+  margin: auto;
+  transform: none;
+  animation-name: contact-widget-in;
+}
+
+.contact-widget[data-open-context="top"] .contact-dialog-card {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Keep chat history scrollable while the composer remains anchored to the widget bottom. */
+.contact-widget .contact-thread {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.contact-widget .contact-thread-heading,
+.contact-widget .contact-thread-closed {
+  flex: 0 0 auto;
+}
+
+.contact-widget .contact-thread-messages {
+  min-height: 0;
+  max-height: none;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 10px 13px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.contact-widget .contact-thread-status {
+  min-height: 0;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 13px;
+}
+
+.contact-widget .contact-thread-status:empty {
+  display: none;
+}
+
+.contact-widget .contact-reply-form.contact-chat-composer {
+  width: 100%;
+  min-height: 0;
+  flex: 0 0 auto;
+  margin-top: auto;
+  gap: 6px;
+  padding: 8px 13px max(10px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(183, 210, 249, 0.12);
+}
+
+.contact-widget .contact-voice-status {
+  min-height: 0;
+  margin: 0 2px;
+  color: #a9c6e8;
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+.contact-widget .contact-voice-status[data-kind="error"] {
+  color: #ffabb5;
+}
+
+.contact-widget .contact-voice-status[data-kind="success"] {
+  color: #91e6c4;
+}
+
+.contact-widget .contact-voice-status[hidden],
+.admin-body .admin-voice-status[hidden] {
+  display: none !important;
+}
+
+/* Audio is the blue message bubble itself; metadata and receipts stay below it. */
+.contact-chat-message.contact-chat-message--audio,
+.thread-message.thread-message--audio {
+  width: min(100%, 340px);
+  max-width: min(90%, 360px);
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.contact-chat-message--audio .contact-chat-identity,
+.thread-message--audio .thread-message-identity {
+  min-width: 0;
+  margin-inline: 2px;
+}
+
+.contact-chat-message--audio .contact-chat-audio,
+.thread-message--audio .thread-message-audio {
+  width: min(320px, 100%);
+  max-width: 100%;
+  margin: 0;
+}
+
+.contact-chat-message--audio .qg-voice-player--message,
+.thread-message--audio .qg-voice-player--message {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 999px;
+}
+
+.contact-chat-message--audio .contact-chat-meta,
+.thread-message--audio .thread-message-meta {
+  min-height: 14px;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-inline: 4px;
+}
+
+.contact-chat-date,
+.thread-message-date {
+  color: rgba(196, 210, 231, 0.86);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-chat-sender,
+.thread-message-sender {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.contact-chat-text,
+.thread-message-text {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Stable floating contact action: unread state adds a badge, never changes the button footprint. */
+.contact-launcher,
+.contact-launcher[data-has-messages="true"] {
+  width: 158px;
+  min-width: 158px;
+  height: 54px;
+  min-height: 54px;
+  padding: 0 17px;
+  border-radius: 999px;
+}
+
+.contact-launcher .contact-launcher-label,
+.contact-launcher[data-has-messages="true"] .contact-launcher-label {
+  display: inline;
+}
+
+.contact-launcher svg {
+  display: block;
+}
+
+/* Social-carousel badges stay on one line; action buttons and account handles share a fixed footer stack. */
+.creator-carousel .discord-footer {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-top: auto;
+}
+
+.creator-carousel .discord-action {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.creator-carousel .discord-community-meta {
+  width: 100%;
+  flex: 0 0 auto;
+  justify-items: start;
+  gap: 1px;
+  padding: 0;
+  text-align: left;
+}
+
+.creator-carousel .discord-invite {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+@media (max-width: 940px) {
+  .network-grid {
+    justify-items: stretch;
+  }
+}
+
+@media (max-width: 760px) {
+  .welcome-account-bar {
+    height: 42px;
+    min-height: 42px;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 3px 5px;
+    border-radius: 13px;
+  }
+
+  .welcome-account-identity {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .member-access-actions {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .member-access-button {
+    padding-inline: 6px;
+    font-size: 7.5px;
+    letter-spacing: 0.035em;
+  }
+
+  .member-profile-pseudo {
+    max-width: clamp(38px, 13vw, 78px);
+    font-size: 9px;
+  }
+
+  .site-presence {
+    min-height: 21px;
+    gap: 3px;
+    padding-inline: 5px;
+    font-size: 7px;
+  }
+
+  .site-presence strong {
+    font-size: 8px;
+  }
+
+  .creator-carousel .creator-slide-topline {
+    position: relative;
+    display: flex;
+    max-width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+
+  .creator-carousel .creator-slide-topline::-webkit-scrollbar {
+    display: none;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-visited-badge,
+  .creator-carousel .creator-slide-topline > .creator-state-pill--visited {
+    position: static;
+    inset: auto;
+    flex: 0 0 auto;
+    min-height: 19px;
+    margin: 0;
+    padding: 2px 5px;
+    font-size: 6.5px;
+    letter-spacing: 0.045em;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-visited-badge[hidden],
+  .creator-carousel .creator-slide-topline > .creator-state-pill--visited[hidden] {
+    display: none !important;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-state-pill {
+    min-height: 19px;
+    gap: 3px;
+    padding: 2px 5px;
+    font-size: 6.5px;
+    letter-spacing: 0.045em;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-state-pill .creator-pill-icon,
+  .creator-carousel .creator-slide-topline > .creator-state-pill .qg-icon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .creator-carousel .discord-content {
+    min-height: 0;
+    gap: 6px;
+  }
+
+  .creator-carousel .discord-detail {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .creator-carousel .discord-footer {
+    gap: 2px;
+  }
+
+  .creator-carousel .discord-community-meta {
+    padding: 0;
+  }
+
+  .network-grid {
+    justify-items: stretch;
+  }
+
+  .contact-launcher,
+  .contact-launcher[data-has-messages="true"] {
+    width: 150px;
+    min-width: 150px;
+    height: 50px;
+    min-height: 50px;
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 390px) {
+  .welcome-account-bar {
+    gap: 3px;
+    padding-inline: 4px;
+  }
+
+  .member-identity .member-profile-avatar {
+    display: none;
+  }
+
+  .member-identity {
+    gap: 4px;
+  }
+
+  .member-profile-pseudo {
+    max-width: clamp(36px, 11vw, 43px);
+  }
+
+  .member-access-button {
+    padding-inline: 4px;
+    font-size: 7px;
+    letter-spacing: 0.025em;
+  }
+
+  .creator-carousel .creator-slide-topline > .creator-state-pill,
+  .creator-carousel .creator-slide-topline > .creator-visited-badge,
+  .creator-carousel .creator-slide-topline > .creator-state-pill--visited {
+    padding-inline: 4px;
+    font-size: 6px;
+  }
+}
+
+@media (max-width: 350px) {
+  .site-presence {
+    display: none !important;
+  }
+}
+
+/* The desktop homepage shares the viewport between the hero and five social cards. */
+@media (min-width: 941px) and (max-width: 1179px) {
+  .site-shell {
+    min-height: 100svh;
+  }
+
+  .hub-layout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-content: stretch;
+    align-items: stretch;
+    gap: 12px;
+    padding-block: 8px;
+  }
+
+  .welcome-panel {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 8px;
+    padding: 44px 13px 12px;
+  }
+
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: clamp(78px, 9vw, 104px) minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .profile-frame {
+    width: clamp(78px, 9vw, 104px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.7rem, 3vw, 2.4rem);
+  }
+
+  .welcome-actions {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 7px;
+  }
+
+  .creator-carousel {
+    height: 218px;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 218px;
+  }
+
+  .welcome-actions .schedule-card {
+    padding: 8px 10px;
+  }
+
+  .networks-panel {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .network-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 64px;
+    gap: 6px;
+    padding: 7px;
+  }
+
+  .site-footer {
+    margin-top: 0;
+    padding-block: 6px;
+  }
+}
+
+@media (min-width: 1180px) {
+  .site-shell {
+    min-height: 100svh;
+  }
+
+  .hub-layout {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+    align-content: stretch;
+    align-items: stretch;
+    gap: clamp(12px, 1.2vw, 18px);
+    padding-block: clamp(6px, 1vh, 12px);
+  }
+
+  .welcome-panel {
+    height: 100%;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.06fr) minmax(260px, 0.94fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-content: stretch;
+    gap: clamp(12px, 1.5vw, 22px);
+    padding: 44px clamp(16px, 1.5vw, 24px) 16px;
+  }
+
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: clamp(90px, 8.4vw, 128px) minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .profile-frame {
+    width: clamp(90px, 8.4vw, 128px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(2.05rem, 3.15vw, 3.35rem);
+  }
+
+  .welcome-actions {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 8px;
+  }
+
+  .creator-carousel {
+    height: clamp(220px, 28vh, 250px);
+  }
+
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 0;
+  }
+
+  .networks-panel {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(14px, 1.4vw, 20px);
+  }
+
+  .network-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 8px;
+  }
+
+  .network-card,
+  .network-card--wide {
+    min-height: 68px;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .site-footer {
+    margin-top: 0;
+    padding-block: 6px;
+  }
+}
+
+@media (min-width: 961px) {
+  body.admin-body {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .admin-body .admin-shell {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .admin-body .admin-layout {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .admin-body .admin-workspace,
+  .admin-body .admin-workspace > .admin-panel,
+  .admin-body .conversation-content,
+  .admin-body .conversation-detail {
+    min-height: 0;
+  }
+
+  .admin-body .admin-workspace {
+    height: 100%;
+  }
+
+  .admin-body .conversation-content {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .admin-body .conversation-history {
+    min-height: 0;
+    max-height: none;
+    flex: 1 1 auto;
+    overflow-y: auto;
+  }
+
+  .admin-body .conversation-reply-form {
+    flex: 0 0 auto;
+    margin-top: auto;
+  }
+}
+
+.admin-body .thread-message.thread-message--audio {
+  width: min(100%, 360px);
+  max-width: min(90%, 380px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-body .thread-message--audio .thread-message-audio {
+  width: min(320px, 100%);
+  max-width: 100%;
+  margin: 0;
+}
+
+.admin-body .thread-message--audio .qg-voice-player--message {
+  width: 100%;
+  border-radius: 999px;
+}
+
+.admin-body .thread-message--audio .thread-message-meta {
+  padding-inline: 4px;
+}
+
+.admin-body .thread-message-date {
+  color: rgba(196, 210, 231, 0.92);
+  font-size: 10px;
+}
+
+.admin-body .admin-chat-composer {
+  gap: 5px;
+}
+
+.admin-body .admin-voice-status {
+  min-height: 0;
+  margin: 0 2px;
+  color: #a9c6e8;
+  font-size: 9px;
+  line-height: 1.25;
+}
+
+@media (max-width: 760px) {
+  .contact-widget[data-open-context="top"] {
+    width: calc(100vw - 24px);
+  }
+}
+
+/* Compact, legible schedule with a strong hour and an explicit next-live marker. */
+.schedule-card {
+  margin-top: 0;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
+.schedule-topline {
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.schedule-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.schedule-mark svg {
+  width: 17px;
+  height: 17px;
+}
+
+.schedule-copy h2 {
+  font-size: 12px;
+}
+
+.schedule-copy p {
+  font-size: 8px;
+}
+
+.schedule-topline .schedule-time {
+  min-width: 52px;
+  justify-content: center;
+  padding: 6px 8px;
+  border: 1px solid rgba(114, 214, 255, 0.24);
+  border-radius: 11px;
+  background: rgba(79, 131, 244, 0.13);
+  color: #b9eeff;
+  font-size: 23px;
+  font-weight: 850;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  text-shadow: 0 0 16px rgba(114, 214, 255, 0.22);
+}
+
+.schedule-topline .schedule-time span {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.schedule-topline .schedule-time[data-layout="varied"] {
+  max-width: 76px;
+  min-width: 0;
+  padding: 6px;
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: pre-line;
+}
+
+.schedule-topline .schedule-time[data-layout="empty"] {
+  min-width: 0;
+  font-size: 14px;
+}
+
+.schedule-days li {
+  min-height: 29px;
+  border-radius: 9px;
+  font-size: 8px;
+}
+
+.schedule-days li[data-next-live] {
+  display: flex;
+  min-height: 39px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  border-color: rgba(102, 207, 255, 0.58);
+  background: linear-gradient(145deg, rgba(50, 132, 220, 0.3), rgba(79, 131, 244, 0.16));
+  box-shadow: 0 0 0 1px rgba(73, 174, 255, 0.08), 0 5px 15px rgba(33, 117, 208, 0.14);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.schedule-days li[data-next-live] .schedule-day-name {
+  font-weight: 900;
+}
+
+.schedule-days .schedule-day-next-label {
+  color: #9ee9ff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 6px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+}
+
+.schedule-days .schedule-day-next-label[hidden] {
+  display: none !important;
+}
+
+.schedule-countdown,
+.schedule-countdown-live {
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 8px;
+}
+
+.schedule-countdown {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.schedule-countdown [data-next-live-prefix] {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.schedule-countdown [data-next-live-prefix] .qg-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.schedule-countdown .schedule-countdown-value {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid rgba(114, 214, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(4, 13, 26, 0.52);
+  color: #eaf8ff;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgba(98, 188, 255, 0.22);
+}
+
+.schedule-countdown .schedule-countdown-value[data-empty="true"] {
+  max-width: 132px;
+  color: #aabbd2;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-align: right;
+  text-shadow: none;
+  white-space: normal;
+}
+
+.schedule-countdown-live {
+  font-size: 9px;
+}
+
+@media (max-width: 390px) {
+  .schedule-card {
+    padding: 9px 10px;
+  }
+
+  .schedule-topline .schedule-time {
+    min-width: 47px;
+    padding-inline: 6px;
+    font-size: 20px;
+  }
+
+  .schedule-countdown {
+    gap: 4px;
+  }
+
+  .schedule-countdown [data-next-live-prefix] {
+    gap: 3px;
+    font-size: 7px;
+  }
+
+  .schedule-countdown .schedule-countdown-value {
+    padding: 4px 5px;
+    font-size: 10px;
+    letter-spacing: 0.055em;
+  }
+}
+
+.contact-widget .contact-form.contact-chat-composer {
+  min-height: 0;
+  flex: 1 1 auto;
+  align-content: end;
+  gap: 6px;
+}
+
+.member-access-button--profile {
+  text-transform: uppercase;
+}
+
+.legal-dialog-done {
+  text-transform: uppercase;
+}
+
+/* Social cards: one shared top row, readable copy, and a consistent touch target. */
+.networks-panel .network-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 11px;
+}
+
+.networks-panel .network-item {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  grid-column: auto;
+  justify-self: stretch;
+}
+
+.networks-panel .network-card {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 150px;
+  aspect-ratio: auto;
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  text-align: left;
+  border-radius: 18px;
+}
+
+.networks-panel .network-card .network-head {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  transform: none;
+}
+
+.networks-panel .network-card .network-icon {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 13px;
+}
+
+.networks-panel .network-card .network-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.networks-panel .network-card .network-side {
+  position: static;
+  z-index: 2;
+  display: flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 5px;
+  margin: 0;
+}
+
+.networks-panel .network-card .network-head .visited-badge {
+  position: static;
+  inset: auto;
+  z-index: 2;
+  display: inline-flex;
+  min-width: 0;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid rgba(87, 225, 157, 0.38);
+  border-radius: 999px;
+  background: rgba(31, 148, 98, 0.19);
+  color: #8af0b7;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.networks-panel .network-card .network-head .visited-badge svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+}
+
+.networks-panel .network-card .live-badge {
+  position: static;
+  min-height: 22px;
+  gap: 5px;
+  padding-inline: 8px;
+  font-size: 8px;
+}
+
+.networks-panel .network-card--youtube .youtube-count-badge {
+  position: static;
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+}
+
+.networks-panel .network-card .network-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 3px;
+  margin: auto 0 0;
+  padding-top: 5px;
+  text-align: left;
+  transform: none;
+}
+
+.networks-panel .network-card .network-copy strong {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  color: #f7faff;
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: 0.045em;
+  line-height: 1.15;
+  text-align: left;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.networks-panel .network-card .network-copy > span:not([hidden]) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+  color: #b6c3d5;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.networks-panel .network-card .network-copy > span[hidden] {
+  display: none !important;
+}
+
+.networks-panel .network-card .network-copy .stream-title {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  color: #97a9c1;
+  font-size: 10px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.networks-panel .network-card .network-watermark {
+  z-index: 0;
+}
+
+@media (min-width: 640px) {
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .networks-panel .network-card {
+    min-height: 160px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 360px) {
+  .networks-panel .network-card {
+    padding: 12px;
+  }
+
+  .networks-panel .network-card .network-copy strong {
+    font-size: 13px;
+  }
+
+  .networks-panel .network-card .network-copy > span:not([hidden]) {
+    font-size: 11px;
+  }
+}
+
+/* Blue-black live schedule with four readable day capsules and a three-part timer. */
+.schedule-card--refresh {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(71, 145, 255, 0.38);
+  border-radius: 22px;
+  background: linear-gradient(135deg, #0c1525 0%, #050b16 52%, #071d3b 100%);
+  box-shadow: 0 16px 40px rgba(2, 7, 17, 0.35), inset 0 1px 0 rgba(190, 220, 255, 0.06);
+  color: #f3f8ff;
+}
+
+.schedule-card--refresh::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(35, 111, 224, 0.24), transparent 54%),
+    linear-gradient(135deg, transparent 35%, rgba(4, 21, 44, 0.42));
+  content: "";
+  pointer-events: none;
+}
+
+.schedule-card--refresh .schedule-topline {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+  margin: 0 0 17px;
+}
+
+.schedule-card--refresh .schedule-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid rgba(82, 161, 255, 0.3);
+  border-radius: 13px;
+  background: linear-gradient(145deg, rgba(48, 130, 236, 0.22), rgba(13, 37, 72, 0.62));
+  color: #7fc5ff;
+  box-shadow: inset 0 1px 0 rgba(210, 235, 255, 0.06), 0 5px 16px rgba(8, 68, 150, 0.13);
+}
+
+.schedule-card--refresh .schedule-mark svg {
+  width: 21px;
+  height: 21px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.schedule-card--refresh .schedule-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.schedule-card--refresh .schedule-copy h2 {
+  margin: 0;
+  color: #f5f9ff;
+  font-size: clamp(12px, 2.8vw, 16px);
+  font-weight: 850;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.schedule-card--refresh .schedule-copy p {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 5px 0 0;
+  color: #9db1cc;
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1.3;
+}
+
+.schedule-live-indicator {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: #51aaff;
+  box-shadow: 0 0 10px rgba(74, 166, 255, 0.85);
+}
+
+.schedule-live-indicator::after {
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgba(84, 175, 255, 0.5);
+  border-radius: inherit;
+  content: "";
+  animation: schedule-indicator-pulse 1.8s ease-out infinite;
+}
+
+@keyframes schedule-indicator-pulse {
+  0% { opacity: 0.8; transform: scale(0.6); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+
+.schedule-card--refresh .schedule-time {
+  display: inline-flex;
+  min-width: 72px;
+  min-height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid rgba(83, 167, 255, 0.55);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(47, 132, 237, 0.27), rgba(12, 42, 81, 0.72));
+  box-shadow: 0 0 20px rgba(32, 118, 222, 0.15), inset 0 1px 0 rgba(221, 240, 255, 0.08);
+  color: #c7e8ff;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(105, 190, 255, 0.35);
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-time[data-layout="varied"] {
+  max-width: 86px;
+  min-width: 76px;
+  min-height: 40px;
+  padding: 5px 7px;
+  font-size: 8px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+}
+
+.schedule-card--refresh .schedule-time[data-layout="empty"] {
+  min-width: 72px;
+  font-size: 14px;
+}
+
+.schedule-card--refresh .schedule-days {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.schedule-card--refresh .schedule-days li {
+  display: flex;
+  min-width: 0;
+  min-height: 67px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 3px;
+  border: 1px solid rgba(165, 191, 224, 0.15);
+  border-radius: 13px;
+  background: rgba(148, 169, 195, 0.08);
+  color: #aebed1;
+  text-align: center;
+  transition: border-color 220ms ease, background 220ms ease, color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.schedule-card--refresh .schedule-day-name {
+  display: block;
+  max-width: 100%;
+  color: inherit;
+  font-size: clamp(7px, 2.2vw, 10px);
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-day-time {
+  color: #8e9fb4;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.schedule-card--refresh .schedule-days li[data-disabled="true"] {
+  opacity: 0.55;
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] {
+  min-height: 67px;
+  border-color: rgba(92, 177, 255, 0.9);
+  background: linear-gradient(145deg, rgba(45, 133, 236, 0.45), rgba(17, 67, 130, 0.48));
+  box-shadow: 0 0 0 1px rgba(92, 177, 255, 0.12), 0 0 22px rgba(37, 123, 221, 0.28), inset 0 1px 0 rgba(206, 234, 255, 0.16);
+  color: #f4faff;
+  transform: translateY(-2px);
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-name,
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-time {
+  color: #f3f9ff;
+}
+
+.schedule-card--refresh .schedule-day-next-label {
+  color: #a9ddff;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.schedule-card--refresh .schedule-days [hidden],
+.schedule-card--refresh [hidden] {
+  display: none !important;
+}
+
+.schedule-card--refresh .schedule-countdown,
+.schedule-card--refresh .schedule-countdown-live {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0 0;
+  padding: 13px 0 0;
+  border-top: 1px solid rgba(153, 185, 224, 0.14);
+}
+
+.schedule-card--refresh .schedule-countdown {
+  justify-content: space-between;
+}
+
+.schedule-card--refresh .schedule-countdown-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: #9eb2cc;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-countdown-label .qg-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  color: #79bdff;
+}
+
+.schedule-card--refresh .schedule-countdown-value {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #eaf6ff;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none;
+}
+
+.schedule-card--refresh .schedule-countdown-unit {
+  display: inline-flex;
+  min-width: 43px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 1px solid rgba(91, 164, 239, 0.34);
+  border-radius: 9px;
+  background: linear-gradient(150deg, rgba(12, 26, 45, 0.96), rgba(7, 15, 28, 0.98));
+  box-shadow: inset 0 1px 0 rgba(204, 230, 255, 0.06), 0 3px 10px rgba(0, 0, 0, 0.18);
+  color: #e5f4ff;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.015em;
+}
+
+.schedule-card--refresh .schedule-countdown-separator {
+  color: #6f9bc9;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.schedule-card--refresh .schedule-countdown-value[data-empty="true"] {
+  max-width: 170px;
+  color: #afbed1;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-align: right;
+  text-shadow: none;
+  white-space: normal;
+}
+
+.schedule-card--refresh .schedule-countdown-empty {
+  color: #aebed1;
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.schedule-card--refresh .schedule-countdown-live {
+  justify-content: center;
+  color: #8cf0ba;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.schedule-card--refresh .schedule-countdown-live .creator-live-dot {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 420px) {
+  .schedule-card--refresh {
+    padding: 15px 13px;
+    border-radius: 19px;
+  }
+
+  .schedule-card--refresh .schedule-topline {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 35px;
+    height: 35px;
+    flex-basis: 35px;
+  }
+
+  .schedule-card--refresh .schedule-copy h2 {
+    font-size: 11px;
+    letter-spacing: 0.055em;
+  }
+
+  .schedule-card--refresh .schedule-copy p {
+    gap: 6px;
+    font-size: 8px;
+  }
+
+  .schedule-card--refresh .schedule-time {
+    min-width: 66px;
+    min-height: 36px;
+    padding-inline: 7px;
+    font-size: 13px;
+  }
+
+  .schedule-card--refresh .schedule-days {
+    gap: 5px;
+  }
+
+  .schedule-card--refresh .schedule-days li,
+  .schedule-card--refresh .schedule-days li[data-next-live] {
+    min-height: 62px;
+    gap: 4px;
+    padding-inline: 2px;
+    border-radius: 11px;
+  }
+
+  .schedule-card--refresh .schedule-day-name {
+    font-size: 7px;
+    letter-spacing: 0.025em;
+  }
+
+  .schedule-card--refresh .schedule-day-time {
+    font-size: 9px;
+  }
+
+  .schedule-card--refresh .schedule-countdown,
+  .schedule-card--refresh .schedule-countdown-live {
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 11px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    gap: 5px;
+    font-size: 7px;
+    letter-spacing: 0.04em;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label .qg-icon {
+    width: 12px;
+    height: 12px;
+    flex-basis: 12px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-value {
+    gap: 3px;
+    font-size: 11px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-unit {
+    min-width: 34px;
+    min-height: 30px;
+    padding-inline: 4px;
+    border-radius: 8px;
+    font-size: 10px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-separator {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-live-indicator::after {
+    animation: none;
+  }
+}
+
+/* Desktop home: full-width vertical sections, with the Hero itself kept two-column. */
+@media (min-width: 941px) {
+  .site-shell {
+    width: min(var(--shell-width), calc(100% - clamp(32px, 5vw, 72px)));
+    min-height: 100svh;
+  }
+
+  .site-header {
+    min-height: 42px;
+    padding-block: 0;
+    gap: 10px;
+  }
+
+  .hub-layout {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: stretch;
+    gap: clamp(6px, 0.9vh, 10px);
+    padding-block: clamp(4px, 0.8vh, 8px);
+  }
+
+  .welcome-panel {
+    width: 100%;
+    height: auto;
+    max-width: none;
+    min-height: clamp(320px, 42svh, 360px);
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(12px, 1.6vw, 22px);
+    padding: 44px clamp(16px, 2vw, 26px) 12px;
+  }
+
+  .welcome-account-bar {
+    position: absolute;
+    top: 7px;
+    right: 12px;
+    bottom: auto;
+    left: auto;
+    z-index: 6;
+    display: flex !important;
+    width: max-content;
+    height: auto;
+    max-width: calc(100% - 24px);
+    min-height: 30px;
+    grid-column: auto;
+    grid-row: auto;
+    justify-content: flex-end;
+    gap: 6px;
+    padding: 2px 5px 2px 8px;
+  }
+
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: clamp(84px, 8.4vw, 116px) minmax(0, 1fr);
+    gap: clamp(10px, 1.4vw, 18px);
+  }
+
+  .profile-frame {
+    width: clamp(84px, 8.4vw, 116px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.85rem, 3vw, 3.05rem);
+    line-height: 1.02;
+  }
+
+  .welcome-actions {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 6px;
+  }
+
+  .creator-carousel {
+    height: clamp(194px, 23vh, 210px);
+  }
+
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 0;
+    padding: 12px 52px 38px 14px;
+  }
+
+  .creator-carousel .discord-content {
+    min-height: 0;
+    gap: 5px;
+  }
+
+  .creator-carousel .discord-copy {
+    gap: 2px;
+  }
+
+  .creator-carousel .discord-overline {
+    font-size: 7px;
+    line-height: 1.2;
+  }
+
+  .creator-carousel .discord-copy strong {
+    gap: 6px;
+    font-size: clamp(20px, 2.4vw, 27px);
+    line-height: 1.05;
+  }
+
+  .creator-carousel .creator-title-mark {
+    width: 20px;
+    height: 20px;
+  }
+
+  .creator-carousel .discord-detail {
+    font-size: 9px;
+    line-height: 1.35;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .creator-carousel .discord-action-default,
+  .creator-carousel .discord-action .visited-badge {
+    min-height: 27px;
+    padding-inline: 8px;
+    font-size: 7px;
+  }
+
+  .creator-carousel .discord-community-meta {
+    padding-right: 0;
+  }
+
+  .creator-carousel-next {
+    right: 9px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .creator-carousel-dots {
+    right: 10px;
+    bottom: 9px;
+    gap: 5px;
+    padding: 4px 6px;
+  }
+
+  .creator-carousel-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .creator-carousel-dot[aria-current="true"] {
+    width: 16px;
+  }
+
+  .welcome-actions .schedule-card--refresh {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 15px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-topline {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-mark {
+    width: 29px;
+    height: 29px;
+    flex-basis: 29px;
+    border-radius: 9px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-mark svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-copy h2 {
+    font-size: 11px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-copy p {
+    gap: 4px;
+    margin-top: 3px;
+    font-size: 8px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-time {
+    min-width: 62px;
+    min-height: 32px;
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-days {
+    gap: 5px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-days li,
+  .welcome-actions .schedule-card--refresh .schedule-days li[data-next-live] {
+    min-height: 44px;
+    gap: 3px;
+    padding: 5px 2px;
+    border-radius: 9px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-day-name {
+    font-size: 8px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-day-time {
+    font-size: 9px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown,
+  .welcome-actions .schedule-card--refresh .schedule-countdown-live {
+    gap: 6px;
+    margin-top: 7px;
+    padding-top: 7px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-label {
+    gap: 4px;
+    font-size: 7px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-label .qg-icon {
+    width: 11px;
+    height: 11px;
+    flex-basis: 11px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-value {
+    gap: 3px;
+    font-size: 10px;
+  }
+
+  .welcome-actions .schedule-card--refresh .schedule-countdown-unit {
+    min-width: 34px;
+    min-height: 25px;
+    padding-inline: 4px;
+    border-radius: 7px;
+    font-size: 9px;
+  }
+
+  .networks-panel {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 9px 12px;
+    border-radius: 18px;
+  }
+
+  .networks-panel .networks-heading h2 {
+    margin: 0;
+    font-size: clamp(1rem, 1.4vw, 1.35rem);
+    line-height: 1.15;
+  }
+
+  .networks-panel .network-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .networks-panel .network-card {
+    min-height: 115px;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .networks-panel .network-item--instagram {
+    grid-column: span 2;
+  }
+
+  .site-footer {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding-block: 4px;
+  }
+}
+
+/* Small screens and tablets: two columns, with Instagram filling the final row. */
+@media (max-width: 940px) {
+  .welcome-account-bar {
+    display: flex !important;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .networks-panel .network-card {
+    min-height: 115px;
+  }
+
+  .networks-panel .network-item--instagram {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The 120px social-card target begins at the large-screen breakpoint. */
+@media (min-width: 1024px) {
+  .networks-panel .network-card {
+    min-height: 120px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .networks-panel .network-item--instagram {
+    grid-column: auto;
+  }
+}
+
+/* Discord badges are normal-flow flex items above the slide's overline. */
+.creator-carousel .creator-slide--discord .discord-badge-row {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 0;
+  overflow: visible;
+  white-space: normal;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-row > .discord-community-pill,
+.creator-carousel .creator-slide--discord .discord-badge-row > .discord-online-badge,
+.creator-carousel .creator-slide--discord .discord-badge-row > .creator-visited-badge {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-row > .creator-visited-badge[hidden],
+.creator-carousel .creator-slide--discord .discord-badge-row > .discord-online-badge[hidden] {
+  display: none !important;
+}

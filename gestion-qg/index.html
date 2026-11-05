@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#07111f" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Administration · QG2GIONNY</title>
+    <link rel="icon" href="/assets/gionny-profile.jpg" type="image/jpeg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/gestion-qg/admin.css" />
+    <link rel="stylesheet" href="/ui-refresh.css" />
+    <link rel="stylesheet" href="/chat-x.css" />
+    <script src="/image-tools.js" defer></script>
+    <script src="/icons.js" defer></script>
+    <script src="/audio-player.js" defer></script>
+    <script src="/voice-recorder.js" defer></script>
+    <script src="/gestion-qg/admin.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <div class="admin-glow admin-glow--blue" aria-hidden="true"></div>
+    <div class="admin-glow admin-glow--red" aria-hidden="true"></div>
+    <main class="admin-shell">
+      <div class="admin-layout">
+        <aside class="admin-sidebar" aria-label="Navigation Admin">
+          <a class="admin-back" href="/">
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-left"></use></svg>
+            Retour au site
+          </a>
+
+          <header class="admin-header">
+            <div class="admin-avatar-frame">
+              <img src="/assets/gionny-profile.jpg" alt="" data-admin-avatar />
+            </div>
+            <div class="admin-header-copy">
+              <p class="admin-eyebrow">QG2GIONNY</p>
+              <h1>Administration <span>du QG</span></h1>
+              <p class="admin-identity-label"><span data-admin-identity-pseudo>Gionny</span><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg><span>Hôte</span></p>
+            </div>
+          </header>
+
+          <div class="admin-presence" data-admin-presence hidden aria-live="polite">
+            <span class="admin-presence-dot" aria-hidden="true"></span>
+            <span><strong data-admin-presence-count>0</strong> sessions actives · 3 min</span>
+          </div>
+
+          <nav class="admin-tabs" aria-label="Sections de l’administration" role="tablist" aria-orientation="vertical" hidden>
+            <button class="admin-tab" id="admin-tab-conversations" type="button" role="tab" aria-selected="true" aria-controls="conversations-panel" data-admin-tab="conversations" aria-label="Discussions"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-discussions"></use></svg> Discussions<span class="admin-tab-unread-count" data-admin-unread-count hidden>0</span></button>
+            <button class="admin-tab" id="admin-tab-dm" type="button" role="tab" aria-selected="false" aria-controls="dm-panel" data-admin-tab="dm" tabindex="-1" aria-label="Discussions directes"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-chat"></use></svg> Discussions (DM)</button>
+            <button class="admin-tab" id="admin-tab-members" type="button" role="tab" aria-selected="false" aria-controls="members-panel" data-admin-tab="members" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-users"></use></svg> Membres</button>
+            <button class="admin-tab" id="admin-tab-reports" type="button" role="tab" aria-selected="false" aria-controls="reports-panel" data-admin-tab="reports" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-shield"></use></svg> Signalements<span class="admin-tab-unread-count" data-admin-reports-count hidden>0</span></button>
+            <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-settings"></use></svg> Réglages</button>
+            <button class="admin-tab" id="admin-tab-planning" type="button" role="tab" aria-selected="false" aria-controls="planning-panel" data-admin-tab="planning" tabindex="-1" aria-label="Planning et à la une"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg> Planning &amp; à la une</button>
+          </nav>
+          <button class="quiet-button admin-sidebar-logout" type="button" data-logout hidden>Se déconnecter</button>
+          <p class="admin-sidebar-footnote">Panneau de gestion sécurisé</p>
+        </aside>
+
+        <div class="admin-workspace">
+      <section class="login-card" data-login-panel aria-labelledby="login-title">
+        <div class="card-symbol" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="4.5" y="10" width="15" height="11" rx="3" />
+            <path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3" />
+          </svg>
+        </div>
+        <p class="admin-eyebrow">ACCÈS PROTÉGÉ</p>
+        <h2 id="login-title">Entre ton code</h2>
+        <p class="login-description">Saisis le code d’accès à 4 caractères pour ouvrir le panneau.</p>
+        <form id="login-form" class="login-form">
+          <label for="admin-password">Code d’accès</label>
+          <input
+            id="admin-password"
+            name="password"
+            type="password"
+            inputmode="text"
+            autocomplete="current-password"
+            autocapitalize="characters"
+            minlength="4"
+            maxlength="4"
+            pattern="[A-Za-z0-9]{4}"
+            required
+            aria-describedby="login-status"
+          />
+          <button class="primary-button" type="submit" data-login-button>
+            <span>Ouvrir le panneau</span>
+            <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-arrow-up-right"></use></svg>
+          </button>
+          <p id="login-status" class="form-status" data-login-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="admin-panel" data-admin-panel aria-labelledby="settings-title" hidden>
+        <div class="admin-toolbar">
+          <div>
+            <h2 id="settings-title" data-admin-title>Tes réglages</h2>
+          </div>
+        </div>
+
+        <div class="admin-tab-panel" id="settings-panel" role="tabpanel" aria-labelledby="admin-tab-settings" data-admin-tab-panel="settings">
+          <div class="storage-notice" data-storage-notice role="status" aria-live="polite"></div>
+
+          <form id="settings-form" class="settings-form">
+          <section class="settings-section" aria-labelledby="socials-title">
+            <div class="section-heading">
+              <span class="section-number">01</span>
+              <div>
+                <h3 id="socials-title">Liens sociaux</h3>
+                <p>Colle le lien complet et ajoute, si tu veux, une petite info sous ton pseudo.</p>
+              </div>
+            </div>
+            <div class="social-fields">
+              <div class="social-field-group">
+                <label class="input-field">
+                  <span>Twitch</span>
+                  <input type="url" name="socials.twitch" value="https://www.twitch.tv/7gionny" maxlength="300" required />
+                </label>
+                <label class="input-field">
+                  <span>Sous-titre / Infos Twitch</span>
+                  <input type="text" name="socialInfo.twitch" maxlength="120" placeholder="Ex. : 45K abonnés • Clips" />
+                </label>
+              </div>
+              <div class="social-field-group">
+                <label class="input-field">
+                  <span>TikTok</span>
+                  <input type="url" name="socials.tiktok" value="https://www.tiktok.com/@gio_nny" maxlength="300" required />
+                </label>
+                <label class="input-field">
+                  <span>Sous-titre / Infos TikTok</span>
+                  <input type="text" name="socialInfo.tiktok" maxlength="120" placeholder="Ex. : 45K abonnés • Clips" />
+                </label>
+              </div>
+              <div class="social-field-group">
+                <label class="input-field">
+                  <span>YouTube</span>
+                  <input type="url" name="socials.youtube" value="https://www.youtube.com/@gionnyyy" maxlength="300" required />
+                </label>
+                <label class="input-field">
+                  <span>Sous-titre / Infos YouTube</span>
+                  <input type="text" name="socialInfo.youtube" maxlength="120" placeholder="Ex. : 45K abonnés • Clips" />
+                </label>
+              </div>
+              <div class="social-field-group">
+                <label class="input-field">
+                  <span>X</span>
+                  <input type="url" name="socials.x" value="https://x.com/nny_gio" maxlength="300" required />
+                </label>
+                <label class="input-field">
+                  <span>Sous-titre / Infos X</span>
+                  <input type="text" name="socialInfo.x" maxlength="120" placeholder="Ex. : 45K abonnés • Clips" />
+                </label>
+              </div>
+              <div class="social-field-group">
+                <label class="input-field">
+                  <span>Instagram</span>
+                  <input type="url" name="socials.instagram" value="https://www.instagram.com/nny_gio/" maxlength="300" required />
+                </label>
+                <label class="input-field">
+                  <span>Sous-titre / Infos Instagram</span>
+                  <input type="text" name="socialInfo.instagram" maxlength="120" placeholder="Ex. : 45K abonnés • Clips" />
+                </label>
+              </div>
+              <label class="input-field">
+                <span>Discord</span>
+                <input type="url" name="socials.discord" value="https://discord.gg/nPACfBTnPx" maxlength="300" required />
+              </label>
+            </div>
+          </section>
+
+          <section class="settings-section" aria-labelledby="schedule-title">
+            <div class="section-heading">
+              <span class="section-number">02</span>
+              <div>
+                <h3 id="schedule-title">Planning des lives</h3>
+                <p>Active les jours voulus et règle chaque heure en heure française.</p>
+              </div>
+            </div>
+            <div class="day-grid">
+              <div class="day-row" data-day-row="monday">
+                <label class="day-toggle" for="day-monday">
+                  <input id="day-monday" type="checkbox" data-day-enabled="monday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Lundi</span>
+                </label>
+                <label class="time-field" for="time-monday">
+                  <span class="sr-only">Heure du lundi</span>
+                  <input id="time-monday" type="time" value="22:00" step="60" data-day-time="monday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="tuesday">
+                <label class="day-toggle" for="day-tuesday">
+                  <input id="day-tuesday" type="checkbox" checked data-day-enabled="tuesday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Mardi</span>
+                </label>
+                <label class="time-field" for="time-tuesday">
+                  <span class="sr-only">Heure du mardi</span>
+                  <input id="time-tuesday" type="time" value="22:00" step="60" data-day-time="tuesday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="wednesday">
+                <label class="day-toggle" for="day-wednesday">
+                  <input id="day-wednesday" type="checkbox" checked data-day-enabled="wednesday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Mercredi</span>
+                </label>
+                <label class="time-field" for="time-wednesday">
+                  <span class="sr-only">Heure du mercredi</span>
+                  <input id="time-wednesday" type="time" value="22:00" step="60" data-day-time="wednesday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="thursday">
+                <label class="day-toggle" for="day-thursday">
+                  <input id="day-thursday" type="checkbox" data-day-enabled="thursday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Jeudi</span>
+                </label>
+                <label class="time-field" for="time-thursday">
+                  <span class="sr-only">Heure du jeudi</span>
+                  <input id="time-thursday" type="time" value="22:00" step="60" data-day-time="thursday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="friday">
+                <label class="day-toggle" for="day-friday">
+                  <input id="day-friday" type="checkbox" data-day-enabled="friday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Vendredi</span>
+                </label>
+                <label class="time-field" for="time-friday">
+                  <span class="sr-only">Heure du vendredi</span>
+                  <input id="time-friday" type="time" value="22:00" step="60" data-day-time="friday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="saturday">
+                <label class="day-toggle" for="day-saturday">
+                  <input id="day-saturday" type="checkbox" checked data-day-enabled="saturday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Samedi</span>
+                </label>
+                <label class="time-field" for="time-saturday">
+                  <span class="sr-only">Heure du samedi</span>
+                  <input id="time-saturday" type="time" value="22:00" step="60" data-day-time="saturday" />
+                </label>
+              </div>
+              <div class="day-row" data-day-row="sunday">
+                <label class="day-toggle" for="day-sunday">
+                  <input id="day-sunday" type="checkbox" checked data-day-enabled="sunday" />
+                  <span class="toggle-mark" aria-hidden="true"></span>
+                  <span>Dimanche</span>
+                </label>
+                <label class="time-field" for="time-sunday">
+                  <span class="sr-only">Heure du dimanche</span>
+                  <input id="time-sunday" type="time" value="22:00" step="60" data-day-time="sunday" />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <div class="save-row">
+            <p class="save-status" data-save-status role="status" aria-live="polite"></p>
+            <button class="primary-button save-button" type="submit" data-save-button>
+              <span>Enregistrer les changements</span>
+              <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg>
+            </button>
+          </div>
+          </form>
+        </div>
+
+        <section class="settings-section dm-section admin-tab-panel" id="dm-panel" role="tabpanel" aria-labelledby="admin-tab-dm" data-admin-tab-panel="dm" hidden>
+          <div class="section-heading dm-heading">
+            <span class="section-number">06</span>
+            <div>
+              <h3 id="dm-title">Discussions (DM)</h3>
+              <p>Les conversations privées reçues par Gionny. Réponds ici, en texte, image ou vocal.</p>
+            </div>
+            <button class="quiet-button dm-refresh" type="button" data-dm-refresh>Actualiser</button>
+          </div>
+          <p class="dm-status" data-dm-status role="status" aria-live="polite">Chargement des discussions…</p>
+          <div class="dm-layout">
+            <section class="dm-sidebar" aria-label="Discussions reçues">
+              <div class="dm-list" data-dm-list role="list"></div>
+            </section>
+            <section class="dm-detail" aria-label="Conversation sélectionnée">
+              <div class="dm-empty" data-dm-empty>
+                <strong>Choisis une discussion</strong>
+                <p>Les messages et tes réponses s’afficheront ici.</p>
+              </div>
+              <div class="dm-content" data-dm-content hidden>
+                <header class="dm-toolbar">
+                  <span class="dm-avatar" data-dm-avatar aria-hidden="true"></span>
+                  <div class="dm-identity">
+                    <strong data-dm-title>Discussion</strong>
+                    <span data-dm-subtitle></span>
+                  </div>
+                </header>
+                <div class="dm-history" data-dm-history role="log" aria-live="polite"></div>
+                <p class="dm-reply-status" data-dm-reply-status role="status" aria-live="polite"></p>
+                <form class="dm-composer" data-dm-form>
+                  <input type="file" accept="image/*" data-dm-image hidden />
+                  <button class="quiet-button dm-attach" type="button" data-dm-attach aria-label="Joindre une image">
+                    <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-image"></use></svg>
+                  </button>
+                  <textarea rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse" data-dm-input></textarea>
+                  <button class="primary-button dm-send" type="submit" data-dm-send>Envoyer</button>
+                </form>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="settings-section members-section admin-tab-panel" id="members-panel" role="tabpanel" aria-labelledby="admin-tab-members" data-admin-tab-panel="members" hidden>
+          <div class="section-heading members-heading">
+            <span class="section-number">03</span>
+            <div>
+              <h3 id="members-title">Membres</h3>
+              <p>Gère les comptes sans supprimer leurs messages ni leurs vocaux.</p>
+            </div>
+            <button class="quiet-button members-refresh" type="button" data-members-refresh>Actualiser</button>
+          </div>
+          <p class="members-status" data-members-status role="status" aria-live="polite">Chargement des membres…</p>
+          <div class="members-list" data-members-list aria-live="polite"></div>
+          <button class="quiet-button members-more" type="button" data-members-more hidden>Afficher plus de membres</button>
+        </section>
+
+        <section class="settings-section reports-section admin-tab-panel" id="reports-panel" role="tabpanel" aria-labelledby="admin-tab-reports" data-admin-tab-panel="reports" hidden>
+          <div class="section-heading reports-heading">
+            <span class="section-number">04</span>
+            <div>
+              <h3 id="reports-title">Signalements</h3>
+              <p>Les profils et messages signalés par la commu. Une action en un clic.</p>
+            </div>
+            <button class="quiet-button reports-refresh" type="button" data-reports-refresh>Actualiser</button>
+          </div>
+          <p class="reports-status" data-reports-status role="status" aria-live="polite">Chargement des signalements…</p>
+          <div class="reports-list" data-reports-list aria-live="polite"></div>
+        </section>
+
+        <section class="settings-section planning-section admin-tab-panel" id="planning-panel" role="tabpanel" aria-labelledby="planning-title" data-admin-tab-panel="planning" hidden>
+          <div class="section-heading planning-heading">
+            <span class="section-number">05</span>
+            <div>
+              <h3 id="planning-title">Planning &amp; à la une</h3>
+              <p>Les jours de live et les annonces du bandeau, enregistrés tout de suite.</p>
+            </div>
+            <button class="quiet-button planning-refresh" type="button" data-planning-refresh>Actualiser</button>
+          </div>
+          <p class="planning-status" data-planning-status role="status" aria-live="polite">Chargement du planning…</p>
+
+          <fieldset class="planning-fieldset">
+            <legend>Jours de live</legend>
+            <div class="planning-days" data-planning-days></div>
+          </fieldset>
+
+          <fieldset class="planning-fieldset">
+            <legend>Bandeau « À la une »</legend>
+            <p class="planning-help">Une annonce par ligne : elles défilent dans l’en-tête du site. Huit maximum, 120 caractères chacune.</p>
+            <div class="planning-announcements" data-planning-announcements></div>
+            <button class="quiet-button planning-add" type="button" data-planning-add>+ Ajouter une annonce</button>
+          </fieldset>
+
+          <div class="save-row">
+            <p class="save-status" data-planning-save-status role="status" aria-live="polite"></p>
+            <button class="primary-button planning-save" type="button" data-planning-save>
+              <span>Enregistrer le planning</span>
+              <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-check"></use></svg>
+            </button>
+          </div>
+        </section>
+
+        <div class="admin-tab-panel" id="conversations-panel" role="tabpanel" aria-labelledby="admin-tab-conversations" data-admin-tab-panel="conversations" hidden>
+          <section class="settings-section inbox-section" aria-labelledby="inbox-title">
+          <div class="section-heading inbox-heading">
+            <h3 class="sr-only" id="inbox-title">Discussions privées</h3>
+            <button class="quiet-button inbox-refresh" type="button" data-inbox-refresh aria-label="Actualiser les discussions"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-rotate"></use></svg></button>
+          </div>
+          <p class="inbox-status" data-conversations-status role="status" aria-live="polite">Chargement des discussions…</p>
+
+          <div class="mail-toolbar" aria-label="Filtres de la boîte de réception">
+            <div class="mail-filter-tabs" role="group" aria-label="Filtrer les discussions">
+              <button class="mail-filter-tab" type="button" aria-pressed="true" data-mail-filter="all">Tous</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="unread">Non lus</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="favorites"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-star"></use></svg> Favoris</button>
+              <button class="mail-filter-tab" type="button" aria-pressed="false" data-mail-filter="audio"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg> Contient un vocal</button>
+            </div>
+            <label class="mail-subject-filter">
+              <span>Sujet</span>
+              <select data-conversation-subject-filter>
+                <option value="">Tous les sujets</option>
+                <option value="Passer en live">Passer en live</option>
+                <option value="Idée vidéo / React">Idée vidéo / React</option>
+                <option value="Histoire / Anecdote">Histoire / Anecdote</option>
+                <option value="Question">Question</option>
+                <option value="Discussion">Discussion</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="mail-bulk-toolbar" data-bulk-toolbar hidden>
+            <span class="mail-selection-count" data-selection-count></span>
+            <div class="mail-bulk-actions">
+              <button type="button" class="quiet-button" data-bulk-favorite><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-star"></use></svg> Mettre en favoris</button>
+              <button type="button" class="quiet-button" data-bulk-read>Marquer comme lu</button>
+              <button type="button" class="quiet-button" data-bulk-close>Fermer</button>
+              <button type="button" class="mail-bulk-delete" data-bulk-delete>Supprimer la sélection</button>
+            </div>
+            <p class="mail-bulk-status" data-bulk-status role="status" aria-live="polite"></p>
+          </div>
+
+          <div class="conversation-layout">
+            <section class="conversation-sidebar" aria-label="Liste des discussions">
+              <div class="conversation-list-toolbar">
+                <label class="mail-select-all">
+                  <input type="checkbox" data-select-all-conversations />
+                  <span>Tout sélectionner</span>
+                </label>
+                <span class="conversation-page-count" data-page-count></span>
+              </div>
+              <div class="conversation-list" data-conversation-list aria-live="polite"></div>
+              <button class="quiet-button conversation-more" type="button" data-conversations-more hidden>Afficher les discussions plus anciennes</button>
+            </section>
+
+            <section class="conversation-detail" aria-label="Discussion sélectionnée">
+              <div class="conversation-empty" data-conversation-empty>
+                <svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-sparkle"></use></svg>
+                <strong>Choisis une discussion</strong>
+                <p>Les messages et tes réponses s’afficheront ici.</p>
+              </div>
+              <div class="conversation-content" data-conversation-content hidden>
+                <header class="conversation-toolbar">
+                  <div class="conversation-identity">
+                    <img class="thread-member-avatar" data-thread-avatar alt="" hidden />
+                    <span class="thread-member-avatar-fallback" data-thread-avatar-fallback aria-hidden="true"></span>
+                    <h4><span data-thread-pseudo>Membre</span><span class="conversation-host-crown" data-thread-host-crown role="img" aria-label="Compte Hôte" title="Compte Hôte" hidden><svg class="qg-icon host-crown-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-crown"></use></svg></span><span class="verified-badge" data-thread-verified-badge role="img" aria-label="Membre vérifié" title="Membre vérifié" hidden><svg class="qg-icon verified-badge-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-verified"></use></svg></span></h4>
+                    <span class="thread-status" data-thread-status></span>
+                    <span class="thread-subject" data-thread-subject></span>
+                  </div>
+                  <div class="conversation-actions">
+                    <button class="quiet-button" type="button" data-thread-close>Fermer</button>
+                    <button class="quiet-button thread-block" type="button" data-thread-block>Bloquer</button>
+                    <button class="quiet-button thread-delete" type="button" data-thread-delete>Supprimer</button>
+                  </div>
+                </header>
+
+                <div class="conversation-history" data-thread-messages role="log" aria-live="polite" aria-relevant="additions text"></div>
+
+                <p class="thread-closed-note" data-thread-closed-note hidden></p>
+                <form class="conversation-reply-form admin-chat-composer" data-reply-form data-admin-chat-composer>
+                  <input type="file" accept="image/*" data-admin-chat-image-input hidden />
+                  <div class="chat-image-preview admin-chat-image-preview" data-admin-image-preview hidden>
+                    <img data-admin-image-preview-img alt="Aperçu de l’image à joindre" />
+                    <button type="button" data-admin-image-remove aria-label="Retirer l’image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
+                  </div>
+                  <p class="admin-voice-status" data-admin-voice-status role="status" aria-live="polite" hidden></p>
+                  <div class="admin-chat-compose-row x-chat-compose-row" data-admin-compose-row>
+                    <button class="admin-chat-plus x-chat-plus" type="button" data-admin-chat-attach aria-label="Joindre une image" title="Joindre une image"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-plus"></use></svg></button>
+                    <button class="x-chat-cancel-button" type="button" data-admin-voice-cancel aria-label="Annuler le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-x"></use></svg></button>
+                    <div class="admin-chat-input-wrap x-chat-input-pill" data-admin-input-pill>
+                      <textarea data-reply-input rows="1" maxlength="1500" placeholder="Message" aria-label="Ta réponse"></textarea>
+                      <button class="admin-chat-voice-record x-chat-action" type="button" data-admin-compose-action aria-label="Enregistrer un message vocal" title="Message vocal"><svg class="qg-icon" data-admin-compose-mic aria-hidden="true"><use href="/assets/qg-icons.svg#icon-microphone-wave"></use></svg><svg class="qg-icon" data-admin-compose-send hidden aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg></button>
+                    </div>
+                    <div class="admin-voice-panel x-voice-panel" data-admin-voice-panel data-state="idle" hidden>
+                      <div class="admin-voice-pill x-voice-pill" data-admin-voice-pill>
+                        <div class="admin-voice-recording-controls x-voice-live" data-admin-voice-recording-controls hidden>
+                          <span class="admin-voice-timer x-voice-timer" data-admin-voice-timer>0:00</span>
+                          <div class="admin-voice-wave x-voice-wave" data-admin-voice-wave aria-hidden="true"></div>
+                          <button type="button" class="admin-voice-action admin-voice-stop x-voice-stop" data-admin-voice-stop aria-label="Arrêter l’enregistrement"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-stop"></use></svg></button>
+                        </div>
+                        <div class="admin-voice-preview x-voice-preview" data-admin-voice-preview hidden></div>
+                        <button type="button" class="admin-voice-action admin-voice-send x-voice-send" data-admin-voice-send aria-label="Envoyer le vocal" hidden><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-send-up"></use></svg></button>
+                      </div>
+                    </div>
+                  </div>
+                                    <button class="sr-only" type="submit" data-reply-send>Envoyer la réponse</button>
+                  <div class="reply-submit-row"><p class="reply-status" data-reply-status role="status" aria-live="polite"></p></div>
+                </form>
+              </div>
+            </section>
+          </div>
+
+          <button class="quiet-button inbox-more" type="button" data-inbox-more hidden>Afficher les messages anciens</button>
+          <details class="legacy-messages">
+            <summary>Anciens messages (avant les discussions)</summary>
+            <p>Ces messages ont été reçus avec l’ancien formulaire. Ils restent privés, mais ne peuvent pas recevoir de réponse dans le site.</p>
+            <p class="inbox-status" data-inbox-status role="status" aria-live="polite">Chargement des anciens messages…</p>
+            <div class="inbox-list" data-inbox-list aria-live="polite"></div>
+          </details>
+          </section>
+        </div>
+      </section>
+
+      <footer class="admin-footer">Modifications du site · visibles par tous après enregistrement</footer>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

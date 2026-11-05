@@ -1,0 +1,3342 @@
+/* ==========================================================================
+   Passe « stockage autonome » : hero plus dense, en-tête plus grand, chat
+   --------------------------------------------------------------------------
+   Ce fichier est chargé en dernier : il ne fait que corriger/compléter, il ne
+   redéfinit jamais une règle utile ailleurs.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Aucune barre de scroll à l'intérieur des grands rectangles
+   -------------------------------------------------------------------------- */
+/* Le Hero et « Retrouve-moi ici : » ne défilent jamais : leur contenu est
+   dimensionné pour tenir, et tout débordement est coupé net. */
+.welcome-panel,
+.networks-panel {
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.welcome-panel::-webkit-scrollbar,
+.networks-panel::-webkit-scrollbar,
+.welcome-actions::-webkit-scrollbar,
+.creator-carousel::-webkit-scrollbar,
+.network-grid::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.welcome-actions,
+.creator-carousel,
+.network-grid,
+.welcome-identity,
+.welcome-intro {
+  overflow: visible;
+  scrollbar-width: none;
+}
+
+/* La grille des réseaux ne défile pas non plus : elle garde sa composition
+   d'origine, sans barre de scroll interne. */
+.network-grid {
+  overflow: visible;
+}
+
+/* --------------------------------------------------------------------------
+   2. Hero : plus grand, plus dense, sans vide au milieu
+   -------------------------------------------------------------------------- */
+.welcome-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 46%);
+  align-items: stretch;
+  gap: clamp(18px, 2.2vw, 30px);
+  padding: clamp(18px, 2vw, 28px);
+}
+
+.welcome-identity {
+  grid-template-columns: clamp(132px, 10.5vw, 168px) minmax(0, 1fr);
+  gap: clamp(18px, 2.2vw, 30px);
+  align-content: center;
+}
+
+/* La colonne de droite prend plus d'ampleur pour combler le centre. */
+.welcome-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: 12px;
+  min-height: 0;
+  width: 100%;
+  justify-self: stretch;
+}
+
+/* Photo de profil : le cadre est plus grand et l'image remplit le cercle. */
+.profile-frame {
+  width: clamp(132px, 10.5vw, 168px);
+  border-width: 2px;
+}
+
+.profile-avatar {
+  border: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.06);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.creator-handle {
+  min-height: 32px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.profile-trigger {
+  align-items: center;
+}
+
+/* Titre et sous-titre franchement plus grands. */
+.welcome-panel h1 {
+  max-width: none;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: clamp(2rem, 2.9vw, 2.875rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+.welcome-copy {
+  display: block;
+  max-width: 30ch;
+  margin-top: 12px;
+  overflow: visible;
+  color: #cbd5e1;
+  font-size: clamp(0.95rem, 1.05vw, 1.125rem);
+  font-weight: 500;
+  line-height: 1.4;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------------------
+   3. Carrousel + planning : plus hauts, plus lisibles, largeurs différenciées
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel {
+  width: 100%;
+  height: auto;
+  min-height: 250px;
+  align-self: stretch;
+}
+
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta,
+.welcome-actions .creator-carousel .creator-slide--discord,
+.welcome-actions .creator-carousel .creator-slide--twitch,
+.welcome-actions .creator-carousel .creator-slide--youtube {
+  min-height: 250px;
+  padding: 20px 22px;
+  border-radius: 22px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+/* Carrousel et planning partagent le même axe : deux cartes pleine largeur,
+   espacées de 12 px (repris en 12 plus bas). */
+.welcome-actions .schedule-card {
+  width: 100%;
+  margin-left: 0;
+  padding: 16px 18px;
+  border-radius: 22px;
+  align-self: stretch;
+}
+
+.welcome-actions .schedule-card h2 {
+  font-size: clamp(0.95rem, 1.1vw, 1.15rem);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.welcome-actions .schedule-copy p {
+  font-size: 11px;
+}
+
+.welcome-actions .schedule-time {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.welcome-actions .schedule-days {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.welcome-actions .schedule-days li {
+  min-height: 42px;
+  padding: 8px 6px;
+  border-radius: 12px;
+}
+
+.welcome-actions .schedule-day-name {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.welcome-actions .schedule-day-time {
+  font-size: 11px;
+}
+
+.welcome-actions .schedule-countdown {
+  margin-top: 10px;
+}
+
+.welcome-actions .schedule-countdown-label {
+  font-size: 10px;
+}
+
+.welcome-actions .schedule-countdown-value {
+  font-size: clamp(1.05rem, 1.35vw, 1.45rem);
+  font-weight: 800;
+}
+
+.welcome-actions .schedule-countdown-unit {
+  min-width: 52px;
+}
+
+/* Titres et descriptions du carrousel : plus grands, boutons plus généreux. */
+.welcome-actions .creator-carousel .discord-copy strong {
+  font-size: clamp(1.5rem, 1.9vw, 1.9rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.welcome-actions .creator-carousel .discord-copy strong .discord-title-mark {
+  width: 0.9em;
+  height: 0.9em;
+}
+
+.welcome-actions .creator-carousel .discord-overline {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+
+.welcome-actions .creator-carousel .discord-detail {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.welcome-actions .creator-carousel .discord-action .discord-action-default {
+  min-height: 38px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.welcome-actions .creator-carousel .discord-invite {
+  font-size: 11px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Barre du compte : plus grande, police minuscule ultra-lisible
+   -------------------------------------------------------------------------- */
+.welcome-account-bar {
+  height: 52px;
+  min-height: 52px;
+  gap: 10px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 999px;
+}
+
+.member-access-actions {
+  height: 44px;
+  min-height: 44px;
+  gap: 8px;
+}
+
+.member-access-button {
+  min-height: 40px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* « Non connecté », « X en ligne » : petites capitales lisibles, jamais condensées. */
+.member-visitor,
+.site-presence,
+.site-presence span,
+.discord-online-copy,
+[data-site-presence-count],
+[data-discord-online-count] {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-caps: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #f1f6ff;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.member-visitor {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+}
+
+.member-visitor-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  opacity: 0.85;
+}
+
+/* Pastille de présence : point parfaitement centré, texte sur une ligne. */
+.site-presence {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid rgba(126, 214, 178, 0.24);
+  border-radius: 999px;
+  background: rgba(25, 60, 48, 0.32);
+  line-height: 1;
+}
+
+.site-presence-dot,
+.discord-online-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.16);
+}
+
+.site-presence span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+/* Carte Discord : [LA COMMU] [🟢 X en ligne] à gauche, [Déjà visité] à droite. */
+.creator-carousel .creator-slide--discord .discord-badge-row {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  justify-content: start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.creator-carousel .creator-slide--discord .discord-badge-row > .creator-visited-badge {
+  justify-self: end;
+  margin-left: 0;
+}
+
+.creator-carousel .discord-online-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid rgba(126, 214, 178, 0.24);
+  border-radius: 999px;
+  background: rgba(25, 60, 48, 0.32);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.creator-carousel .discord-online-copy {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   5. Fenêtre de chat : en-tête neutre hors connexion + fermeture qui glisse
+   -------------------------------------------------------------------------- */
+.contact-dialog-topline .contact-header-context {
+  display: none;
+  min-width: 0;
+}
+
+/* Non connecté : ni photo de Gionny, ni « Gionny 👑 », ni « Discussion ». */
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-avatar,
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-identity {
+  display: none !important;
+}
+
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-context {
+  display: grid;
+  gap: 2px;
+  align-content: center;
+}
+
+.contact-header-context strong {
+  color: #f4f8ff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.contact-header-context span {
+  color: #9fb3c8;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* La flèche pointe toujours vers le bas : aucune rotation, jamais. */
+.contact-dialog-close,
+.contact-dialog-close:hover,
+.contact-dialog-close:focus-visible,
+.contact-dialog-close:active {
+  transform: none !important;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.contact-dialog-close > .qg-icon,
+.contact-dialog-close > svg {
+  transform: none !important;
+  transition: none !important;
+}
+
+/* Fermeture : la fenêtre glisse vers le bas puis disparaît. */
+.contact-widget {
+  transition: opacity 250ms ease-in-out, transform 250ms ease-in-out;
+}
+
+.contact-widget.is-closing {
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-widget {
+    transition-duration: 1ms;
+  }
+}
+
+/* Le scrim accompagne la fermeture. */
+.contact-scrim {
+  transition: opacity 250ms ease-in-out;
+}
+
+/* ==========================================================================
+   Passe « sécurité + direction artistique »
+   --------------------------------------------------------------------------
+   Hero (photo plein cadre, carrousel entier, colonne alignée), compteurs en
+   ligne, couronne et badge Validé en SVG, fenêtre de discussion épurée, et
+   ouverture / fermeture animées sans flou d'arrière-plan.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   6. Hero : la photo remplit le grand cercle, sans rond vide intermédiaire
+   -------------------------------------------------------------------------- */
+/* La colonne de gauche suit la taille de la photo pour rester alignée. */
+.welcome-identity {
+  grid-template-columns: clamp(144px, 11vw, 176px) minmax(0, 1fr);
+}
+
+.welcome-identity .profile-trigger {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+}
+
+.profile-frame,
+.profile-trigger .profile-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 176px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid rgba(185, 224, 255, 0.55);
+  border-radius: 50%;
+  background: #0b1a2e;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 18px 44px rgba(4, 9, 19, 0.42),
+    0 0 34px rgba(96, 165, 250, 0.22);
+}
+
+/* La lueur reste derrière le cercle : elle ne mange plus l'intérieur. */
+.profile-frame-glow,
+.profile-frame::after {
+  display: none !important;
+}
+
+.profile-avatar,
+.profile-trigger .profile-avatar {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  transform: none;
+  box-shadow: none;
+}
+
+/* La bulle vit hors du cercle rogné : elle est positionnée par rapport au
+   déclencheur entier et se pose justement au-dessus du cadre photo. */
+.welcome-identity .profile-trigger > .profile-tooltip {
+  left: clamp(52px, 5.2vw, 84px);
+}
+
+.creator-handle {
+  margin: 0;
+  justify-self: center;
+}
+
+/* --------------------------------------------------------------------------
+   7. Compteurs « en ligne » : un chiffre et des mots sur la même ligne de base
+   -------------------------------------------------------------------------- */
+.site-presence-text,
+.discord-online-copy {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  color: #eef6ff;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-caps: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+
+.site-presence-text strong,
+.discord-online-copy strong,
+[data-site-presence-count],
+[data-discord-online-count] {
+  display: inline;
+  color: #ffffff;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: 700 !important;
+  letter-spacing: 0;
+  line-height: inherit;
+}
+
+.site-presence {
+  padding: 0 13px;
+  height: 32px;
+}
+
+.site-presence-dot,
+.discord-online-dot {
+  align-self: center;
+  margin: 0;
+}
+
+.creator-carousel .discord-online-copy {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.creator-carousel .discord-online-badge {
+  padding: 0 10px;
+}
+
+/* --------------------------------------------------------------------------
+   8. Couronne et badge Validé : vecteurs nets, coche parfaitement centrée
+   -------------------------------------------------------------------------- */
+.host-crown-icon,
+.contact-chat-host-crown,
+.verified-badge-icon,
+.member-profile-crown,
+.member-admin-shield {
+  display: inline-block;
+  flex: 0 0 auto;
+  vertical-align: -0.16em;
+}
+
+.host-crown-icon {
+  width: 1.15em;
+  height: 1.15em;
+  filter: drop-shadow(0 1px 2px rgba(217, 152, 21, 0.34));
+}
+
+.contact-widget .contact-dialog-topline .host-crown-icon {
+  width: 15px;
+  height: 15px;
+  color: #fbbf24;
+}
+
+.verified-badge-icon {
+  width: 1.05em;
+  height: 1.05em;
+  overflow: visible;
+  shape-rendering: geometricPrecision;
+}
+
+/* --------------------------------------------------------------------------
+   9. Carrousel : tout le contenu respire à l'intérieur, points intégrés
+   -------------------------------------------------------------------------- */
+.welcome-actions {
+  gap: 12px;
+  align-content: center;
+  justify-items: stretch;
+}
+
+.welcome-actions .creator-carousel {
+  width: 100%;
+  min-height: 286px;
+  height: 286px;
+  align-self: center;
+}
+
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta {
+  min-height: 286px;
+  height: 100%;
+  padding: 18px 20px 20px;
+  border-radius: 22px;
+}
+
+.welcome-actions .creator-carousel .discord-content {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.welcome-actions .creator-carousel .creator-slide-topline,
+.welcome-actions .creator-carousel .discord-badge-row {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.welcome-actions .creator-carousel .discord-copy {
+  display: grid;
+  flex: 0 1 auto;
+  align-content: start;
+  gap: 4px;
+  min-height: 0;
+}
+
+.welcome-actions .creator-carousel .discord-detail {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.welcome-actions .creator-carousel .discord-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  /* Respiration à droite : place pour les 3 points intégrés. */
+  padding-right: 74px;
+  gap: 10px;
+}
+
+.welcome-actions .creator-carousel .discord-community-meta {
+  flex: 0 1 auto;
+  justify-items: end;
+  padding-right: 0;
+  text-align: right;
+}
+
+.welcome-actions .creator-carousel .discord-invite {
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.welcome-actions .creator-carousel .discord-action-default {
+  min-height: 38px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+/* Les trois points vivent DANS la carte, en bas à droite. */
+.creator-carousel .creator-carousel-dots {
+  right: 14px;
+  bottom: 14px;
+  z-index: 6;
+  padding: 5px 7px;
+  gap: 5px;
+}
+
+.creator-carousel .creator-carousel-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.creator-carousel .creator-carousel-dot[aria-current="true"] {
+  width: 17px;
+}
+
+.creator-carousel-next {
+  right: 10px;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 200ms ease, background-color 200ms ease, border-color 200ms ease;
+}
+
+.welcome-actions .creator-carousel:hover .creator-carousel-next,
+.welcome-actions .creator-carousel:focus-within .creator-carousel-next {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   10. Colonne de droite : carrousel + planning sur le même axe, gap serré
+   -------------------------------------------------------------------------- */
+.welcome-actions .schedule-card {
+  width: 100%;
+  margin-left: 0;
+  padding: 15px 17px;
+  border-radius: 22px;
+  align-self: stretch;
+}
+
+.welcome-actions .schedule-card h2 {
+  font-size: clamp(0.92rem, 1.05vw, 1.1rem);
+}
+
+.welcome-actions .schedule-days {
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.welcome-actions .schedule-days li {
+  min-height: 40px;
+  padding: 7px 5px;
+}
+
+.welcome-actions .schedule-countdown {
+  margin-top: 9px;
+}
+
+.welcome-actions .schedule-countdown-value {
+  font-size: clamp(1.05rem, 1.3vw, 1.4rem);
+}
+
+/* --------------------------------------------------------------------------
+   11. Fenêtre de discussion : Bento QG, en-tête minimal, composeur épuré
+   -------------------------------------------------------------------------- */
+.contact-widget {
+  width: min(418px, calc(100vw - 30px));
+  height: min(560px, 78vh);
+  height: min(560px, 78dvh);
+  max-height: min(78vh, 690px);
+  max-height: min(78dvh, 690px);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 70% at 88% 0%, rgba(59, 130, 246, 0.18), transparent 58%),
+    linear-gradient(180deg, #111c35 0%, #0c1528 52%, #080e1c 100%);
+  color: #eef5ff;
+  box-shadow:
+    0 26px 70px rgba(2, 6, 18, 0.55),
+    0 0 0 1px rgba(96, 165, 250, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  -webkit-font-smoothing: antialiased;
+  transform-origin: bottom right;
+  /* Entrée et sortie ancrées en bas à droite. On anime `translate` / `scale`
+     (et non `transform`) pour ne jamais écraser le centrage existant de la
+     fenêtre quand elle s'ouvre depuis la barre du compte. */
+  opacity: 0;
+  translate: 0 24px;
+  scale: 0.95;
+  transition:
+    opacity 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    scale 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Les anciennes animations d'entrée keyframes sont neutralisées : la
+   transition ci-dessus est la seule source de mouvement. */
+.contact-widget,
+.contact-widget[data-open-context],
+.contact-widget[data-open-context="top"],
+.contact-widget[data-open-context="launcher"] {
+  animation: none !important;
+}
+
+.contact-widget.is-open {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+.contact-widget.is-closing {
+  opacity: 0;
+  translate: 0 24px;
+  scale: 0.95;
+  pointer-events: none;
+}
+
+.contact-widget[hidden] {
+  display: none !important;
+}
+
+.contact-widget .contact-dialog-card {
+  border-radius: inherit;
+  background: transparent;
+}
+
+.contact-widget .contact-dialog-topline {
+  min-height: 66px;
+  gap: 11px;
+  padding: 12px 14px 12px 16px;
+  border-bottom: 1px solid rgba(96, 165, 250, 0.14);
+  background: linear-gradient(180deg, rgba(23, 38, 66, 0.55), rgba(9, 16, 30, 0));
+}
+
+.contact-widget .contact-header-avatar {
+  width: 38px;
+  height: 38px;
+  border: 1.5px solid rgba(147, 197, 253, 0.55);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  object-fit: cover;
+}
+
+.contact-widget .contact-header-identity {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.contact-widget .contact-header-identity > strong,
+.contact-widget .contact-dialog-topline strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffffff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.contact-header-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Plus de sous-titre « Discussion » ni d'icône bulle sous le pseudo. */
+.contact-header-subject {
+  display: none !important;
+}
+
+.contact-widget .contact-dialog-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(191, 219, 254, 0.2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e8f2ff;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.contact-widget .contact-dialog-close:hover,
+.contact-widget .contact-dialog-close:focus-visible {
+  border-color: rgba(147, 197, 253, 0.6);
+  background: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.14), 0 0 18px rgba(59, 130, 246, 0.32);
+  transform: none;
+}
+
+/* La flèche descend doucement au survol : jamais de rotation. */
+.contact-widget .contact-dialog-close > svg,
+.contact-widget .contact-dialog-close > .qg-icon {
+  width: 17px;
+  height: 17px;
+  transform: none;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.contact-widget .contact-dialog-close:hover > svg,
+.contact-widget .contact-dialog-close:focus-visible > svg,
+.contact-widget .contact-dialog-close:hover > .qg-icon,
+.contact-widget .contact-dialog-close:focus-visible > .qg-icon {
+  transform: translateY(2px);
+}
+
+/* Non connecté : « Connexion requise » + invitation, rien d'autre. */
+.contact-header-context {
+  display: none;
+  min-width: 0;
+}
+
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-avatar,
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-identity {
+  display: none !important;
+}
+
+.contact-widget[data-signed-out="true"] .contact-dialog-topline .contact-header-context {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 3px;
+  align-content: center;
+}
+
+.contact-header-context strong {
+  color: #f6faff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.contact-header-context span {
+  color: #9db4d0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* Le pseudo du haut est affiché d'office une fois connecté (photo + pseudo +
+   couronne + badge Validé), donc « Connexion requise » ne s'affiche que hors
+   connexion. */
+.contact-widget[data-signed-out="false"] .contact-dialog-topline .contact-header-context {
+  display: none !important;
+}
+
+/* Le fil ne porte plus de titre dupliqué ni de bouton Déconnexion. */
+.contact-widget .contact-thread-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 2px 10px;
+}
+
+.contact-widget .contact-thread-subject-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.contact-widget .contact-thread-subject-label {
+  color: #7f97b5;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.contact-widget .contact-thread-heading p {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  margin: 0;
+  color: #cfe2f8;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.contact-widget .contact-thread-state {
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(59, 130, 246, 0.14);
+  color: #cfe4ff;
+  font-size: 9px;
+}
+
+/* Espace libre uniquement pour les messages : plus de bloc « Nouvelle
+   discussion » ni de bouton Déconnexion dans la fenêtre. */
+.contact-widget .contact-new-view {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding: 12px 14px 14px;
+}
+
+.contact-widget .contact-compose-heading {
+  display: none;
+}
+
+/* Composeur : pilule nette, aucune outline au focus. */
+.chat-input-surface,
+.x-chat-input-pill {
+  outline: none !important;
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.chat-input-surface:focus-within,
+.x-chat-input-pill:focus-within,
+.contact-widget .chat-input-surface:focus-within {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.chat-input-surface textarea,
+.x-chat-input-pill textarea,
+.contact-widget textarea {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.chat-input-surface textarea:focus,
+.chat-input-surface textarea:focus-visible,
+.contact-widget textarea:focus,
+.contact-widget textarea:focus-visible,
+.contact-widget input:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Micro studio fin + transition au survol. */
+.contact-voice-record,
+.x-chat-action {
+  border-radius: 999px;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 200ms ease;
+}
+
+.contact-voice-record .qg-icon,
+.x-chat-action .qg-icon {
+  width: 17px;
+  height: 17px;
+  transition: transform 200ms ease;
+}
+
+.contact-voice-record:hover,
+.x-chat-action:hover {
+  border-color: rgba(147, 197, 253, 0.5);
+  background: rgba(59, 130, 246, 0.18);
+  color: #ffffff;
+}
+
+.contact-voice-record:hover .qg-icon,
+.x-chat-action:hover .qg-icon {
+  transform: translateY(-1px) scale(1.04);
+}
+
+/* Déconnexion : plus dans la fenêtre (elle reste dans la barre du compte). */
+.contact-widget .contact-logout {
+  display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   11.b Connexion / inscription : même matière Bento, rien de daté
+   -------------------------------------------------------------------------- */
+.contact-widget .contact-auth {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.contact-widget .chat-welcome-mark {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 0;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 13px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #a9d4ff;
+  font-size: 19px;
+}
+
+.contact-widget .contact-auth h2,
+.contact-widget #contact-title {
+  margin: 0;
+  color: #ffffff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.contact-widget #contact-copy {
+  margin: 0;
+  color: #a5bcd6;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.contact-widget .contact-auth-tabs {
+  margin: 4px 0 2px;
+  padding: 4px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 13px;
+  background: rgba(6, 13, 26, 0.5);
+}
+
+.contact-widget .contact-auth-tabs button {
+  min-height: 34px;
+  border-radius: 10px;
+  color: #9db4d0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.contact-widget .contact-auth-tabs button[aria-selected="true"] {
+  border-color: rgba(96, 165, 250, 0.42);
+  background: rgba(59, 130, 246, 0.2);
+  color: #ffffff;
+}
+
+.contact-widget .contact-auth-form {
+  width: 100%;
+  gap: 10px;
+}
+
+.contact-widget .contact-field > span {
+  color: #9db4d0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.contact-widget .contact-field input,
+.contact-widget .contact-field textarea {
+  border: 1px solid rgba(191, 219, 254, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #ffffff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 200ms ease, background-color 200ms ease;
+}
+
+.contact-widget .contact-field input:focus,
+.contact-widget .contact-field textarea:focus {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.contact-widget .contact-privacy {
+  margin: 0;
+  color: #8ba3bf;
+  font-size: 10.5px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.contact-widget .contact-send {
+  min-height: 40px;
+  border: 1px solid rgba(147, 197, 253, 0.42);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(56, 152, 224, 0.92));
+  color: #ffffff;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  transition: filter 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+.contact-widget .contact-send:hover:not([disabled]) {
+  filter: brightness(1.06);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.32);
+}
+
+/* Le fil occupe toute la hauteur restante, sans en-tête dupliqué. */
+.contact-widget .contact-thread {
+  padding: 10px 14px 12px;
+}
+
+.contact-widget .contact-thread-messages {
+  padding: 2px 2px 6px;
+}
+
+.contact-widget .contact-reply-form {
+  padding-top: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   12. Le lanceur reste net et actif quand la discussion est ouverte
+   -------------------------------------------------------------------------- */
+.contact-launcher {
+  z-index: 82;
+  transition:
+    transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 220ms ease,
+    background-color 220ms ease;
+}
+
+.contact-launcher[aria-expanded="true"] {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16), 0 14px 32px rgba(2, 6, 18, 0.42);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-widget,
+  .contact-widget.is-open,
+  .contact-widget.is-closing,
+  .contact-widget .contact-dialog-close > svg,
+  .contact-widget .contact-dialog-close > .qg-icon {
+    transition-duration: 1ms;
+  }
+}
+
+/* Sur mobile, la fenêtre ouverte depuis la barre du compte est centrée par un
+   `transform: translateX(-50%)` : on garde ce centrage quand elle glisse. */
+@media (max-width: 760px) {
+  .contact-widget[data-open-context="top"] {
+    translate: none;
+    scale: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Petits écrans : on garde les mêmes intentions sans casser la mise en page
+   -------------------------------------------------------------------------- */
+@media (max-width: 940px) {
+  .welcome-panel {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(96px, 26vw, 128px) minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .profile-frame {
+    width: clamp(96px, 26vw, 128px);
+  }
+
+  .welcome-panel h1 {
+    font-size: clamp(1.65rem, 6vw, 2.2rem);
+  }
+
+  .welcome-copy {
+    max-width: none;
+    font-size: 0.95rem;
+  }
+
+  .welcome-actions {
+    grid-template-rows: auto auto;
+  }
+
+  .welcome-actions .creator-carousel,
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    min-height: 250px;
+    height: 250px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 16px;
+  }
+
+  .welcome-actions .schedule-card {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .welcome-identity {
+    grid-template-columns: clamp(112px, 30vw, 148px) minmax(0, 1fr);
+  }
+
+  .profile-frame,
+  .profile-trigger .profile-frame {
+    width: 100%;
+    max-width: 148px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    padding-right: 66px;
+  }
+
+  .welcome-account-bar {
+    height: auto;
+    min-height: 48px;
+    flex-wrap: wrap;
+  }
+
+  .member-access-button {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .creator-carousel .creator-slide--discord .discord-badge-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .creator-carousel .discord-online-badge { height: 24px; padding: 0 8px; }
+  .creator-carousel .discord-online-copy { font-size: 10px; }
+}
+
+@media (max-width: 520px) {
+  .welcome-actions .creator-carousel .discord-badge-group { gap: 5px; }
+  .creator-carousel .creator-slide--discord .discord-badge-row { margin-bottom: 8px; }
+  .welcome-actions .creator-carousel .discord-copy strong { font-size: 1.35rem; }
+  .welcome-actions .creator-carousel .discord-detail { font-size: 12px; -webkit-line-clamp: 2; line-clamp: 2; }
+  .welcome-actions .creator-carousel .discord-footer { padding-right: 58px; }
+  .contact-widget { width: calc(100vw - 24px); }
+  .contact-widget .contact-dialog-topline { min-height: 60px; padding: 10px 12px 10px 14px; }
+}
+
+/* ==========================================================================
+   13. Passe « 7 points » : Hero qui tient, Planning moderne, chat façon X
+   --------------------------------------------------------------------------
+   Ce bloc est le dernier du dernier fichier chargé : il a le dernier mot sur
+   les feuilles précédentes (styles.css, ui-refresh.css, display-fixes.css,
+   chat-x.css). Tout est écrit sans bordure dure, sans cadre « montre
+   digitale » et sans élément rogné.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   13.1 Hero / PC : la barre du compte a son propre étage, la carte du
+   carrousel commence toujours EN DESSOUS et descend jusqu'au planning
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  /* La bulle « Qui suis-je ? » dépasse le haut du panneau : il ne rogne plus. */
+  .welcome-panel {
+    overflow: visible !important;
+  }
+
+  /* Hero en deux étages : [barre du compte] / [identité + colonne droite]. */
+  .welcome-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 44%);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    column-gap: clamp(18px, 2.2vw, 30px);
+    row-gap: 0;
+    padding: clamp(16px, 1.8vw, 24px);
+  }
+
+  /* Étages 1 : la barre d'authentification, à sa place, avec une marge nette.
+     Elle glisse à droite pour laisser la bulle « Qui suis-je ? » respirer. */
+  .welcome-account-bar {
+    position: relative;
+    inset: auto;
+    z-index: 6;
+    margin-left: auto;
+    display: flex !important;
+    width: 100%;
+    max-width: none;
+    height: 46px;
+    min-height: 46px;
+    flex: 0 0 46px;
+    align-items: center;
+    justify-content: flex-end;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    /* `mb-3` : 12 px entre la barre et le haut de la carte. */
+    margin-bottom: 12px;
+    padding: 3px 5px 3px 12px;
+    border-radius: 999px;
+  }
+
+  .welcome-account-bar .welcome-account-identity {
+    margin-right: auto;
+  }
+
+  .welcome-account-bar .welcome-account-identity {
+    margin-right: auto;
+  }
+
+  /* Étages 2 : identité à gauche, carrousel + planning à droite. */
+  .welcome-identity {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: center;
+  }
+
+  .welcome-actions {
+    display: flex;
+    min-height: 0;
+    height: 100%;
+    grid-column: 2;
+    grid-row: 2;
+    flex-direction: column;
+    align-self: stretch;
+    justify-content: space-between;
+    /* `gap-3` : le seul espace entre la carte et « LES PROCHAINS LIVES ». */
+    gap: 12px;
+  }
+
+  /* La carte du carrousel s'étire : elle finit juste au-dessus du planning. */
+  .welcome-actions .creator-carousel {
+    height: auto;
+    min-height: clamp(236px, 27vh, 328px);
+    flex: 1 1 auto;
+    align-self: stretch;
+  }
+
+  .welcome-actions .schedule-card {
+    flex: 0 0 auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13.2 Les 3 slides : badges / titre + description / bouton + lien
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta {
+  padding: 18px 20px 20px;
+  border-radius: 22px;
+  /* Les slides sont posés en absolu dans le carrousel : une colonne pleine
+     hauteur garantit que `space-between` répartit vraiment les trois blocs. */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.welcome-actions .creator-carousel .discord-content {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.welcome-actions .creator-carousel .creator-slide-topline,
+.welcome-actions .creator-carousel .discord-badge-row {
+  flex: 0 0 auto;
+  align-items: flex-start;
+  margin: 0;
+}
+
+.welcome-actions .creator-carousel .discord-copy {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-content: start;
+  justify-content: center;
+  gap: 0;
+}
+
+.welcome-actions .creator-carousel .discord-overline {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+}
+
+.welcome-actions .creator-carousel .discord-copy strong {
+  gap: 8px;
+  margin-top: 2px;
+  font-size: clamp(1.5rem, 1.9vw, 1.95rem);
+  line-height: 1.1;
+}
+
+/* Description complète, juste sous le titre : 4 lignes suffisent à afficher
+   la phrase entière à ces largeurs, et le garde-fou évite tout chevauchement
+   avec le bouton si la carte est très étroite. */
+.welcome-actions .creator-carousel .discord-detail {
+  display: -webkit-box;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+/* Bas de carte : bouton à gauche, lien/membres juste en dessous. */
+.welcome-actions .creator-carousel .discord-footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  /* Place pour les 3 points intégrés, en bas à droite. */
+  padding-right: 74px;
+}
+
+.welcome-actions .creator-carousel .discord-action {
+  flex: 0 0 auto;
+}
+
+.welcome-actions .creator-carousel .discord-action-default {
+  min-height: 38px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.welcome-actions .creator-carousel .discord-community-meta {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-items: start;
+  gap: 5px;
+  padding-right: 0;
+  text-align: left;
+}
+
+.welcome-actions .creator-carousel .discord-invite,
+.welcome-actions .creator-carousel .discord-member-count {
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Les 3 points, DANS la carte colorée, en bas à droite, jamais dehors. */
+.welcome-actions .creator-carousel .creator-carousel-dots {
+  position: absolute;
+  z-index: 6;
+  right: 16px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(4, 18, 36, 0.34);
+}
+
+/* --------------------------------------------------------------------------
+   13.3 Planning : plus large vers la gauche, capsule douce, compteur fluide
+   -------------------------------------------------------------------------- */
+.welcome-actions .schedule-card.schedule-card--refresh {
+  overflow: visible;
+  padding: 16px 18px;
+  border: 1px solid rgba(96, 165, 250, 0.16);
+  border-radius: 22px;
+  box-shadow: 0 0 26px rgba(37, 99, 235, 0.1), inset 0 1px 0 rgba(191, 219, 254, 0.05);
+}
+
+@media (min-width: 941px) {
+  /* Largeurs différenciées : la carte réseau est un peu en retrait à droite,
+     le planning occupe toute la largeur disponible (il reste dans le panneau,
+     donc il ne passe jamais derrière le texte « Bienvenue »). */
+  .welcome-actions .creator-carousel {
+    width: 88%;
+    margin-left: auto;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+/* En-tête du planning : lisible, sans mini-cadre autour du titre. */
+.schedule-card--refresh .schedule-mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(79, 70, 229, 0.9));
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.24);
+}
+
+.schedule-card--refresh .schedule-mark svg {
+  width: 19px;
+  height: 19px;
+}
+
+.schedule-card--refresh .schedule-copy h2 {
+  color: #ffffff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: clamp(13px, 1.05vw, 16px);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
+.schedule-card--refresh .schedule-copy p {
+  gap: 6px;
+  margin-top: 3px;
+  color: #b9cbe4;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+/* Jours : surfaces douces, plus de petits cadres serrés. */
+.schedule-card--refresh .schedule-days {
+  gap: 8px;
+}
+
+.schedule-card--refresh .schedule-days li,
+.schedule-card--refresh .schedule-days li[data-next-live] {
+  gap: 4px;
+  padding: 9px 6px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] {
+  background: linear-gradient(180deg, #3b82f6, #4f46e5);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.28);
+}
+
+.schedule-card--refresh .schedule-days li .schedule-day-name {
+  font-size: clamp(10px, 0.8vw, 11.5px);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.schedule-card--refresh .schedule-days li .schedule-day-time {
+  color: #93a5bd;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-time {
+  color: rgba(224, 242, 254, 0.95);
+}
+
+.schedule-card--refresh .schedule-days li[data-next-live] .schedule-day-next-label {
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+}
+
+/* Le petit point vert n'est jamais rogné sur le bord gauche. */
+.schedule-card--refresh .schedule-copy {
+  padding-left: 4px;
+  overflow: visible;
+}
+
+.schedule-card--refresh .schedule-copy p {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.schedule-card--refresh .schedule-live-indicator {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  margin-left: 1px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.85);
+  overflow: visible;
+}
+
+.schedule-card--refresh .schedule-live-indicator::after {
+  position: absolute;
+  inset: -3px;
+  border: 1px solid rgba(52, 211, 153, 0.5);
+  border-radius: 50%;
+  content: "";
+  animation: qg-live-ping 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@keyframes qg-live-ping {
+  0% { transform: scale(0.85); opacity: 0.85; }
+  70% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* Horaire : capsule douce, plus de cadre rigide « IA ». */
+.schedule-card--refresh .schedule-time,
+.schedule-card--refresh .schedule-time[data-layout="varied"],
+.schedule-card--refresh .schedule-time[data-layout="empty"] {
+  min-height: 0;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  color: #fff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-time[data-layout="varied"] {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+
+/* Compteur : une ligne, aucun petit cadre autour des chiffres. */
+.schedule-card--refresh .schedule-countdown,
+.schedule-card--refresh .schedule-countdown-live {
+  display: flex;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.schedule-card--refresh .schedule-countdown-label {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 0;
+  overflow: visible;
+  color: #e2e8f0;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-overflow: clip;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-countdown-value {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-shadow: none;
+  white-space: nowrap;
+}
+
+.schedule-card--refresh .schedule-countdown-chunk {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  /* L'ancien chiffre glisse vers le bas : il reste dans la ligne. */
+  overflow: hidden;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* `[hidden]` de la base du site est `display: block !important` : on garde la
+   règle locale pour que les unités disparaissent vraiment quand il n'y a plus
+   de live programmé. */
+.schedule-card--refresh .schedule-countdown-chunk[hidden],
+.schedule-card--refresh .schedule-countdown-empty[hidden] {
+  display: none !important;
+}
+
+.schedule-card--refresh .schedule-countdown-digits {
+  display: inline-block;
+  min-width: 1.15em;
+  text-align: right;
+}
+
+.schedule-card--refresh .schedule-countdown-suffix {
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* Le chiffre qui part glisse vers le bas pendant que le nouveau descend. */
+.schedule-card--refresh .schedule-countdown-ghost {
+  position: absolute;
+  inset: 0;
+  display: inline-block;
+  color: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.schedule-card--refresh .schedule-countdown-digits.is-ticking {
+  animation: qg-countdown-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.schedule-card--refresh .schedule-countdown-digits .is-ticking .schedule-countdown-ghost,
+.schedule-card--refresh .schedule-countdown-chunk:has(.is-ticking) .schedule-countdown-ghost {
+  animation: qg-countdown-out 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes qg-countdown-in {
+  from { transform: translateY(-70%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes qg-countdown-out {
+  from { transform: translateY(0); opacity: 0.75; }
+  to { transform: translateY(70%); opacity: 0; }
+}
+
+.schedule-card--refresh .schedule-countdown-value[data-empty="true"] {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+@media (max-width: 940px) {
+  .schedule-card--refresh .schedule-countdown-label {
+    font-size: 12px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-value {
+    font-size: 16px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .schedule-card--refresh .schedule-countdown {
+    gap: 6px;
+    padding: 9px 12px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    font-size: 11px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-value {
+    gap: 4px;
+    font-size: 14.5px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13.4 Téléphone : la barre de compte reste sur UNE seule ligne
+   -------------------------------------------------------------------------- */
+@media (max-width: 940px) {
+  .welcome-account-bar {
+    display: flex !important;
+    width: 100%;
+    height: auto;
+    min-height: 38px;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 3px 4px 3px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .welcome-account-bar .welcome-account-identity {
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  .welcome-account-bar .member-visitor,
+  .welcome-account-bar .member-identity {
+    gap: 4px;
+    font-size: 10.5px;
+    white-space: nowrap;
+  }
+
+  .welcome-account-bar .member-access-actions {
+    display: flex;
+    min-width: 0;
+    height: auto;
+    min-height: 32px;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  .welcome-account-bar .member-access-button {
+    height: 30px;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .welcome-account-bar .site-presence {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .welcome-account-bar .member-profile-avatar {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+  }
+
+  .welcome-account-bar .member-profile-pseudo {
+    max-width: 74px;
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 420px) {
+  .welcome-account-bar {
+    gap: 4px;
+    padding: 3px 3px 3px 8px;
+  }
+
+  .welcome-account-bar .member-access-actions {
+    gap: 3px;
+  }
+
+  .welcome-account-bar .member-access-button {
+    height: 28px;
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 9px;
+  }
+
+  .welcome-account-bar .member-visitor {
+    font-size: 9.5px;
+  }
+
+  .welcome-account-bar .member-visitor-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .welcome-account-bar .member-profile-pseudo {
+    max-width: 52px;
+  }
+
+  .welcome-account-bar .site-presence {
+    display: none;
+  }
+}
+
+/* Très petits écrans : on garde une seule ligne, on retire juste le pseudo. */
+@media (max-width: 360px) {
+  .welcome-account-bar {
+    gap: 3px;
+    padding: 3px 3px 3px 7px;
+  }
+
+  .welcome-account-bar .member-profile-name-line,
+  .welcome-account-bar .member-profile-avatar {
+    display: none;
+  }
+
+  .welcome-account-bar .member-access-button {
+    padding: 0 6px;
+    font-size: 8.5px;
+    letter-spacing: 0;
+  }
+
+  .welcome-account-bar .member-visitor {
+    font-size: 9px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13.5 Bulle « Qui suis-je » : au-dessus du cercle, jamais rognée
+   -------------------------------------------------------------------------- */
+.welcome-identity .profile-trigger {
+  position: relative;
+  overflow: visible;
+}
+
+/* Sous 941 px, le panneau garde son `overflow: hidden` : la bulle se pose donc
+   SUR le bas du cercle, entièrement dans le panneau, jamais rognée. */
+@media (max-width: 940px) {
+  .welcome-identity .profile-trigger > .profile-tooltip {
+    bottom: 2px;
+    left: 50%;
+    transform: translate(-50%, 6px) scale(0.96);
+  }
+
+  .welcome-identity .profile-trigger:hover > .profile-tooltip,
+  .welcome-identity .profile-trigger:focus-visible > .profile-tooltip {
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+/* Sur PC, la bulle se pose au-dessus du cercle, à droite : elle ne sort jamais
+   du panneau et n'est jamais coupée par la barre du compte. */
+@media (min-width: 941px) {
+  .welcome-identity .profile-trigger > .profile-tooltip {
+    top: -34px;
+    bottom: auto;
+    left: auto;
+    right: -14px;
+    transform: translate(0, 6px) scale(0.96);
+  }
+
+  .welcome-identity .profile-trigger:hover > .profile-tooltip,
+  .welcome-identity .profile-trigger:focus-visible > .profile-tooltip {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.welcome-identity .profile-tooltip {
+  z-index: 30;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   13.6 Badge bleu « Validé » : le SVG respire, rien n'est coupé
+   -------------------------------------------------------------------------- */
+.verified-badge,
+.member-profile-name-line .verified-badge {
+  overflow: visible;
+  padding: 0;
+}
+
+.verified-badge-icon {
+  overflow: visible;
+  transform: scale(1.02);
+}
+
+/* --------------------------------------------------------------------------
+   13.7 Chat : fermeture = exact inverse de l'ouverture (280 ms, bas droite)
+   -------------------------------------------------------------------------- */
+.contact-widget.is-closing {
+  opacity: 0;
+  translate: 0 24px;
+  scale: 0.95;
+  transform-origin: bottom right;
+  pointer-events: none;
+  transition:
+    opacity 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 280ms cubic-bezier(0.16, 1, 0.3, 1),
+    scale 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --------------------------------------------------------------------------
+   13.8 Bas du chat : footer symétrique, pilule et `+` sur la même ligne
+   -------------------------------------------------------------------------- */
+.contact-widget .contact-form.contact-chat-composer,
+.contact-widget .contact-reply-form.contact-chat-composer,
+.admin-body .conversation-reply-form.admin-chat-composer {
+  gap: 8px;
+  /* Même air au-dessus et en dessous de la ligne de boutons. */
+  padding: 14px 16px max(14px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+}
+
+.contact-widget .x-chat-compose-row,
+.admin-body .conversation-reply-form .x-chat-compose-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  /* Une seule ligne, alignement par le centre : `+` et pilule à la même hauteur. */
+  align-items: center;
+  gap: 10px;
+}
+
+/* Bouton rond `[ + ]` : surface pleine, aucune bordure, +20 % au survol. */
+.contact-widget .chat-plus-button.x-chat-plus,
+.admin-body .admin-chat-plus.x-chat-plus {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #1b273d;
+  color: #e8f1ff;
+  /* L'icône reste un `+` droit : jamais de rotation, même au survol. */
+  transform: none;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.contact-widget .chat-plus-button.x-chat-plus:hover,
+.contact-widget .chat-plus-button.x-chat-plus:focus-visible,
+.admin-body .admin-chat-plus.x-chat-plus:hover,
+.admin-body .admin-chat-plus.x-chat-plus:focus-visible {
+  border: 0;
+  background: #2a3c5c;
+  color: #ffffff;
+  transform: none;
+}
+
+.contact-widget .chat-plus-button.x-chat-plus[aria-expanded="true"],
+.admin-body .admin-chat-plus.x-chat-plus[aria-expanded="true"] {
+  transform: none;
+}
+
+.contact-widget .chat-plus-button.x-chat-plus > .qg-icon,
+.admin-body .admin-chat-plus.x-chat-plus > .qg-icon {
+  width: 20px;
+  height: 20px;
+  transform: none;
+}
+
+/* Grande pilule `[ Message ]` : même hauteur (44 px), surface pleine. */
+.contact-widget .chat-input-surface.x-chat-input-pill,
+.admin-body .admin-chat-input-wrap.x-chat-input-pill {
+  display: flex;
+  height: 44px;
+  min-height: 44px;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #1b273d;
+  box-shadow: none;
+  transition: background-color 150ms ease;
+}
+
+.contact-widget .chat-input-surface.x-chat-input-pill:hover,
+.contact-widget .chat-input-surface.x-chat-input-pill:focus-within,
+.admin-body .admin-chat-input-wrap.x-chat-input-pill:hover,
+.admin-body .admin-chat-input-wrap.x-chat-input-pill:focus-within {
+  border: 0;
+  background: #2a3c5c;
+  box-shadow: none;
+  outline: none;
+}
+
+.contact-widget .chat-input-surface.x-chat-input-pill textarea,
+.admin-body .admin-chat-input-wrap.x-chat-input-pill textarea {
+  min-height: 20px;
+  max-height: 20px;
+  flex: 1 1 auto;
+  align-self: center;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #f2f7ff;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13.5px;
+  line-height: 20px;
+  resize: none;
+}
+
+.contact-widget .chat-input-surface.x-chat-input-pill textarea::placeholder,
+.admin-body .admin-chat-input-wrap.x-chat-input-pill textarea::placeholder {
+  color: #8b9cb5;
+}
+
+/* Micro / envoi dans la pilule : surface plus claire, +20 % au survol. */
+.contact-widget .contact-voice-record.x-chat-action,
+.admin-body .admin-chat-voice-record.x-chat-action {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  flex: 0 0 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #243452;
+  color: #ffffff;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.contact-widget .contact-voice-record.x-chat-action:hover,
+.contact-widget .contact-voice-record.x-chat-action:focus-visible,
+.admin-body .admin-chat-voice-record.x-chat-action:hover,
+.admin-body .admin-chat-voice-record.x-chat-action:focus-visible {
+  border: 0;
+  background: #32476e;
+  color: #ffffff;
+  transform: none;
+}
+
+.contact-widget .contact-voice-record.x-chat-action:hover .qg-icon,
+.admin-body .admin-chat-voice-record.x-chat-action:hover .qg-icon {
+  transform: none;
+}
+
+/* Bouton rond `[ ⌄ ]` de l'en-tête : surface pleine, aucune bordure. */
+.contact-widget .contact-dialog-close,
+.contact-widget .contact-dialog-close:hover,
+.contact-widget .contact-dialog-close:focus-visible,
+.contact-widget .contact-dialog-close:active {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: #1b273d;
+  box-shadow: none;
+  color: #e8f1ff;
+  transform: none;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.contact-widget .contact-dialog-close:hover,
+.contact-widget .contact-dialog-close:focus-visible {
+  background: #2a3c5c;
+  color: #ffffff;
+}
+
+/* Même système pour les boutons secondaires du même type. */
+.contact-widget .contact-thread-state,
+.profile-dialog .profile-dialog-close,
+.profile-dialog .profile-password-toggle {
+  border: 0;
+  background: #1b273d;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.contact-widget .contact-thread-state:hover,
+.profile-dialog .profile-dialog-close:hover,
+.profile-dialog .profile-password-toggle:hover,
+.profile-dialog .profile-dialog-close:focus-visible,
+.profile-dialog .profile-password-toggle:focus-visible {
+  border: 0;
+  background: #2a3c5c;
+}
+
+.admin-body .admin-chat-plus.x-chat-plus[disabled],
+.contact-widget .chat-plus-button.x-chat-plus[disabled] {
+  background: #1b273d;
+  color: rgba(232, 241, 255, 0.45);
+}
+
+/* --------------------------------------------------------------------------
+   13.9 Le panneau du Hero ne rogne plus rien
+   --------------------------------------------------------------------------
+   `overflow: visible` laisse passer la bulle « Qui suis-je ? », donc on retire
+   aussi tout ce qui la faisait disparaître : le noir du panneau est désormais
+   peint par le fond de `.welcome-panel` seul, sans effet de bord négatif.
+   -------------------------------------------------------------------------- */
+.welcome-panel {
+  overflow: visible;
+}
+
+.welcome-panel::before,
+.welcome-panel::after {
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   13.10 Petits écrans : on garde les mêmes intentions, jamais de 2e ligne
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .contact-widget .contact-form.contact-chat-composer,
+  .contact-widget .contact-reply-form.contact-chat-composer {
+    padding: 12px 12px max(12px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .contact-widget .x-chat-compose-row {
+    gap: 8px;
+  }
+
+  .contact-widget .chat-plus-button.x-chat-plus,
+  .contact-widget .chat-input-surface.x-chat-input-pill {
+    height: 42px;
+    min-height: 42px;
+  }
+
+  .contact-widget .chat-plus-button.x-chat-plus {
+    width: 42px;
+    min-width: 42px;
+    flex-basis: 42px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    padding-right: 58px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-card--refresh .schedule-countdown-digits.is-ticking,
+  .schedule-card--refresh .schedule-countdown-chunk:has(.is-ticking) .schedule-countdown-ghost,
+  .schedule-card--refresh .schedule-live-indicator::after {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   14. Passe « Hero équilibré » : une seule hauteur, aucun chevauchement
+   --------------------------------------------------------------------------
+   Trois causes de chevauchement / de vide étaient en jeu :
+     • la carte du carrousel (et chaque slide) était bridée à 200 px par
+       `display-fixes.css` alors que sa colonne en faisait 260 → 60 px de vide
+       sous Discord, et le contenu débordait par-dessus les badges ;
+     • `.discord-copy` était en `flex: 1 1 auto` avec `min-height: 0` : elle se
+       comprimait à 30 px et laissait titre + description sortir de la boîte ;
+     • la carte faisait 88 % de la colonne avec un décalage à droite, d'où la
+       bande vide à gauche de Discord et l'impression de « petit rectangle ».
+   Désormais la carte visible définit la hauteur de la pile, le contenu ne
+   descend jamais sous sa taille naturelle, et la colonne de droite remplit
+   exactement la hauteur du panneau.
+   ========================================================================== */
+
+/* 14.1 Le carrousel prend la hauteur de sa carte visible ------------------ */
+.welcome-actions .creator-carousel {
+  display: flex;
+  min-height: 0;
+  max-height: none;
+  flex-direction: column;
+  touch-action: pan-y;
+}
+
+.welcome-actions .creator-carousel .creator-slide,
+.welcome-actions .creator-carousel .discord-cta {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+/* Les slides inactives sont posées les unes sur les autres… */
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="false"] {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+/* …la carte visible reste dans le flux : elle donne sa hauteur à la pile. */
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+  position: relative;
+  inset: auto;
+  height: auto;
+  flex: 1 1 auto;
+}
+
+/* 14.2 Le contenu ne se comprime plus jamais sous sa taille naturelle ---- */
+.welcome-actions .creator-carousel .discord-content {
+  display: flex;
+  min-height: 0;
+  height: auto;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.welcome-actions .creator-carousel .discord-copy {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.welcome-actions .creator-carousel .discord-detail {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  margin-bottom: 0;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+.welcome-actions .creator-carousel .discord-footer {
+  flex: 0 0 auto;
+}
+
+/* 14.3 Hero ≥ 941 px : colonne de droite pleine, carte large, zéro vide --- */
+@media (min-width: 941px) {
+  /* Une seule colonne, deux étages : le Hero prend la place restante, la
+     carte « Retrouve-moi ici » garde sa hauteur. Plus de scroll parasite. */
+  .hub-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: stretch;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .welcome-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .welcome-actions {
+    justify-content: flex-start;
+    gap: clamp(12px, 1.1vw, 16px);
+  }
+
+  /* La carte réseau fait toute la largeur de la colonne, comme le planning. */
+  .welcome-actions .creator-carousel {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    margin-left: 0;
+    flex: 1 1 auto;
+    align-self: stretch;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  /* Un peu plus d'air dans la carte : elle a maintenant la place. */
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 20px 22px 22px;
+  }
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.6rem, 2vw, 2.05rem);
+  }
+
+  .welcome-actions .creator-carousel .discord-detail {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+/* 14.4 Écrans bas : on comprime le gabarit au lieu de créer un scroll ------ */
+@media (min-width: 941px) and (max-height: 820px) {
+  .welcome-panel {
+    padding: 14px clamp(14px, 1.4vw, 20px);
+  }
+
+  .welcome-account-bar {
+    height: 42px;
+    min-height: 42px;
+    flex-basis: 42px;
+    margin-bottom: 10px;
+  }
+
+  .welcome-actions {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 16px 18px 18px;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .discord-detail {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 12px;
+  }
+}
+
+/* 14.5 Téléphone : la pile suit son contenu, plus de carte trop courte ----- */
+@media (max-width: 940px) {
+  .welcome-actions .creator-carousel {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+    min-height: 236px;
+  }
+}
+
+/* 14.6 Barre de compte : le pseudo ne passe plus SOUS les boutons ---------- */
+.welcome-account-bar .welcome-account-identity {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.welcome-account-bar .member-visitor,
+.welcome-account-bar .member-identity {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 460px) {
+  /* Sur un écran étroit, le libellé se raccourcit proprement (…) au lieu de
+     glisser sous « Se connecter ». */
+  .welcome-account-bar {
+    gap: 6px;
+    padding-right: 4px;
+  }
+
+  .welcome-account-bar .member-visitor {
+    flex: 0 1 auto;
+    font-size: 10px;
+  }
+
+  .welcome-account-bar .member-access-actions {
+    flex: 0 0 auto;
+  }
+
+  .welcome-account-bar .member-access-button {
+    padding: 0 9px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 360px) {
+  /* Là, vraiment plus de place : on garde les deux boutons, on retire le texte. */
+  .welcome-account-bar .welcome-account-identity {
+    display: none;
+  }
+
+  .welcome-account-bar {
+    justify-content: flex-end;
+  }
+}
+
+/* 14.7 Planning : un peu plus généreux, toujours dans sa carte ------------ */
+.welcome-actions .schedule-card.schedule-card--refresh {
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.schedule-card--refresh .schedule-copy h2 {
+  font-size: clamp(14px, 1.1vw, 17px);
+}
+
+.schedule-card--refresh .schedule-days li {
+  min-height: 48px;
+  padding: 9px 6px;
+}
+
+.schedule-card--refresh .schedule-countdown {
+  padding: 9px 14px;
+}
+
+/* --------------------------------------------------------------------------
+   14.8 Compteur : la durée reste sur une ligne, l'icône du chat ne la mange
+   plus
+   --------------------------------------------------------------------------
+   Le lanceur du chat est fixé en bas à droite par-dessus le site. Sous
+   1 000 px, le compteur du planning passait dessous. On lui laisse donc une
+   réserve à droite, uniquement là où le lanceur peut le recouvrir.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1000px) {
+  .welcome-actions .schedule-card .schedule-countdown {
+    padding-right: 74px;
+  }
+}
+
+@media (max-width: 420px) {
+  .welcome-actions .schedule-card .schedule-countdown {
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 62px 8px 12px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+  }
+
+  .schedule-card--refresh .schedule-countdown-value {
+    gap: 3px;
+    font-size: 14px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14.9 Carte réseau : le texte respire, le bouton et les points ne se
+   chevauchent jamais
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel .discord-footer {
+  gap: 10px;
+  padding-right: 86px;
+}
+
+.welcome-actions .creator-carousel .discord-community-meta {
+  gap: 8px;
+}
+
+@media (max-width: 940px) {
+  .welcome-actions .creator-carousel .discord-footer {
+    padding-right: 74px;
+  }
+}
+
+/* ==========================================================================
+   15. Passe « aucune compression » : le Hero suit son contenu
+   --------------------------------------------------------------------------
+   Le Hero était posé dans une grille de hauteur fixe (« une seule fenêtre ») :
+   quand la fenêtre était un peu courte (1 024 × 768, 1 366 × 768…), la colonne
+   de droite se faisait rogner et la carte Discord tombait à 60 px de haut, son
+   contenu débordant par-dessus les badges. On laisse désormais le contenu
+   décider de la hauteur (avec un plancher `min-content` qui interdit toute
+   compression), et le Hero s'étire seulement s'il reste de la place.
+   ========================================================================== */
+@media (min-width: 941px) {
+  .site-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .hub-layout {
+    display: grid;
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(min-content, 1fr) auto;
+    align-content: stretch;
+    align-items: stretch;
+    overflow: visible;
+    scrollbar-width: auto;
+  }
+
+  .welcome-panel {
+    height: auto;
+    min-height: min-content;
+    overflow: visible;
+  }
+
+  /* La carte réseau et le planning ne descendent JAMAIS sous leur contenu. */
+  .welcome-actions {
+    height: auto;
+    min-height: min-content;
+  }
+
+  .welcome-actions .creator-carousel {
+    height: auto;
+    min-height: min-content;
+    max-height: none;
+    flex: 1 1 auto;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+    min-height: min-content;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    min-height: min-content;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    min-height: min-content;
+  }
+
+  .networks-panel {
+    min-height: min-content;
+  }
+}
+
+/* Fenêtre courte : on comprime le texte, jamais la carte. */
+@media (min-width: 941px) and (max-height: 860px) {
+  .welcome-actions .creator-carousel .discord-detail {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.35rem, 1.7vw, 1.7rem);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.1 Les trois cartes ont la MÊME hauteur (celle de la plus grande)
+   --------------------------------------------------------------------------
+   Les slides inactives étaient en `position: absolute` : la pile prenait
+   seulement la hauteur de la carte affichée, si bien que passer de Discord à
+   Twitch faisait sauter le planning. On les empile maintenant dans une seule
+   cellule de grille : la grille prend la hauteur du contenu le plus haut, et
+   chaque carte s'étire dessus. Plus de saut, plus de carte « trop petite ».
+   -------------------------------------------------------------------------- */
+.welcome-actions .creator-carousel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  align-items: stretch;
+}
+
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide],
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"],
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="false"] {
+  position: relative;
+  inset: auto;
+  grid-area: 1 / 1;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="false"] {
+  transform: translate3d(18px, 0, 0);
+}
+
+.welcome-actions .creator-carousel .discord-cta[data-carousel-slide][data-active="true"] {
+  transform: translate3d(0, 0, 0);
+}
+
+/* --------------------------------------------------------------------------
+   15.2 Le Hero prend la hauteur restante, sans jamais dépasser la fenêtre
+   --------------------------------------------------------------------------
+   `min-height: min-content` protège le contenu, mais il ne doit pas pousser le
+   pied de page hors de l'écran : la rangée du Hero est bornée par la place
+   réellement disponible, et c'est la carte du planning qui absorbe la
+   différence (elle est en `flex: 0 0 auto`, donc elle garde sa taille).
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  .site-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    padding-bottom: 0;
+  }
+
+  .site-header {
+    flex: 0 0 auto;
+  }
+
+  /* Le plancher `min-content` interdit toute compression de la carte réseau :
+     si la fenêtre est vraiment trop courte, c'est la page qui défile — jamais
+     le contenu qui se chevauche. */
+  .hub-layout {
+    grid-template-rows: minmax(min-content, 1fr) auto;
+    align-content: stretch;
+    padding-block: 8px 6px;
+    row-gap: 8px;
+  }
+
+  .welcome-panel {
+    overflow: visible;
+  }
+
+  .site-footer {
+    flex: 0 0 auto;
+    padding-block: 4px;
+  }
+}
+
+/* Sous 940 px, la page défile normalement : rien à brider. */
+
+/* --------------------------------------------------------------------------
+   15.3 Un seul scroll, celui de la page
+   --------------------------------------------------------------------------
+   `display-fixes.css` gardait `html, body { height: 100% }` + `overflow-y:
+   auto` sur le body : le défilement se faisait donc DANS le body, d'où cette
+   barre qui semblait glisser « entre le bloc Bienvenue et Retrouve-moi ici ».
+   On rend la hauteur au document : une seule barre, celle de la fenêtre.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  .site-shell {
+    height: auto;
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.4 Compteur : la seconde qui « glisse » reste dans sa ligne
+   --------------------------------------------------------------------------
+   La pastille `.schedule-countdown-chunk` clippait la seconde en cours
+   d'animation et les suffixes `h/m/s` se retrouvaient à moitié coupés. Les
+   unités sortent donc du cadre animé : le chiffre glisse, l'unité reste nette.
+   -------------------------------------------------------------------------- */
+.schedule-card--refresh .schedule-countdown-chunk {
+  overflow: visible;
+  gap: 2px;
+}
+
+.schedule-card--refresh .schedule-countdown-digits {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  /* Une ligne de chiffres + sa marge basse : le glissement ne mord jamais
+     sur l'unité voisine. */
+  padding-block: 0.06em 0.12em;
+  line-height: 1.05;
+  vertical-align: baseline;
+}
+
+/* Le doublon sortant est DANS la boîte du chiffre : il glisse vers le bas sans
+   jamais dépasser sur l'unité suivante. */
+.schedule-card--refresh .schedule-countdown-ghost {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: inherit;
+  line-height: 1.05;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.schedule-card--refresh .schedule-countdown-suffix {
+  position: relative;
+  flex: 0 0 auto;
+  color: #38bdf8;
+  font-size: 0.92em;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+/* Une seule ligne, même sur les plus petites largeurs. */
+.schedule-card--refresh .schedule-countdown-value {
+  align-items: baseline;
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+
+@media (max-width: 400px) {
+  .schedule-card--refresh .schedule-countdown-value {
+    font-size: 15px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-suffix {
+    font-size: 0.86em;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.5 La carte a un plafond, la colonne se centre
+   --------------------------------------------------------------------------
+   Sur un très grand écran, la carte réseau prenait toute la hauteur (800 px) et
+   les trois blocs se retrouvaient perdus. On plafonne la carte : l'espace
+   restant devient de l'air entre la carte et « LES PROCHAINS LIVES ».
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  .welcome-actions {
+    justify-content: center;
+  }
+
+  .welcome-actions .creator-carousel {
+    min-height: min-content;
+    max-height: clamp(240px, 30vh, 430px);
+    flex: 0 1 auto;
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide] {
+    max-height: clamp(240px, 30vh, 430px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.6 Fenêtres peu hautes : on resserre le texte, jamais les cartes
+   --------------------------------------------------------------------------
+   On resserre le TEXTE (marges, interlignes, tailles), jamais la hauteur de
+   la carte : la carte réseau s'adapte à son contenu, rien n'est rogné.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) and (max-height: 880px) {
+  .welcome-panel {
+    padding: 12px clamp(14px, 1.3vw, 18px) 14px;
+  }
+
+  .welcome-account-bar {
+    height: 42px;
+    min-height: 42px;
+    flex-basis: 42px;
+    margin-bottom: 10px;
+  }
+
+  .welcome-actions {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 16px 18px;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    gap: 10px;
+  }
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.3rem, 1.6vw, 1.6rem);
+  }
+
+  .welcome-actions .creator-carousel .discord-detail {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .welcome-actions .creator-carousel .discord-action-default {
+    min-height: 34px;
+    padding: 7px 16px;
+    font-size: 11.5px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    gap: 6px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 10px;
+    padding: 12px 14px 14px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+    border-radius: 10px;
+  }
+
+  .schedule-card--refresh .schedule-mark svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .schedule-card--refresh .schedule-days li {
+    min-height: 40px;
+    padding: 6px 4px;
+  }
+
+  .schedule-card--refresh .schedule-countdown {
+    padding: 7px 12px;
+  }
+
+  .networks-panel {
+    padding: 12px 14px;
+  }
+
+  .networks-panel .networks-heading h2 {
+    font-size: clamp(16px, 1.4vw, 20px);
+  }
+
+  .networks-panel .network-card,
+  .networks-panel .network-card--wide {
+    min-height: 92px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.7 « Retrouve-moi ici » : 5 colonnes sur PC, même fenêtre étroite
+   --------------------------------------------------------------------------
+   Entre 941 et 1 200 px, la grille retombait à 3 colonnes : le panneau doublait
+   de hauteur et poussait le pied de page hors de l'écran. On garde une seule
+   rangée de 5 cartes, simplement plus compactes.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) {
+  .networks-panel {
+    min-height: min-content;
+  }
+
+  .networks-panel .network-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  /* Instagram ne prend plus deux colonnes : la rangée reste unique. */
+  .networks-panel .network-item--instagram {
+    grid-column: auto !important;
+  }
+
+  .networks-panel .network-card,
+  .networks-panel .network-card--wide {
+    min-height: 96px;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .networks-panel .network-card .network-copy strong {
+    font-size: clamp(12px, 0.95vw, 15px);
+  }
+
+  .networks-panel .network-card .network-copy > span {
+    font-size: 10px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.8 Fenêtres vraiment courtes (1 366 × 768, 1 024 × 768) : le Hero tient
+   --------------------------------------------------------------------------
+   Dernier étage de compression : on gagne la hauteur sur les marges, la
+   description du carrousel et le planning — jamais en rognant une carte.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) and (max-height: 800px) {
+  .welcome-panel {
+    padding: 10px clamp(12px, 1.2vw, 16px) 12px;
+  }
+
+  .welcome-account-bar {
+    height: 38px;
+    min-height: 38px;
+    flex-basis: 38px;
+    margin-bottom: 8px;
+  }
+
+  .welcome-actions {
+    gap: 8px;
+  }
+
+  .welcome-actions .creator-carousel .creator-slide,
+  .welcome-actions .creator-carousel .discord-cta {
+    padding: 12px 16px;
+  }
+
+  .welcome-actions .creator-carousel .discord-content {
+    gap: 8px;
+  }
+
+  .welcome-actions .creator-carousel .discord-copy strong {
+    font-size: clamp(1.15rem, 1.45vw, 1.45rem);
+  }
+
+  /* La description reste entière : deux lignes suffisent, on ne tronque pas
+     la phrase en plein milieu. */
+  .welcome-actions .creator-carousel .discord-detail {
+    margin-top: 4px;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
+
+  .welcome-actions .creator-carousel .discord-action-default {
+    min-height: 30px;
+    padding: 6px 14px;
+    font-size: 10.5px;
+  }
+
+  .welcome-actions .creator-carousel .discord-footer {
+    gap: 4px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 8px;
+    padding: 10px 12px 12px;
+  }
+
+  .schedule-card--refresh .schedule-topline {
+    gap: 8px;
+  }
+
+  .schedule-card--refresh .schedule-mark {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 9px;
+  }
+
+  .schedule-card--refresh .schedule-mark svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .schedule-card--refresh .schedule-days {
+    gap: 6px;
+  }
+
+  .schedule-card--refresh .schedule-days li {
+    min-height: 36px;
+    padding: 5px 3px;
+  }
+
+  .schedule-card--refresh .schedule-countdown {
+    padding: 6px 10px;
+  }
+
+  .schedule-card--refresh .schedule-countdown-label {
+    font-size: 12px;
+  }
+
+  .networks-panel {
+    padding: 10px 12px;
+  }
+
+  .networks-panel .network-grid {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .networks-panel .network-card,
+  .networks-panel .network-card--wide {
+    min-height: 84px;
+    padding: 8px 10px;
+  }
+
+  .networks-panel .networks-heading h2 {
+    font-size: clamp(15px, 1.25vw, 18px);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.9 Bulle « Qui suis-je ? » : le bouton entier la révèle
+   --------------------------------------------------------------------------
+   `styles.css` ne réagissait qu'au survol du cercle : passer sur le pseudo
+   n'affichait rien. Toute la zone du bouton déclenche désormais la bulle, au
+   survol comme au clavier.
+   -------------------------------------------------------------------------- */
+.welcome-identity .profile-trigger:hover > .profile-tooltip,
+.welcome-identity .profile-trigger:focus-visible > .profile-tooltip,
+.welcome-identity .profile-trigger:focus > .profile-tooltip {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   15.10 Compteur : la bonne taille, à la bonne place
+   --------------------------------------------------------------------------
+   `ui-refresh.css` impose `font-size: 10px` sur la valeur du compteur avec un
+   sélecteur `.welcome-actions .schedule-card--refresh …` plus spécifique : la
+   durée apparaissait en tout petit à droite de la carte. On reprend la main
+   avec le même niveau de sélecteur, et on règle les trois paliers ici.
+   -------------------------------------------------------------------------- */
+.welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+  gap: 10px;
+  padding: 9px 14px;
+}
+
+.welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-label {
+  flex: 0 1 auto;
+  color: #dbe7f5;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-value {
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 6px;
+  color: #ffffff;
+  font-family: "Outfit", "Inter", sans-serif;
+  font-size: clamp(16px, 1.15vw, 20px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-suffix {
+  color: #38bdf8;
+  font-size: 0.92em;
+  font-weight: 800;
+}
+
+@media (max-width: 940px) {
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-label {
+    font-size: 12px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-value {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 400px) {
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-label {
+    font-size: 11px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-value {
+    gap: 4px;
+    font-size: 15px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.11 Fenêtres moyennes : le planning reste dans le panneau
+   --------------------------------------------------------------------------
+   Le compteur a retrouvé sa taille : la carte grandit d'autant. On récupère
+   ces quelques pixels sur les marges internes pour que 1 440 × 900 et
+   1 366 × 768 tiennent encore sans faire défiler la page.
+   -------------------------------------------------------------------------- */
+@media (min-width: 941px) and (max-height: 920px) {
+  .welcome-actions .creator-carousel {
+    max-height: clamp(240px, 29.2dvh, 430px);
+  }
+
+  .welcome-actions .creator-carousel .discord-cta[data-carousel-slide] {
+    max-height: clamp(240px, 29.2dvh, 430px);
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh {
+    gap: 10px;
+    padding: 12px 16px 14px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-days li {
+    min-height: 42px;
+    padding: 7px 4px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+    padding: 7px 12px;
+  }
+}
+
+/* Dernier cran pour 1 366 × 768 : 9 px de trop, on les prend sur le pied de
+   page et sur l'air autour du Hero. */
+@media (min-width: 941px) and (max-height: 790px) {
+  .hub-layout {
+    padding-block: 6px 2px;
+    row-gap: 8px;
+  }
+
+  .site-footer {
+    padding-block: 2px;
+  }
+
+  .site-footer-tagline {
+    display: none;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+    padding: 6px 12px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15.12 Compteur sur téléphone : réservé au lanceur du chat seulement quand
+   il le recouvre vraiment
+   --------------------------------------------------------------------------
+   La réserve à droite est utile tant que le compteur croise le lanceur. Dès
+   que la carte est assez étroite pour que les deux cohabitent, cette réserve
+   n'est plus qu'un vide : on la rend au texte.
+   -------------------------------------------------------------------------- */
+@media (max-width: 460px) {
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+    /* Le lanceur du chat est fixé au coin bas-droit de la fenêtre : il peut
+       croiser la valeur du compteur quand la carte passe dessous. On réserve
+       cette bande pour que les secondes restent toujours lisibles. */
+    padding-right: 34px;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-value {
+    margin-left: auto;
+  }
+
+  /* Le lecteur d'écran garde l'info complète via `aria-label` sur la valeur. */
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-value {
+    white-space: nowrap;
+  }
+
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Sous 400 px, la carte est plus étroite : on garde la réserve du lanceur mais
+   on la réduit, sinon le compteur n'a plus de place. */
+@media (max-width: 400px) {
+  .welcome-actions .schedule-card.schedule-card--refresh .schedule-countdown {
+    padding-right: 30px;
+  }
+}

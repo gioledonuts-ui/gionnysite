@@ -1,0 +1,3015 @@
+(() => {
+  const DAYS = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+  const SOCIALS = ["twitch", "tiktok", "youtube", "x", "instagram", "discord"];
+  const SOCIAL_INFO = ["twitch", "tiktok", "youtube", "x", "instagram"];
+  const CHAT_SUBJECTS = ["Passer en live", "Idée vidéo / React", "Histoire / Anecdote", "Question", "Discussion"];
+  const ADMIN_MAX_VOICE_BYTES = 200_000;
+  // Point 5: every admin change is also kept in the browser, so a server cold
+  // start can be repaired from localStorage instead of resetting the planning.
+  const PERSIST_KEY = "qg_persisted_admin_state";
+  const PERSIST_VERSION = 1;
+  const loginPanel = document.querySelector("[data-login-panel]");
+  const adminPanel = document.querySelector("[data-admin-panel]");
+  const adminTabs = [...document.querySelectorAll("[data-admin-tab]")];
+  const adminTabNavigation = document.querySelector(".admin-tabs");
+  const adminUnreadBadge = document.querySelector("[data-admin-unread-count]");
+  const conversationsTab = document.querySelector('[data-admin-tab="conversations"]');
+  const adminPresence = document.querySelector("[data-admin-presence]");
+  const adminPresenceCount = document.querySelector("[data-admin-presence-count]");
+  const adminTabPanels = [...document.querySelectorAll("[data-admin-tab-panel]")];
+  const adminTitle = document.querySelector("[data-admin-title]");
+  const adminIdentityPseudo = document.querySelector("[data-admin-identity-pseudo]");
+  const adminAvatarImage = document.querySelector("[data-admin-avatar]");
+  const membersList = document.querySelector("[data-members-list]");
+  const membersStatus = document.querySelector("[data-members-status]");
+  const membersRefreshButton = document.querySelector("[data-members-refresh]");
+  const membersMoreButton = document.querySelector("[data-members-more]");
+  const loginForm = document.querySelector("#login-form");
+  const settingsForm = document.querySelector("#settings-form");
+  const loginInput = document.querySelector("#admin-password");
+  const loginButton = document.querySelector("[data-login-button]");
+  const loginStatus = document.querySelector("[data-login-status]");
+  const storageNotice = document.querySelector("[data-storage-notice]");
+  const saveButton = document.querySelector("[data-save-button]");
+  const saveStatus = document.querySelector("[data-save-status]");
+  const logoutButton = document.querySelector("[data-logout]");
+  const inboxList = document.querySelector("[data-inbox-list]");
+  const inboxStatus = document.querySelector("[data-inbox-status]");
+  const inboxRefreshButton = document.querySelector("[data-inbox-refresh]");
+  const inboxMoreButton = document.querySelector("[data-inbox-more]");
+  const conversationsList = document.querySelector("[data-conversation-list]");
+  const conversationsStatus = document.querySelector("[data-conversations-status]");
+  const conversationsMoreButton = document.querySelector("[data-conversations-more]");
+  const mailFilterButtons = [...document.querySelectorAll("[data-mail-filter]")];
+  const conversationSubjectFilter = document.querySelector("[data-conversation-subject-filter]");
+  const selectAllConversations = document.querySelector("[data-select-all-conversations]");
+  const conversationPageCount = document.querySelector("[data-page-count]");
+  const bulkToolbar = document.querySelector("[data-bulk-toolbar]");
+  const selectionCount = document.querySelector("[data-selection-count]");
+  const bulkFavoriteButton = document.querySelector("[data-bulk-favorite]");
+  const bulkReadButton = document.querySelector("[data-bulk-read]");
+  const bulkCloseButton = document.querySelector("[data-bulk-close]");
+  const bulkDeleteButton = document.querySelector("[data-bulk-delete]");
+  const bulkStatus = document.querySelector("[data-bulk-status]");
+  const conversationEmpty = document.querySelector("[data-conversation-empty]");
+  const conversationContent = document.querySelector("[data-conversation-content]");
+  const threadPseudo = document.querySelector("[data-thread-pseudo]");
+  const threadHostCrown = document.querySelector("[data-thread-host-crown]");
+  const threadVerifiedBadge = document.querySelector("[data-thread-verified-badge]");
+  const threadStatus = document.querySelector("[data-thread-status]");
+  const threadSubject = document.querySelector("[data-thread-subject]");
+  const threadAvatar = document.querySelector("[data-thread-avatar]");
+  const threadAvatarFallback = document.querySelector("[data-thread-avatar-fallback]");
+  const threadMessages = document.querySelector("[data-thread-messages]");
+  const threadCloseButton = document.querySelector("[data-thread-close]");
+  const threadBlockButton = document.querySelector("[data-thread-block]");
+  const threadDeleteButton = document.querySelector("[data-thread-delete]");
+  const threadClosedNote = document.querySelector("[data-thread-closed-note]");
+  const replyForm = document.querySelector("[data-reply-form]");
+  const replyInput = document.querySelector("[data-reply-input]");
+  const replySendButton = document.querySelector("[data-reply-send]");
+  const replyStatus = document.querySelector("[data-reply-status]");
+  const adminChatImageInput = document.querySelector("[data-admin-chat-image-input]");
+  // The `+` opens the file picker directly, exactly like on the member side.
+  const adminChatAttach = document.querySelector("[data-admin-chat-attach]");
+  const adminImagePreview = document.querySelector("[data-admin-image-preview]");
+  const adminImagePreviewImg = document.querySelector("[data-admin-image-preview-img]");
+  const adminImageRemove = document.querySelector("[data-admin-image-remove]");
+  const adminComposeAction = document.querySelector("[data-admin-compose-action]");
+  const adminComposeMic = adminComposeAction?.querySelector("[data-admin-compose-mic]");
+  const adminComposeSend = adminComposeAction?.querySelector("[data-admin-compose-send]");
+  const adminInputPill = document.querySelector("[data-admin-input-pill]");
+  const adminVoicePanel = document.querySelector("[data-admin-voice-panel]");
+  const adminVoiceRecordingControls = document.querySelector("[data-admin-voice-recording-controls]");
+  const adminVoiceWave = document.querySelector("[data-admin-voice-wave]");
+  const adminVoiceTimer = document.querySelector("[data-admin-voice-timer]");
+  const adminVoiceCancelButton = document.querySelector("[data-admin-voice-cancel]");
+  const adminVoiceStopButton = document.querySelector("[data-admin-voice-stop]");
+  const adminVoicePreview = document.querySelector("[data-admin-voice-preview]");
+  const adminVoiceSendButton = document.querySelector("[data-admin-voice-send]");
+  const adminVoiceStatus = document.querySelector("[data-admin-voice-status]");
+
+  let storageConfigured = false;
+  let saving = false;
+  let inboxLoading = false;
+  let inboxCursor = "";
+  let inboxHasMore = false;
+  let conversationsLoading = false;
+  let queuedConversationsLoad = null;
+  let conversationsCursor = "";
+  let conversationsHasMore = false;
+  let activeMailFilter = "all";
+  let activeSubjectFilter = "";
+  const selectedConversationIds = new Set();
+  const conversationRecords = new Map();
+  let currentConversationId = "";
+  let currentConversationStatus = "";
+  let currentConversationMessages = [];
+  let currentConversationMessageCount = -1;
+  let adminVoiceState = null;
+  let selectedConversationLoading = false;
+  let adminPollTimer = 0;
+  let adminPresenceTimer = 0;
+  let activeAdminTab = "conversations";
+  let hostSessionActive = false;
+  let membersLoading = false;
+  let membersLoaded = false;
+  let membersCursor = "";
+  const reportsList = document.querySelector("[data-reports-list]");
+  const reportsStatus = document.querySelector("[data-reports-status]");
+  const reportsRefreshButton = document.querySelector("[data-reports-refresh]");
+  const reportsCountBadge = document.querySelector("[data-admin-reports-count]");
+  const reportsById = new Map();
+  let reportsLoading = false;
+  let reportsLoaded = false;
+  let membersHasMore = false;
+  const memberRecords = new Map();
+
+  const setStatus = (element, message, kind = "") => {
+    if (!element) return;
+    element.textContent = message;
+    if (kind) element.dataset.kind = kind;
+    else delete element.dataset.kind;
+  };
+
+  const updateAdminUnreadBadge = (count) => {
+    if (!Number.isInteger(count) || count < 0 || !adminUnreadBadge) return;
+    adminUnreadBadge.textContent = count > 99 ? "99+" : String(count);
+    adminUnreadBadge.hidden = count === 0;
+    adminUnreadBadge.setAttribute("aria-label", `${count} discussion${count === 1 ? "" : "s"} non lue${count === 1 ? "" : "s"}`);
+    conversationsTab?.setAttribute("aria-label", count ? `Discussions, ${count} non lue${count === 1 ? "" : "s"}` : "Discussions");
+    conversationsTab?.setAttribute("title", count ? `${count} discussion${count === 1 ? "" : "s"} non lue${count === 1 ? "" : "s"}` : "Discussions");
+  };
+
+  const readJson = async (response) => {
+    try {
+      return await response.json();
+    } catch {
+      return {};
+    }
+  };
+
+  const applyAdminIdentity = (identity) => {
+    if (typeof identity?.pseudo === "string" && identity.pseudo.trim()) {
+      if (adminIdentityPseudo) adminIdentityPseudo.textContent = identity.pseudo;
+    }
+    const avatarData = typeof identity?.avatarData === "string" && identity.avatarData.startsWith("data:image/webp;base64,") && identity.avatarData.length < 10_000
+      ? identity.avatarData
+      : "";
+    if (adminAvatarImage) adminAvatarImage.src = avatarData || "/assets/gionny-profile.jpg";
+  };
+
+  const loadAdminIdentity = async () => {
+    try {
+      const response = await fetch("/api/admin-auth", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.ok && data.authenticated === true && data.adminIdentity) applyAdminIdentity(data.adminIdentity);
+    } catch {
+      // Keep the server-rendered Hôte fallback when identity refresh is unavailable.
+    }
+  };
+
+  const showLogin = (message = "") => {
+    hostSessionActive = false;
+    if (adminVoiceState?.mode === "recording") adminVoiceState.cancel();
+    else adminVoiceState?.reset();
+    if (adminPollTimer) window.clearInterval(adminPollTimer);
+    if (adminPresenceTimer) window.clearInterval(adminPresenceTimer);
+    adminPollTimer = 0;
+    adminPresenceTimer = 0;
+    queuedConversationsLoad = null;
+    loginPanel.hidden = false;
+    adminPanel.hidden = true;
+    if (adminTabNavigation) adminTabNavigation.hidden = true;
+    if (logoutButton) logoutButton.hidden = true;
+    if (adminPresence) adminPresence.hidden = true;
+    setStatus(loginStatus, message, message ? "error" : "");
+    window.setTimeout(() => loginInput?.focus(), 0);
+  };
+
+  const updateDayInputState = (day) => {
+    const enabled = document.querySelector(`[data-day-enabled="${day}"]`);
+    const time = document.querySelector(`[data-day-time="${day}"]`);
+    const row = document.querySelector(`[data-day-row="${day}"]`);
+    if (!enabled || !time || !row) return;
+    time.disabled = !enabled.checked;
+    row.dataset.disabled = String(!enabled.checked);
+  };
+
+  const populateForm = (config) => {
+    for (const key of SOCIALS) {
+      const input = settingsForm.elements.namedItem(`socials.${key}`);
+      if (input && typeof config?.socials?.[key] === "string") input.value = config.socials[key];
+    }
+
+    for (const key of SOCIAL_INFO) {
+      const input = settingsForm.elements.namedItem(`socialInfo.${key}`);
+      if (input) input.value = typeof config?.socialInfo?.[key] === "string" ? config.socialInfo[key] : "";
+    }
+
+    for (const day of DAYS) {
+      const enabled = document.querySelector(`[data-day-enabled="${day}"]`);
+      const time = document.querySelector(`[data-day-time="${day}"]`);
+      const saved = config?.schedule?.[day];
+      if (!enabled || !time || !saved) continue;
+      enabled.checked = saved.enabled === true;
+      if (typeof saved.time === "string") time.value = saved.time;
+      updateDayInputState(day);
+    }
+  };
+
+  const formatSavedTime = (value) => {
+    if (typeof value !== "string") return "";
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  };
+
+  const updateStorageNotice = (data) => {
+    storageConfigured = data?.storageConfigured === true;
+    saveButton.disabled = !storageConfigured || saving;
+
+    if (!storageConfigured) {
+      storageNotice.dataset.state = "warning";
+      storageNotice.textContent =
+        "Le stockage partagé n’est pas encore activé dans Vercel. Tu peux préparer tes réglages ici, mais l’enregistrement pour tous sera disponible après la création et la connexion d’un espace Vercel Blob.";
+      return;
+    }
+
+    storageNotice.dataset.state = "ready";
+    const savedTime = formatSavedTime(data.updatedAt);
+    storageNotice.textContent = savedTime
+      ? `Stockage en ligne actif. Dernière sauvegarde partagée : ${savedTime}.`
+      : "Stockage en ligne actif. Les réglages seront partagés après le premier enregistrement.";
+  };
+
+  const readPersistedAdminState = () => {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== PERSIST_VERSION || !parsed.config) return null;
+      return parsed;
+    } catch {
+      return null;
+    }
+  };
+
+  const writePersistedAdminState = (config, extra = {}) => {
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify({
+        version: PERSIST_VERSION,
+        savedAt: new Date().toISOString(),
+        config,
+        ...extra,
+      }));
+    } catch {
+      // A full or disabled localStorage only loses the client-side safety net.
+    }
+  };
+
+  // The server answers with the built-in defaults once its /tmp snapshot is
+  // gone. If the browser holds something else, the browser wins and the custom
+  // planning goes back to the server automatically.
+  const serverIsDefault = (data) => data?.updatedAt == null;
+
+  const pushPersistedConfig = async (persisted) => {
+    const response = await fetch("/api/site-config", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify({ restore: true, config: persisted.config }),
+    });
+    const data = await readJson(response);
+    return { response, data };
+  };
+
+  const loadSettings = async () => {
+    setStatus(saveStatus, "Chargement des réglages…");
+    saveButton.disabled = true;
+
+    try {
+      const response = await fetch("/api/site-config", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (!response.ok) {
+        storageNotice.dataset.state = "error";
+        storageNotice.textContent = data.message || "Impossible de charger les réglages en ligne.";
+        setStatus(saveStatus, "Les réglages n’ont pas pu être chargés.", "error");
+        return;
+      }
+
+      let payload = data;
+      const persisted = readPersistedAdminState();
+      if (persisted && serverIsDefault(data)) {
+        // Cold start on the server: the browser restores its own settings.
+        setStatus(saveStatus, "Restauration de tes réglages enregistrés…");
+        try {
+          const restored = await pushPersistedConfig(persisted);
+          if (restored.response.ok) payload = restored.data;
+        } catch {
+          // The form still gets the local copy below.
+        }
+        populateForm(payload?.config || persisted.config);
+        writePersistedAdminState(payload?.config || persisted.config);
+        updateStorageNotice(payload);
+        setStatus(saveStatus, "Réglages restaurés depuis ce navigateur.", "success");
+        return;
+      }
+
+      populateForm(payload.config);
+      if (payload.updatedAt || !persisted) writePersistedAdminState(payload.config);
+      updateStorageNotice(payload);
+      setStatus(saveStatus, payload.updatedAt ? "Réglages partagés chargés." : "Prêt à configurer.");
+    } catch {
+      storageNotice.dataset.state = "error";
+      storageNotice.textContent = "Impossible de joindre le serveur. Vérifie ta connexion et réessaie.";
+      setStatus(saveStatus, "Erreur de connexion.", "error");
+    }
+  };
+
+  const formatInboxTime = (value) => {
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return "Date inconnue";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  };
+
+  const createInboxMessage = (message) => {
+    const card = document.createElement("article");
+    card.className = "inbox-message";
+
+    const header = document.createElement("div");
+    header.className = "inbox-message-header";
+
+    const sender = document.createElement("strong");
+    sender.className = "inbox-message-sender";
+    sender.textContent = typeof message.pseudo === "string" && message.pseudo.trim() ? message.pseudo : "Membre inconnu";
+
+    const date = document.createElement("time");
+    date.className = "inbox-message-date";
+    date.dateTime = message.createdAt;
+    date.textContent = formatInboxTime(message.createdAt);
+
+    const identity = document.createElement("div");
+    identity.className = "inbox-message-identity";
+    identity.append(sender, date);
+
+    const removeButton = document.createElement("button");
+    removeButton.className = "inbox-delete";
+    removeButton.type = "button";
+    removeButton.textContent = "Supprimer";
+    removeButton.setAttribute("aria-label", `Supprimer le message de ${sender.textContent}`);
+
+    const content = document.createElement("p");
+    content.className = "inbox-message-content";
+    content.textContent = typeof message.message === "string" ? message.message : "";
+
+    header.append(identity, removeButton);
+    card.append(header, content);
+    removeButton.addEventListener("click", () => {
+      void deleteInboxMessage(message.id, card, removeButton);
+    });
+    return card;
+  };
+
+  const deleteInboxMessage = async (id, card, button) => {
+    if (!id || !window.confirm("Supprimer définitivement ce message ?")) return;
+    button.disabled = true;
+
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id }),
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.deleted !== true) {
+        setStatus(inboxStatus, data.error || "Le message n’a pas pu être supprimé.", "error");
+        return;
+      }
+
+      card.remove();
+      const count = inboxList?.querySelectorAll(".inbox-message").length || 0;
+      setStatus(
+        inboxStatus,
+        count ? "Message supprimé." : inboxHasMore ? "Page supprimée." : "Aucun ancien message."
+      );
+    } catch {
+      setStatus(inboxStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  const loadInbox = async ({ reset = false } = {}) => {
+    if (!inboxList || inboxLoading) return;
+    if (reset) {
+      inboxList.replaceChildren();
+      inboxCursor = "";
+      inboxHasMore = false;
+    }
+
+    inboxLoading = true;
+    if (inboxRefreshButton) inboxRefreshButton.disabled = true;
+    if (inboxMoreButton) inboxMoreButton.disabled = true;
+    setStatus(inboxStatus, "Chargement des anciens messages…");
+
+    try {
+      const url = new URL("/api/admin-messages", window.location.origin);
+      if (inboxCursor) url.searchParams.set("cursor", inboxCursor);
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(inboxStatus, data.error || "Les anciens messages n’ont pas pu être chargés.", "error");
+        return;
+      }
+
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      messages.forEach((message) => inboxList.append(createInboxMessage(message)));
+      inboxCursor = typeof data.cursor === "string" ? data.cursor : "";
+      inboxHasMore = data.hasMore === true && Boolean(inboxCursor);
+      if (inboxMoreButton) inboxMoreButton.hidden = !inboxHasMore;
+
+      const count = inboxList.querySelectorAll(".inbox-message").length;
+      setStatus(
+        inboxStatus,
+        count ? `${count} ancien${count > 1 ? "s" : ""} message${count > 1 ? "s" : ""}.` : "Aucun ancien message."
+      );
+    } catch {
+      setStatus(inboxStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      inboxLoading = false;
+      if (inboxRefreshButton) inboxRefreshButton.disabled = false;
+      if (inboxMoreButton) inboxMoreButton.disabled = false;
+    }
+  };
+
+  const formatMemberDate = (value) => {
+    const date = typeof value === "string" ? new Date(value) : null;
+    if (!date || !Number.isFinite(date.getTime())) return "Membre pionnier";
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+      timeZone: "Europe/Paris",
+    }).format(date);
+  };
+
+  const createHostCrownBadge = (className) => {
+    const badge = document.createElement("span");
+    badge.className = className;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", "Compte Hôte");
+    badge.title = "Compte Hôte";
+    if (typeof window.qgIcon === "function") badge.append(window.qgIcon("crown", "host-crown-icon"));
+    return badge;
+  };
+
+  const createVerifiedBadge = (className = "verified-badge") => {
+    const badge = document.createElement("span");
+    badge.className = className;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", "Membre vérifié");
+    badge.title = "Membre vérifié";
+    if (typeof window.qgIcon === "function") badge.append(window.qgIcon("verified", "verified-badge-icon"));
+    return badge;
+  };
+
+  const normalizeSubject = (value) => {
+    const clean = typeof value === "string" ? value.normalize("NFKC").replace(/^[^\p{L}\p{N}]+/u, "").trim() : "";
+    return CHAT_SUBJECTS.includes(clean) ? clean : "Discussion";
+  };
+
+  const subjectIcon = (subject) => ({
+    "Passer en live": "live",
+    "Idée vidéo / React": "bulb",
+    "Histoire / Anecdote": "book",
+    Question: "help",
+    Discussion: "chat",
+  }[subject] || "chat");
+
+  const renderSubjectLabel = (element, subject) => {
+    if (!element) return;
+    const clean = normalizeSubject(subject);
+    const text = document.createElement("span");
+    text.textContent = clean;
+    const icon = typeof window.qgIcon === "function" ? window.qgIcon(subjectIcon(clean), "subject-label-icon") : null;
+    element.replaceChildren(...(icon ? [icon, text] : [text]));
+  };
+
+  const createMemberAvatar = () => {
+    const avatar = document.createElement("span");
+    avatar.className = "member-default-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    avatar.innerHTML = '<svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="19"/><circle cx="20" cy="15" r="6"/><path d="M8.5 33.5c1.7-6.2 5.8-9.3 11.5-9.3s9.8 3.1 11.5 9.3"/></svg>';
+    return avatar;
+  };
+
+  const memberSignature = (member) => JSON.stringify([
+    member.pseudo, member.role, member.status, member.createdAt, member.conversationId,
+    Array.isArray(member.badges) ? member.badges.join(",") : "",
+    // Étape 4 : la ligne Discord (pseudo + ID traçable) doit se rafraîchir seule.
+    member.discordUsername || "", member.discordId || "",
+  ]);
+
+  const createMemberItem = (member) => {
+    memberRecords.set(member.id, member);
+    const row = document.createElement("article");
+    row.className = "member-row";
+    row.dataset.memberId = member.id;
+    row.dataset.memberSignature = memberSignature(member);
+
+    const identity = document.createElement("div");
+    identity.className = "member-row-identity";
+    identity.append(createMemberAvatar());
+    const copy = document.createElement("div");
+    copy.className = "member-row-copy";
+    const nameLine = document.createElement("div");
+    nameLine.className = "member-row-name-line";
+    const pseudo = document.createElement("strong");
+    pseudo.className = "member-row-pseudo";
+    pseudo.textContent = member.pseudo || "Membre";
+    nameLine.append(pseudo);
+    if (Array.isArray(member.badges) && member.badges.includes("verified")) {
+      nameLine.append(createVerifiedBadge("member-row-verified-badge"));
+    }
+    if (member.role === "host") {
+      nameLine.append(createHostCrownBadge("member-row-crown"));
+      const hostBadge = document.createElement("span");
+      hostBadge.className = "member-host-badge";
+      hostBadge.textContent = "Hôte";
+      nameLine.append(hostBadge);
+    }
+    if (member.status === "banned") {
+      const bannedBadge = document.createElement("span");
+      bannedBadge.className = "member-banned-badge";
+      bannedBadge.textContent = "Banni";
+      nameLine.append(bannedBadge);
+    }
+    const joined = document.createElement("span");
+    joined.className = "member-row-date";
+    joined.textContent = formatMemberDate(member.createdAt);
+    copy.append(nameLine, joined);
+
+    // Étape 4 : « Discord : @pseudo · ID: 284759... » sous chaque membre lié.
+    if (member.discordUsername || member.discordId) {
+      const discord = document.createElement("p");
+      discord.className = "member-row-discord";
+      const mark = document.createElement("span");
+      mark.className = "member-row-discord-mark";
+      mark.setAttribute("aria-hidden", "true");
+      mark.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0c-.164-.394-.406-.875-.618-1.25a.077.077 0 0 0-.078-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.028C.533 9.046-.32 13.58.099 18.058a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.873-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.011c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .079.01c.12.099.246.198.373.292a.077.077 0 0 1-.007.128c-.6.349-1.22.645-1.873.891a.077.077 0 0 0-.04.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.029 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.055c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.029ZM8.02 15.331c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.956 2.418-2.157 2.418Zm7.975 0c-1.183 0-2.157-1.086-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.211 0 2.176 1.096 2.157 2.42 0 1.332-.946 2.418-2.157 2.418Z"/></svg>';
+      const label = document.createElement("span");
+      label.className = "member-row-discord-copy";
+      const handle = member.discordUsername ? `Discord : @${member.discordUsername}` : "Discord lié";
+      // « Discord : @pseudo · ID : 284759… » — l'ID reste traçable pour toujours.
+      label.textContent = member.discordId ? `${handle} · ID : ${member.discordId}` : handle;
+      discord.append(mark, label);
+      if (member.discordLinkedAt) discord.title = `Lié le ${formatMemberDate(member.discordLinkedAt)}`;
+      copy.append(discord);
+    }
+    identity.append(copy);
+
+    const actions = document.createElement("div");
+    actions.className = "member-row-actions";
+    const viewButton = document.createElement("button");
+    viewButton.className = "member-action-button member-action-button--view";
+    viewButton.type = "button";
+    viewButton.textContent = "Voir la conversation";
+    viewButton.disabled = !member.conversationId;
+    viewButton.addEventListener("click", () => {
+      if (!member.conversationId) return;
+      setAdminTab("conversations");
+      void selectConversation(member.conversationId, { scroll: true });
+    });
+
+    const writeButton = document.createElement("button");
+    writeButton.className = "member-action-button member-action-button--write";
+    writeButton.type = "button";
+    if (typeof window.qgIcon === "function") writeButton.append(window.qgIcon("chat"));
+    const writeLabel = document.createElement("span");
+    writeLabel.textContent = "Écrire";
+    writeButton.append(writeLabel);
+    writeButton.setAttribute("aria-label", `Écrire à ${member.pseudo || "ce membre"}`);
+    writeButton.title = member.conversationId ? "Ouvrir sa discussion" : "Démarrer une discussion sans envoyer de message";
+    writeButton.addEventListener("click", () => void writeToMember(member, writeButton));
+
+    // Deux rôles, deux interrupteurs : un clic accorde, le clic suivant retire.
+    const badgeButton = document.createElement("button");
+    const hasVerifiedBadge = Array.isArray(member.badges) && member.badges.includes("verified");
+    badgeButton.className = `member-action-button member-action-button--verified${hasVerifiedBadge ? " is-on" : ""}`;
+    badgeButton.type = "button";
+    badgeButton.dataset.role = "verified";
+    badgeButton.setAttribute("aria-pressed", String(hasVerifiedBadge));
+    badgeButton.textContent = hasVerifiedBadge ? "[ ✓ VALIDÉ ]" : "[ VALIDER ]";
+    badgeButton.title = hasVerifiedBadge
+      ? `Retirer le badge Validé de ${member.pseudo || "ce membre"}`
+      : `Donner le badge Validé à ${member.pseudo || "ce membre"}`;
+    badgeButton.setAttribute("aria-label", badgeButton.title);
+    badgeButton.addEventListener("click", () => void changeMemberVerified(member, badgeButton));
+
+    const roleButton = document.createElement("button");
+    const isHostRole = member.role === "host";
+    roleButton.className = `member-action-button member-action-button--role${isHostRole ? " is-on" : ""}`;
+    roleButton.type = "button";
+    roleButton.dataset.role = "host";
+    roleButton.setAttribute("aria-pressed", String(isHostRole));
+    roleButton.textContent = isHostRole ? "[ 👑 HÔTE ]" : "[ NOMMER HÔTE ]";
+    roleButton.title = isHostRole
+      ? `Retirer le rôle Hôte de ${member.pseudo || "ce membre"}`
+      : `Nommer ${member.pseudo || "ce membre"} Hôte`;
+    roleButton.setAttribute("aria-label", roleButton.title);
+    roleButton.addEventListener("click", () => void changeMemberRole(member, roleButton));
+
+    const banButton = document.createElement("button");
+    banButton.className = "member-action-button member-action-button--danger";
+    banButton.type = "button";
+    banButton.textContent = member.status === "banned" ? "Réactiver" : "Bannir";
+    banButton.disabled = member.role === "host";
+    banButton.title = member.role === "host" ? "Retire d’abord le rôle Hôte" : "";
+    banButton.addEventListener("click", () => void changeMemberBan(member, banButton));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "member-action-button member-action-button--delete";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Supprimer";
+    deleteButton.disabled = member.role === "host";
+    deleteButton.title = member.role === "host" ? "Retire d’abord le rôle Hôte" : "";
+    deleteButton.addEventListener("click", () => void removeMember(member, deleteButton));
+
+    actions.append(writeButton, viewButton, badgeButton, roleButton, banButton, deleteButton);
+    row.append(identity, actions);
+    return row;
+  };
+
+  const sortMemberRows = () => {
+    if (!membersList) return;
+    const rows = [...membersList.querySelectorAll(".member-row")];
+    rows.sort((left, right) => {
+      const leftMember = memberRecords.get(left.dataset.memberId);
+      const rightMember = memberRecords.get(right.dataset.memberId);
+      const leftDate = leftMember?.createdAt ? Date.parse(leftMember.createdAt) : 0;
+      const rightDate = rightMember?.createdAt ? Date.parse(rightMember.createdAt) : 0;
+      return rightDate - leftDate || (leftMember?.pseudo || "").localeCompare(rightMember?.pseudo || "");
+    });
+    rows.forEach((row) => membersList.append(row));
+  };
+
+  const upsertMemberItem = (member, { deferSort = false } = {}) => {
+    if (!member || typeof member.id !== "string" || !membersList) return false;
+    memberRecords.set(member.id, member);
+    const existing = [...membersList.querySelectorAll(".member-row")]
+      .find((row) => row.dataset.memberId === member.id);
+    let changed = false;
+    if (existing) {
+      if (existing.dataset.memberSignature !== memberSignature(member)) {
+        existing.replaceWith(createMemberItem(member));
+        changed = true;
+      }
+    } else {
+      membersList.append(createMemberItem(member));
+      changed = true;
+    }
+    if (changed && !deferSort) sortMemberRows();
+    return changed;
+  };
+
+  const loadMembers = async ({ reset = false, quiet = false } = {}) => {
+    if (!membersList || membersLoading) return;
+    const requestedCursor = reset || quiet ? "" : membersCursor;
+    membersLoading = true;
+    if (membersRefreshButton) membersRefreshButton.disabled = true;
+    if (membersMoreButton) membersMoreButton.disabled = true;
+    if (!quiet) setStatus(membersStatus, "Chargement des membres…");
+    try {
+      const url = new URL("/api/admin-members", window.location.origin);
+      if (requestedCursor) url.searchParams.set("cursor", requestedCursor);
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(membersStatus, data.error || "Les membres n’ont pas pu être chargés.", "error");
+        return;
+      }
+      const validMember = (member) => member && typeof member === "object" &&
+        typeof member.id === "string" && /^[0-9a-f-]{36}$/iu.test(member.id) &&
+        typeof member.pseudo === "string" && member.pseudo.trim().length > 0 &&
+        ["member", "host"].includes(member.role) && ["active", "banned"].includes(member.status) &&
+        (member.badges === undefined || (Array.isArray(member.badges) && member.badges.every((badge) => badge === "verified")));
+      if (!Array.isArray(data.members) || !data.members.every(validMember) ||
+          (data.cursor !== null && data.cursor !== undefined && typeof data.cursor !== "string") ||
+          typeof data.hasMore !== "boolean") {
+        if (!quiet) setStatus(membersStatus, "La réponse des membres est invalide. Les données affichées ont été conservées.", "error");
+        return;
+      }
+      const members = data.members;
+      if (quiet && members.length === 0) return;
+
+      const nextCursor = typeof data.cursor === "string" ? data.cursor : "";
+      const nextHasMore = data.hasMore === true && Boolean(nextCursor);
+      if (reset && !quiet && members.length === 0) {
+        membersList.replaceChildren();
+        memberRecords.clear();
+      } else {
+        if (reset && !quiet && !nextHasMore) {
+          const currentIds = new Set(members.map((member) => member.id));
+          for (const id of memberRecords.keys()) {
+            if (currentIds.has(id)) continue;
+            memberRecords.delete(id);
+            [...membersList.querySelectorAll(".member-row")]
+              .find((row) => row.dataset.memberId === id)
+              ?.remove();
+          }
+        }
+        let listChanged = false;
+        members.forEach((member) => {
+          if (upsertMemberItem(member, { deferSort: true })) listChanged = true;
+        });
+        if (listChanged) sortMemberRows();
+      }
+      membersLoaded = true;
+      membersCursor = nextCursor;
+      membersHasMore = nextHasMore;
+      if (membersMoreButton) membersMoreButton.hidden = !membersHasMore;
+      const count = membersList.querySelectorAll(".member-row").length;
+      if (!quiet) {
+        setStatus(membersStatus, count ? `${count} membre${count > 1 ? "s" : ""} affiché${count > 1 ? "s" : ""}.` : "Aucun compte membre pour le moment.");
+      }
+    } catch {
+      if (!quiet) setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      membersLoading = false;
+      if (membersRefreshButton) membersRefreshButton.disabled = false;
+      if (membersMoreButton) membersMoreButton.disabled = false;
+    }
+  };
+
+  const performMemberPatch = async (member, action, button) => {
+    if (!member || !button || button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/admin-members", {
+        method: "PATCH",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id: member.id, ...action }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return false;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(membersStatus, data.error || "L’action sur ce membre a échoué.", "error");
+        return false;
+      }
+      if (data.member) upsertMemberItem(data.member);
+      await loadMembers({ reset: true, quiet: true });
+      if (member.conversationId && member.conversationId === currentConversationId) {
+        await loadSelectedConversation({ quiet: true });
+      }
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      setStatus(membersStatus, "Modification du membre enregistrée.");
+      return true;
+    } catch {
+      setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+      return false;
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  const changeMemberRole = async (member, button) => {
+    const nextRole = member.role === "host" ? "member" : "host";
+    // Retirer un rôle est immédiat (aucune confirmation) ; l'accorder reste une
+    // décision explicite parce qu'il n'y a qu'un seul compte Hôte.
+    if (nextRole === "host") {
+      const confirmation = `Nommer ${member.pseudo} compte Hôte ? Ce choix remplacera l’unique compte Hôte actuel, s’il y en a un.`;
+      if (!window.confirm(confirmation)) return;
+    }
+    await performMemberPatch(member, { role: nextRole }, button);
+  };
+
+  const changeMemberVerified = async (member, button) => {
+    const badges = Array.isArray(member.badges) ? member.badges : [];
+    const nextBadges = badges.includes("verified")
+      ? badges.filter((badge) => badge !== "verified")
+      : [...badges, "verified"];
+    await performMemberPatch(member, { badges: nextBadges }, button);
+  };
+
+  const changeMemberBan = async (member, button) => {
+    const banned = member.status !== "banned";
+    const confirmation = banned
+      ? `Bannir le compte de ${member.pseudo} ? Ses conversations et ses vocaux seront conservés.`
+      : `Réactiver le compte de ${member.pseudo} ?`;
+    if (!window.confirm(confirmation)) return;
+    await performMemberPatch(member, { banned }, button);
+  };
+
+  const removeMember = async (member, button) => {
+    if (!window.confirm(`Supprimer le compte de ${member.pseudo} ? Ses conversations et ses vocaux resteront conservés.`)) return;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/admin-members", {
+        method: "DELETE",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id: member.id }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.deleted !== true) {
+        setStatus(membersStatus, data.error || "Le compte n’a pas pu être supprimé.", "error");
+        return;
+      }
+      memberRecords.delete(member.id);
+      [...(membersList?.querySelectorAll(".member-row") || [])]
+        .find((row) => row.dataset.memberId === member.id)
+        ?.remove();
+      await loadMembers({ reset: true, quiet: true });
+      setStatus(membersStatus, "Compte supprimé. La conversation et les vocaux ont été conservés.");
+    } catch {
+      setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      button.disabled = false;
+    }
+  };
+
+  /* ------------------------------------------------------------------------
+     SIGNALEMENTS · voir, supprimer, retirer Validé, bannir — en un clic
+     ---------------------------------------------------------------------- */
+  const formatReportDate = (value) => {
+    const date = value ? new Date(value) : null;
+    if (!date || !Number.isFinite(date.getTime())) return "";
+    return date.toLocaleString("fr-FR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+
+  const updateReportsBadge = () => {
+    const open = [...reportsById.values()].filter((report) => report.status !== "handled").length;
+    if (!reportsCountBadge) return;
+    reportsCountBadge.hidden = open === 0;
+    reportsCountBadge.textContent = open > 99 ? "99+" : String(open);
+  };
+
+  const reportAction = async (report, action, button) => {
+    if (!report || !report.id) return;
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch("/api/admin-reports", {
+        method: "PATCH",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ id: report.id, action, pseudo: report.targetPseudo }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(reportsStatus, data.error || "Cette action n’a pas pu être effectuée.", "error");
+        return;
+      }
+      if (data.report) reportsById.set(data.report.id, { ...reportsById.get(report.id), ...data.report });
+      else if (action === "ban" || action === "unverify" || action === "remove-post") {
+        reportsById.set(report.id, { ...report, status: "handled" });
+      }
+      setStatus(
+        reportsStatus,
+        action === "ban"
+          ? `@${report.targetPseudo} est banni${report.targetPseudo.endsWith("e") ? "e" : ""}.`
+          : action === "unban"
+            ? `@${report.targetPseudo} est réactivé.`
+            : action === "remove-post"
+              ? "Le post signalé a été supprimé."
+              : action === "unverify"
+                ? `Badge Validé retiré à @${report.targetPseudo}.`
+              : action === "reopen"
+                ? "Signalement rouvert."
+                : "Signalement marqué comme traité."
+      );
+      await loadReports({ quiet: true });
+    } catch {
+      setStatus(reportsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (button) button.disabled = false;
+    }
+  };
+
+  const removeReport = async (report, button) => {
+    if (!report?.id) return;
+    if (button) button.disabled = true;
+    try {
+      const url = new URL("/api/admin-reports", window.location.origin);
+      url.searchParams.set("id", report.id);
+      const response = await fetch(url.href, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true) {
+        setStatus(reportsStatus, data.error || "Le signalement n’a pas pu être supprimé.", "error");
+        return;
+      }
+      reportsById.delete(report.id);
+      [...(reportsList?.querySelectorAll(".report-row") || [])]
+        .find((row) => row.dataset.reportId === report.id)?.remove();
+      updateReportsBadge();
+      setStatus(reportsStatus, "Signalement supprimé.");
+    } catch {
+      setStatus(reportsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (button) button.disabled = false;
+    }
+  };
+
+  const createReportRow = (report) => {
+    const row = document.createElement("article");
+    row.className = `report-row${report.status === "handled" ? " is-handled" : ""}`;
+    row.dataset.reportId = report.id;
+
+    const head = document.createElement("div");
+    head.className = "report-row-head";
+    const pseudo = document.createElement("strong");
+    pseudo.className = "report-row-target";
+    pseudo.textContent = `@${report.targetPseudo || "membre inconnu"}`;
+    const state = document.createElement("span");
+    state.className = `report-state report-state--${report.status === "handled" ? "handled" : "open"}`;
+    state.textContent = report.status === "handled" ? "Traité" : "À traiter";
+    head.append(pseudo, state);
+
+    const reason = document.createElement("p");
+    reason.className = "report-row-reason";
+    reason.textContent = report.targetMessageId ? `${report.reason} · message signalé` : report.reason || "Signalement";
+
+    const meta = document.createElement("p");
+    meta.className = "report-row-meta";
+    meta.textContent = `Signalé par @${report.reporterPseudo || "membre"} · ${formatReportDate(report.createdAt)}`;
+    const details = document.createElement("p");
+    details.className = "report-row-details";
+    details.textContent = report.details || "";
+    details.hidden = !report.details;
+
+    const actions = document.createElement("div");
+    actions.className = "report-row-actions";
+
+    // Trois gestes demandés : Ignorer · Supprimer le post · Bannir l'utilisateur.
+    const handled = report.status === "handled";
+    const ignoreButton = document.createElement("button");
+    ignoreButton.type = "button";
+    ignoreButton.className = "member-action-button";
+    ignoreButton.textContent = handled ? "Rouvrir" : "Ignorer";
+    ignoreButton.title = handled ? "Remettre ce signalement dans la pile" : "Classer sans suite";
+    ignoreButton.addEventListener("click", () =>
+      void reportAction(report, handled ? "reopen" : "handled", ignoreButton)
+    );
+
+    const removePostButton = document.createElement("button");
+    removePostButton.type = "button";
+    removePostButton.className = "member-action-button member-action-button--delete";
+    removePostButton.textContent = "Supprimer le post";
+    removePostButton.disabled = !report.targetMessageId;
+    removePostButton.title = report.targetMessageId
+      ? "Supprime le post signalé et clôt le signalement"
+      : "Ce signalement ne vise pas un post";
+    removePostButton.addEventListener("click", () => void reportAction(report, "remove-post", removePostButton));
+
+    const banButton = document.createElement("button");
+    banButton.type = "button";
+    banButton.className = "member-action-button member-action-button--danger";
+    banButton.textContent = "Bannir l’utilisateur";
+    banButton.addEventListener("click", () => void reportAction(report, "ban", banButton));
+
+    const unverifyButton = document.createElement("button");
+    unverifyButton.type = "button";
+    unverifyButton.className = "member-action-button member-action-button--verified";
+    unverifyButton.textContent = "Retirer le badge Validé";
+    unverifyButton.addEventListener("click", () => void reportAction(report, "unverify", unverifyButton));
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "member-action-button member-action-button--ghost";
+    removeButton.textContent = "Supprimer le signalement";
+    removeButton.addEventListener("click", () => void removeReport(report, removeButton));
+
+    actions.append(ignoreButton, removePostButton, banButton, unverifyButton, removeButton);
+    row.append(head, reason, meta, details, actions);
+    return row;
+  };
+
+  const loadReports = async ({ quiet = false } = {}) => {
+    if (!reportsList || reportsLoading) return;
+    reportsLoading = true;
+    if (reportsRefreshButton) reportsRefreshButton.disabled = true;
+    if (!quiet) setStatus(reportsStatus, "Chargement des signalements…");
+    try {
+      const response = await fetch("/api/admin-reports", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(reportsStatus, data.error || "Les signalements n’ont pas pu être chargés.", "error");
+        return;
+      }
+      const reports = (Array.isArray(data.reports) ? data.reports : []).filter(
+        (report) => report && typeof report.id === "string" && typeof report.targetPseudo === "string"
+      );
+      reportsById.clear();
+      reports.forEach((report) => reportsById.set(report.id, report));
+      reportsList.replaceChildren(...reports.map(createReportRow));
+      const open = reports.filter((report) => report.status !== "handled").length;
+      if (!reports.length) {
+        const empty = document.createElement("p");
+        empty.className = "reports-empty";
+        empty.textContent = "Aucun signalement pour le moment. Tout est calme dans le QG.";
+        reportsList.append(empty);
+      }
+      updateReportsBadge();
+      reportsLoaded = true;
+      if (!quiet) {
+        setStatus(
+          reportsStatus,
+          reports.length
+            ? `${reports.length} signalement${reports.length > 1 ? "s" : ""} · ${open} à traiter.`
+            : "Aucun signalement pour le moment."
+        );
+      }
+    } catch {
+      if (!quiet) setStatus(reportsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      reportsLoading = false;
+      if (reportsRefreshButton) reportsRefreshButton.disabled = false;
+    }
+  };
+
+  reportsRefreshButton?.addEventListener("click", () => void loadReports({ quiet: false }));
+
+  const setAdminTab = (tabName, { focus = false, refresh = true } = {}) => {
+    const validTab = ["settings", "members", "conversations", "reports", "planning", "dm"].includes(tabName) ? tabName : "settings";
+    const previousTab = activeAdminTab;
+    activeAdminTab = validTab;
+    if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
+    if (adminPanel) adminPanel.dataset.activeTab = validTab;
+    const tabTitles = {
+      settings: "Tes réglages",
+      members: "Membres",
+      conversations: "Discussions",
+      reports: "Signalements",
+      planning: "Planning & à la une",
+      dm: "Discussions (DM)",
+    };
+    adminTabs.forEach((tab) => {
+      const selected = tab.dataset.adminTab === validTab;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      if (focus && selected) tab.focus();
+    });
+    adminTabPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.adminTabPanel !== validTab;
+    });
+    if (adminTitle) adminTitle.textContent = tabTitles[validTab];
+    if (validTab === "members" && !adminPanel.hidden && !membersLoaded) {
+      void loadMembers({ reset: true, quiet: false });
+    }
+    if (validTab === "reports" && !adminPanel.hidden && !reportsLoaded) {
+      void loadReports({ quiet: false });
+    }
+    if (validTab === "dm" && !adminPanel.hidden && !dmLoaded) {
+      void loadDmThreads({ quiet: false });
+    }
+    if (validTab === "planning" && !adminPanel.hidden && !planningLoaded) {
+      void loadPlanning({ quiet: false });
+    }
+    if (validTab === "conversations" && !adminPanel.hidden && refresh &&
+        (previousTab !== validTab || !conversationsList?.childElementCount)) {
+      void loadConversations({ reset: true, quiet: true, skipSelected: true });
+    }
+  };
+
+  adminTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => setAdminTab(tab.dataset.adminTab));
+    tab.addEventListener("keydown", (event) => {
+      const vertical = adminTabNavigation?.getAttribute("aria-orientation") === "vertical";
+      const supportedArrows = vertical ? ["ArrowUp", "ArrowDown"] : ["ArrowLeft", "ArrowRight"];
+      if (![...supportedArrows, "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const moveForward = event.key === "ArrowRight" || event.key === "ArrowDown";
+      const nextIndex = event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? adminTabs.length - 1
+          : (index + (moveForward ? 1 : adminTabs.length - 1)) % adminTabs.length;
+      setAdminTab(adminTabs[nextIndex]?.dataset.adminTab, { focus: true });
+    });
+  });
+  window.addEventListener("resize", () => {
+    if (adminTabNavigation) adminTabNavigation.setAttribute("aria-orientation", window.matchMedia("(min-width: 961px)").matches ? "vertical" : "horizontal");
+  }, { passive: true });
+  membersRefreshButton?.addEventListener("click", () => void loadMembers({ reset: true }));
+  membersMoreButton?.addEventListener("click", () => void loadMembers());
+
+  const statusLabel = (status) => {
+    if (status === "blocked") return "Bloquée";
+    if (status === "closed") return "Fermée";
+    return "Ouverte";
+  };
+
+  const visibleConversationIds = () => [...(conversationsList?.querySelectorAll(".conversation-list-item") || [])]
+    .map((item) => item.dataset.conversationId)
+    .filter(Boolean);
+
+  const updateBulkToolbar = () => {
+    const ids = [...selectedConversationIds];
+    const selected = ids.map((id) => conversationRecords.get(id)).filter(Boolean);
+    if (bulkToolbar) bulkToolbar.hidden = ids.length === 0;
+    if (selectionCount) selectionCount.textContent = `${ids.length} sélectionnée${ids.length > 1 ? "s" : ""}`;
+
+    const allFavorite = selected.length > 0 && selected.every((conversation) => conversation.favorite === true);
+    const allRead = selected.length > 0 && selected.every((conversation) => conversation.adminUnread !== true);
+    if (bulkFavoriteButton) {
+      const label = document.createElement("span");
+      label.textContent = allFavorite ? "Retirer des favoris" : "Mettre en favoris";
+      const icon = typeof window.qgIcon === "function" ? window.qgIcon(allFavorite ? "star-filled" : "star") : null;
+      bulkFavoriteButton.replaceChildren(...(icon ? [icon, label] : [label]));
+    }
+    if (bulkReadButton) bulkReadButton.textContent = allRead ? "Marquer comme non lu" : "Marquer comme lu";
+    if (bulkCloseButton) bulkCloseButton.disabled = !selected.some((conversation) => conversation.status === "open");
+
+    const visibleIds = visibleConversationIds();
+    const visibleSelected = visibleIds.filter((id) => selectedConversationIds.has(id)).length;
+    if (selectAllConversations) {
+      selectAllConversations.disabled = visibleIds.length === 0;
+      selectAllConversations.checked = visibleIds.length > 0 && visibleSelected === visibleIds.length;
+      selectAllConversations.indeterminate = visibleSelected > 0 && visibleSelected < visibleIds.length;
+    }
+  };
+
+  const updateConversationSelection = () => {
+    conversationsList?.querySelectorAll(".conversation-list-item").forEach((item) => {
+      const id = item.dataset.conversationId;
+      const selected = selectedConversationIds.has(id);
+      const checkbox = item.querySelector("[data-select-conversation]");
+      const openButton = item.querySelector("[data-open-conversation]");
+      if (checkbox) checkbox.checked = selected;
+      if (openButton) openButton.setAttribute("aria-current", String(id === currentConversationId));
+      item.classList.toggle("is-selected", selected);
+      item.classList.toggle("is-current", id === currentConversationId);
+    });
+    if (conversationPageCount) {
+      const visibleCount = conversationsList?.querySelectorAll(".conversation-list-item").length || 0;
+      conversationPageCount.textContent = visibleCount ? `${visibleCount} affichée${visibleCount > 1 ? "s" : ""}` : "";
+    }
+    updateBulkToolbar();
+  };
+
+  const conversationRowSignature = (conversation) => JSON.stringify([
+    conversation.pseudo,
+    conversation.subject,
+    conversation.status,
+    conversation.updatedAt,
+    conversation.lastMessagePreview,
+    conversation.lastMessageSender,
+    conversation.lastMessagePseudo,
+    conversation.adminUnread,
+    conversation.favorite,
+    conversation.hasAudio,
+    conversation.hasImage,
+    conversation.isHost,
+    conversation.avatarData,
+    Array.isArray(conversation.memberBadges) ? conversation.memberBadges.join(",") : "",
+  ]);
+
+  const createConversationListItem = (conversation) => {
+    conversationRecords.set(conversation.id, conversation);
+    const item = document.createElement("article");
+    item.className = "conversation-list-item";
+    item.dataset.conversationId = conversation.id;
+    item.dataset.recordSignature = conversationRowSignature(conversation);
+
+    const checkbox = document.createElement("input");
+    checkbox.className = "conversation-list-checkbox";
+    checkbox.type = "checkbox";
+    checkbox.dataset.selectConversation = "";
+    checkbox.checked = selectedConversationIds.has(conversation.id);
+    checkbox.setAttribute("aria-label", `Sélectionner la discussion de ${conversation.pseudo || "Membre"}`);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedConversationIds.add(conversation.id);
+      else selectedConversationIds.delete(conversation.id);
+      updateConversationSelection();
+    });
+
+    const favorite = document.createElement("button");
+    favorite.className = "conversation-list-star";
+    favorite.type = "button";
+    favorite.dataset.favorite = String(conversation.favorite === true);
+    favorite.setAttribute("aria-pressed", String(conversation.favorite === true));
+    favorite.setAttribute("aria-label", conversation.favorite
+      ? `Retirer ${conversation.pseudo || "Membre"} des favoris`
+      : `Ajouter ${conversation.pseudo || "Membre"} aux favoris`);
+    favorite.title = conversation.favorite ? "Retirer des favoris" : "Ajouter aux favoris";
+    if (typeof window.qgIcon === "function") favorite.append(window.qgIcon(conversation.favorite ? "star-filled" : "star"));
+    favorite.addEventListener("click", () => void toggleConversationFavorite(conversation.id));
+
+    const openButton = document.createElement("button");
+    openButton.className = "conversation-list-open";
+    openButton.type = "button";
+    openButton.dataset.openConversation = "";
+    openButton.setAttribute("aria-current", String(conversation.id === currentConversationId));
+
+    const avatar = document.createElement("span");
+    avatar.className = "conversation-list-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    if (typeof conversation.avatarData === "string" && conversation.avatarData) {
+      const avatarImage = document.createElement("img");
+      avatarImage.src = conversation.avatarData;
+      avatarImage.alt = "";
+      avatar.append(avatarImage);
+    } else {
+      avatar.textContent = (String(conversation.pseudo || "M").trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
+
+    const head = document.createElement("span");
+    head.className = "conversation-list-head";
+
+    const pseudo = document.createElement("strong");
+    pseudo.className = "conversation-list-pseudo";
+    pseudo.textContent = typeof conversation.pseudo === "string" && conversation.pseudo.trim()
+      ? conversation.pseudo
+      : "Membre";
+
+    const subject = document.createElement("span");
+    subject.className = "conversation-list-subject";
+    renderSubjectLabel(subject, conversation.subject);
+
+    const unread = document.createElement("span");
+    unread.className = "conversation-list-unread";
+    unread.textContent = "Non lu";
+    unread.hidden = conversation.adminUnread !== true;
+
+    const status = document.createElement("span");
+    status.className = "conversation-list-status";
+    status.dataset.state = conversation.status;
+    status.textContent = statusLabel(conversation.status);
+    head.append(pseudo);
+    if (conversation.isHost) head.append(createHostCrownBadge("conversation-list-host-crown"));
+    if (Array.isArray(conversation.memberBadges) && conversation.memberBadges.includes("verified")) {
+      head.append(createVerifiedBadge("conversation-list-verified-badge"));
+    }
+    head.append(subject, unread, status);
+
+    const preview = document.createElement("span");
+    preview.className = "conversation-list-preview";
+    const previewText = typeof conversation.lastMessagePreview === "string" ? conversation.lastMessagePreview : "";
+    const senderPseudo = typeof conversation.lastMessagePseudo === "string" && conversation.lastMessagePseudo.trim()
+      ? conversation.lastMessagePseudo
+      : conversation.lastMessageSender === "gionny" ? "Gionny" : conversation.pseudo || "Membre";
+    preview.textContent = `${senderPseudo} : ${previewText}`;
+
+    const date = document.createElement("time");
+    date.className = "conversation-list-date";
+    date.dateTime = conversation.updatedAt;
+    date.textContent = formatInboxTime(conversation.updatedAt);
+
+    openButton.append(avatar, head, preview, date);
+    openButton.addEventListener("click", () => selectConversation(conversation.id, { scroll: true }));
+    item.append(checkbox, favorite, openButton);
+    return item;
+  };
+
+  const conversationMatchesCurrentFilters = (conversation) => {
+    if (activeSubjectFilter && conversation.subject !== activeSubjectFilter) return false;
+    if (activeMailFilter === "unread" && conversation.adminUnread !== true) return false;
+    if (activeMailFilter === "favorites" && conversation.favorite !== true) return false;
+    if (activeMailFilter === "audio" && conversation.hasAudio !== true) return false;
+    return true;
+  };
+
+  const sortConversationListRows = () => {
+    if (!conversationsList) return;
+    const rows = [...conversationsList.querySelectorAll(".conversation-list-item")];
+    rows.sort((left, right) => {
+      const leftConversation = conversationRecords.get(left.dataset.conversationId);
+      const rightConversation = conversationRecords.get(right.dataset.conversationId);
+      return Date.parse(rightConversation?.updatedAt || "") - Date.parse(leftConversation?.updatedAt || "");
+    });
+    rows.forEach((row) => conversationsList.append(row));
+  };
+
+  const upsertConversationListItem = (conversation, { deferRender = false } = {}) => {
+    if (!conversation || typeof conversation.id !== "string" || !conversationsList) return false;
+    conversationRecords.set(conversation.id, conversation);
+    const existing = [...conversationsList.querySelectorAll(".conversation-list-item")]
+      .find((item) => item.dataset.conversationId === conversation.id);
+    let changed = false;
+    if (!conversationMatchesCurrentFilters(conversation)) {
+      selectedConversationIds.delete(conversation.id);
+      if (existing) {
+        existing.remove();
+        changed = true;
+      }
+    } else if (!existing) {
+      conversationsList.append(createConversationListItem(conversation));
+      changed = true;
+    } else if (existing.dataset.recordSignature !== conversationRowSignature(conversation)) {
+      existing.replaceWith(createConversationListItem(conversation));
+      changed = true;
+    }
+    if (changed && !deferRender) {
+      sortConversationListRows();
+      updateConversationSelection();
+    }
+    return changed;
+  };
+
+  const updateConversationRow = (conversation) => upsertConversationListItem(conversation);
+
+  const loadConversations = async ({ reset = false, quiet = false, skipSelected = false } = {}) => {
+    if (!conversationsList) return;
+    if (conversationsLoading) {
+      if (quiet && !reset) return;
+      queuedConversationsLoad = queuedConversationsLoad
+        ? { reset: queuedConversationsLoad.reset || reset, quiet: queuedConversationsLoad.quiet && quiet, skipSelected: queuedConversationsLoad.skipSelected && skipSelected }
+        : { reset, quiet, skipSelected };
+      return;
+    }
+
+    const requestedFilter = activeMailFilter;
+    const requestedSubject = activeSubjectFilter;
+    const requestedCursor = reset || quiet ? "" : conversationsCursor;
+    conversationsLoading = true;
+    if (inboxRefreshButton) inboxRefreshButton.disabled = true;
+    if (conversationsMoreButton) conversationsMoreButton.disabled = true;
+    if (!quiet) setStatus(conversationsStatus, "Chargement des discussions…");
+
+    try {
+      const url = new URL("/api/admin-messages", window.location.origin);
+      url.searchParams.set("view", "conversations");
+      if (requestedCursor) url.searchParams.set("cursor", requestedCursor);
+      url.searchParams.set("filter", requestedFilter);
+      if (requestedSubject) url.searchParams.set("subject", requestedSubject);
+      if (quiet) url.searchParams.set("summary", "0");
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(conversationsStatus, data.error || "Les discussions n’ont pas pu être chargées.", "error");
+        return;
+      }
+      if (requestedFilter !== activeMailFilter || requestedSubject !== activeSubjectFilter) return;
+
+      const validConversation = (conversation) => conversation && typeof conversation === "object" &&
+        typeof conversation.id === "string" && /^[0-9a-f-]{36}$/iu.test(conversation.id) &&
+        typeof conversation.pseudo === "string" && conversation.pseudo.trim().length > 0 &&
+        typeof conversation.updatedAt === "string" && Number.isFinite(Date.parse(conversation.updatedAt)) &&
+        ["open", "closed", "blocked"].includes(conversation.status) &&
+        typeof conversation.lastMessagePreview === "string" &&
+        ["visitor", "gionny"].includes(conversation.lastMessageSender) &&
+        typeof conversation.adminUnread === "boolean" && typeof conversation.favorite === "boolean" &&
+        typeof conversation.hasAudio === "boolean" && typeof conversation.isHost === "boolean";
+      if (!Array.isArray(data.conversations) || !data.conversations.every(validConversation) ||
+          (data.cursor !== null && data.cursor !== undefined && typeof data.cursor !== "string") ||
+          typeof data.hasMore !== "boolean") {
+        if (!quiet) setStatus(conversationsStatus, "La réponse des discussions est invalide. Les données affichées ont été conservées.", "error");
+        return;
+      }
+
+      if (Number.isInteger(data.unreadCount) && data.unreadCount >= 0) updateAdminUnreadBadge(data.unreadCount);
+      const items = data.conversations;
+      if (quiet && items.length === 0) return;
+      const nextCursor = typeof data.cursor === "string" ? data.cursor : "";
+      const nextHasMore = data.hasMore === true && Boolean(nextCursor);
+
+      // A completed explicit refresh can reconcile the visible page, but only
+      // after a valid response arrives. Quiet polling only upserts non-empty data.
+      if (reset && !quiet) {
+        const responseIds = new Set(items.map((conversation) => conversation.id));
+        [...(conversationsList.querySelectorAll(".conversation-list-item") || [])].forEach((row) => {
+          if (!responseIds.has(row.dataset.conversationId)) row.remove();
+        });
+      }
+      let listChanged = false;
+      items.forEach((conversation) => {
+        if (upsertConversationListItem(conversation, { deferRender: true })) listChanged = true;
+      });
+      if (listChanged) {
+        sortConversationListRows();
+        updateConversationSelection();
+      }
+      conversationsCursor = nextCursor;
+      conversationsHasMore = nextHasMore;
+      if (conversationsMoreButton) conversationsMoreButton.hidden = !conversationsHasMore;
+
+      const count = conversationsList.querySelectorAll(".conversation-list-item").length;
+      if (conversationPageCount) conversationPageCount.textContent = count ? `${count} affichée${count > 1 ? "s" : ""}` : "";
+      const emptyMessage = requestedFilter !== "all" || requestedSubject
+        ? "Aucune discussion ne correspond à ces filtres."
+        : "Aucune discussion pour le moment.";
+      if (!quiet) {
+        setStatus(
+          conversationsStatus,
+          count ? `${count} discussion${count > 1 ? "s" : ""} affichée${count > 1 ? "s" : ""}.` : emptyMessage
+        );
+      }
+      updateConversationSelection();
+
+      if (!currentConversationId && items[0]) {
+        await selectConversation(items[0].id, { markRead: false });
+      } else if (currentConversationId && !skipSelected) {
+        void loadSelectedConversation({ quiet: true });
+      }
+    } catch {
+      if (!quiet) setStatus(conversationsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      conversationsLoading = false;
+      if (inboxRefreshButton) inboxRefreshButton.disabled = false;
+      if (conversationsMoreButton) conversationsMoreButton.disabled = false;
+      if (queuedConversationsLoad) {
+        const nextLoad = queuedConversationsLoad;
+        queuedConversationsLoad = null;
+        void loadConversations(nextLoad);
+      }
+    }
+  };
+
+  const createThreadMessage = (message) => {
+    const item = document.createElement("article");
+    const sender = message.sender === "gionny" ? "gionny" : "visitor";
+    item.className = `thread-message thread-message--${sender}`;
+
+    const ownerConversation = conversationRecords.get(currentConversationId);
+    const senderPseudo = typeof message.pseudo === "string" && message.pseudo.trim()
+      ? message.pseudo
+      : sender === "gionny" ? "Gionny" : ownerConversation?.pseudo || "Membre";
+    const isHostMessage = message.isHost === true || sender === "gionny";
+    const avatarSource = message.avatarData || (sender === "gionny" ? "/assets/gionny-profile.jpg" : ownerConversation?.avatarData || "");
+    const identity = document.createElement("div");
+    identity.className = "thread-message-identity";
+    const avatar = document.createElement("span");
+    avatar.className = "thread-message-avatar";
+    avatar.setAttribute("aria-hidden", "true");
+    if (avatarSource) {
+      const image = document.createElement("img");
+      image.src = avatarSource;
+      image.alt = "";
+      avatar.append(image);
+    } else {
+      avatar.textContent = (String(senderPseudo).trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
+    const name = document.createElement("span");
+    name.className = "thread-message-sender";
+    name.textContent = senderPseudo;
+    if (isHostMessage) name.append(createHostCrownBadge("thread-message-host-crown"));
+    else if ((Array.isArray(message.badges) && message.badges.includes("verified")) || ownerConversation?.memberBadges?.includes("verified")) {
+      name.append(createVerifiedBadge("thread-message-verified-badge"));
+    }
+    identity.append(avatar, name);
+    item.append(identity);
+
+    if (message.kind === "audio" || message.hasAudio) {
+      item.classList.add("thread-message--audio");
+      const audioUrl = message.pending && typeof message.previewUrl === "string" && message.previewUrl
+        ? message.previewUrl
+        : `/api/contact-audio?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
+      const player = typeof window.createQGVoicePlayer === "function"
+        ? window.createQGVoicePlayer(audioUrl, `Message vocal de ${senderPseudo}`, { peaks: message.audioPeaks })
+        : document.createElement("p");
+      if (player.tagName === "P") player.textContent = "Le lecteur vocal est indisponible.";
+      player.classList.add("thread-message-audio");
+      item.append(player);
+    } else if (message.kind === "image" || message.hasImage) {
+      const imageUrl = message.pending && typeof message.previewUrl === "string" && message.previewUrl
+        ? message.previewUrl
+        : `/api/contact-image?conversationId=${encodeURIComponent(currentConversationId)}&messageId=${encodeURIComponent(message.id)}`;
+      const imageButton = document.createElement("button");
+      imageButton.type = "button";
+      imageButton.className = "thread-attachment-image";
+      imageButton.setAttribute("aria-label", `Agrandir l’image envoyée par ${senderPseudo}`);
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = "Image jointe à la discussion";
+      image.loading = "lazy";
+      imageButton.append(image);
+      imageButton.addEventListener("click", () => window.qgImageTools?.openImageViewer(imageUrl, image.alt));
+      item.append(imageButton);
+      if (typeof message.text === "string" && message.text) {
+        const caption = document.createElement("p");
+        caption.className = "thread-message-text thread-message-caption";
+        caption.textContent = message.text;
+        item.append(caption);
+      }
+    } else {
+      const content = document.createElement("p");
+      content.className = "thread-message-text";
+      content.textContent = typeof message.text === "string" ? message.text : "";
+      item.append(content);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "thread-message-meta";
+    const date = document.createElement("time");
+    date.className = "thread-message-date";
+    date.dateTime = message.createdAt;
+    date.textContent = formatInboxTime(message.createdAt);
+    meta.append(date);
+    if (sender === "gionny") {
+      const receipt = document.createElement("span");
+      receipt.className = "chat-read-receipt";
+      receipt.dataset.state = message.pending ? "sending" : message.read === true ? "read" : "sent";
+      receipt.setAttribute("aria-label", message.pending ? "Envoi en cours" : message.read === true ? "Message lu" : "Message envoyé");
+      receipt.title = message.pending ? "Envoi en cours" : message.read === true ? "Lu" : "Envoyé";
+      if (typeof window.qgIcon === "function") receipt.append(window.qgIcon(message.pending ? "check" : "check-double", "chat-receipt-icon"));
+      meta.append(receipt);
+    }
+    item.append(meta);
+    return item;
+  };
+
+  const renderSelectedConversation = (data) => {
+    const conversation = data.conversation;
+    conversationRecords.set(conversation.id, conversation);
+    currentConversationStatus = conversation.status;
+    conversationEmpty.hidden = true;
+    conversationContent.hidden = false;
+    threadPseudo.textContent = conversation.pseudo || "Membre";
+    const avatarSource = typeof conversation.avatarData === "string" ? conversation.avatarData : "";
+    if (threadAvatar) {
+      threadAvatar.hidden = !avatarSource;
+      if (avatarSource && threadAvatar.src !== avatarSource) threadAvatar.src = avatarSource;
+      if (!avatarSource) threadAvatar.removeAttribute("src");
+    }
+    if (threadAvatarFallback) {
+      threadAvatarFallback.hidden = Boolean(avatarSource);
+      threadAvatarFallback.textContent = (String(conversation.pseudo || "M").trim().charAt(0) || "M").toLocaleUpperCase("fr-FR");
+    }
+    if (threadHostCrown) threadHostCrown.hidden = conversation.isHost !== true;
+    if (threadVerifiedBadge) threadVerifiedBadge.hidden = !conversation.memberBadges?.includes("verified");
+    renderSubjectLabel(threadSubject, conversation.subject);
+    threadStatus.textContent = statusLabel(conversation.status);
+    threadStatus.dataset.state = conversation.status;
+    threadCloseButton.disabled = conversation.status === "blocked";
+    threadCloseButton.textContent = conversation.status === "open" ? "Fermer" : "Réouvrir";
+    threadBlockButton.textContent = conversation.status === "blocked" ? "Débloquer" : "Bloquer";
+    threadDeleteButton.disabled = false;
+
+    const isOpen = conversation.status === "open";
+    replyForm.hidden = !isOpen;
+    const voiceActive = Boolean(adminVoiceState && (adminVoiceState.mode !== "idle" || adminVoiceState.sending));
+    adminVoiceState?.syncAvailability();
+    if (replySendButton) replySendButton.disabled = !isOpen || voiceActive;
+    if (adminChatAttach) adminChatAttach.disabled = !hostSessionActive || !isOpen || voiceActive;
+    threadClosedNote.hidden = isOpen;
+    threadClosedNote.textContent = conversation.status === "blocked"
+      ? "Cette discussion est bloquée. Débloque-la pour pouvoir répondre à nouveau."
+      : "Cette discussion est fermée. Tu peux la rouvrir quand tu veux.";
+
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    const messageSignature = messages.map((message) =>
+      `${message.id}:${message.kind || "text"}:${message.sender || ""}:${message.pseudo || ""}:${message.isHost === true}:${message.read === true}:${message.avatarData || ""}:${Array.isArray(message.audioPeaks) ? message.audioPeaks.join(",") : ""}:${Array.isArray(message.badges) ? message.badges.join(",") : ""}`
+    ).join("|");
+    if (threadMessages.dataset.messageSignature !== messageSignature) {
+      const wasNearBottom = threadMessages.scrollHeight - threadMessages.scrollTop - threadMessages.clientHeight < 90;
+      const renderedMessages = messages.map(createThreadMessage);
+      if (messages.length === 0) {
+        const emptyNote = document.createElement("p");
+        emptyNote.className = "thread-empty-note";
+        emptyNote.textContent = "La discussion est prête. Écris le premier message à ce membre.";
+        renderedMessages.push(emptyNote);
+      }
+      threadMessages.replaceChildren(...renderedMessages);
+      threadMessages.dataset.messageSignature = messageSignature;
+      if (wasNearBottom) threadMessages.scrollTop = threadMessages.scrollHeight;
+    }
+    updateConversationRow(conversation);
+    updateConversationSelection();
+  };
+
+  const loadSelectedConversation = async ({ quiet = false } = {}) => {
+    if (!currentConversationId || selectedConversationLoading) return null;
+    const requestedId = currentConversationId;
+    selectedConversationLoading = true;
+
+    try {
+      const url = new URL("/api/admin-messages", window.location.origin);
+      url.searchParams.set("view", "conversation");
+      url.searchParams.set("id", requestedId);
+      if (quiet && currentConversationMessageCount >= 0) {
+        url.searchParams.set("after", String(currentConversationMessageCount));
+      }
+      const response = await fetch(url.href, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (requestedId === currentConversationId && response.status === 404) {
+          currentConversationId = "";
+          currentConversationStatus = "";
+          currentConversationMessages = [];
+          currentConversationMessageCount = -1;
+          conversationContent.hidden = true;
+          conversationEmpty.hidden = false;
+        } else if (requestedId === currentConversationId) {
+          setStatus(replyStatus, data.error || "La discussion n’a pas pu être chargée.", "error");
+        }
+        return;
+      }
+      if (requestedId === currentConversationId) {
+        const incomingMessages = Array.isArray(data.messages) ? data.messages : [];
+        if (data.messagesComplete === false) {
+          const messagesById = new Map(currentConversationMessages.map((message) => [message.id, message]));
+          incomingMessages.forEach((message) => messagesById.set(message.id, message));
+          currentConversationMessages = [...messagesById.values()]
+            .sort((left, right) => (left.sequence || 0) - (right.sequence || 0));
+        } else {
+          currentConversationMessages = incomingMessages;
+        }
+        currentConversationMessageCount = Number.isInteger(data.conversation?.messageCount)
+          ? data.conversation.messageCount
+          : currentConversationMessageCount;
+        const completeData = { ...data, messages: currentConversationMessages };
+        renderSelectedConversation(completeData);
+        return completeData;
+      }
+    } catch {
+      if (!quiet) setStatus(replyStatus, "Impossible de charger cette discussion.", "error");
+    } finally {
+      selectedConversationLoading = false;
+      if (currentConversationId && currentConversationId !== requestedId) {
+        void loadSelectedConversation({ quiet: true });
+      }
+    }
+    return null;
+  };
+
+  const patchConversationMetadata = async (payload, { quiet = false } = {}) => {
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "PATCH",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(payload),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return null;
+      }
+      if (!response.ok) {
+        if (!quiet) setStatus(conversationsStatus, data.error || "La mise à jour n’a pas abouti.", "error");
+        return null;
+      }
+      const updated = data.conversation ? [data.conversation] : Array.isArray(data.updated) ? data.updated : [];
+      updated.forEach((conversation) => {
+        conversationRecords.set(conversation.id, conversation);
+        updateConversationRow(conversation);
+      });
+      return data;
+    } catch {
+      if (!quiet) setStatus(conversationsStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+      return null;
+    }
+  };
+
+  const selectConversation = async (id, { scroll = false, markRead = true } = {}) => {
+    if (!id) return;
+    const changedConversation = id !== currentConversationId;
+    if (changedConversation && adminVoiceState && !adminVoiceState.sending) adminVoiceState.cancel();
+    if (changedConversation) {
+      currentConversationMessages = [];
+      currentConversationMessageCount = -1;
+    }
+    currentConversationId = id;
+    setStatus(replyStatus, "");
+    conversationEmpty.hidden = true;
+    conversationContent.hidden = false;
+    threadPseudo.textContent = "Chargement…";
+    threadMessages.replaceChildren();
+    updateConversationSelection();
+    const shouldMarkRead = conversationRecords.get(id)?.adminUnread === true;
+    const loaded = await loadSelectedConversation();
+    if (markRead && (shouldMarkRead || loaded?.conversation?.adminUnread === true)) {
+      const updated = await patchConversationMetadata({ conversationId: id, unread: false }, { quiet: true });
+      if (updated) await loadConversations({ reset: true, quiet: true, skipSelected: true });
+    }
+    if (scroll && window.matchMedia("(max-width: 640px)").matches) {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      document.querySelector("[data-conversation-detail]")?.scrollIntoView({ behavior, block: "start" });
+    }
+  };
+
+  const writeToMember = async (member, button) => {
+    if (!member || typeof member.id !== "string" || !button || button.disabled) return;
+    button.disabled = true;
+    setStatus(membersStatus, `Ouverture de la discussion avec ${member.pseudo || "ce membre"}…`);
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "start-conversation", accountId: member.id }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true || !data.conversation?.id) {
+        setStatus(membersStatus, data.error || "La discussion n’a pas pu être ouverte.", "error");
+        return;
+      }
+
+      member.conversationId = data.conversation.id;
+      memberRecords.set(member.id, member);
+      upsertMemberItem(member);
+      conversationRecords.set(data.conversation.id, data.conversation);
+      setAdminTab("conversations");
+      const selection = selectConversation(data.conversation.id, { scroll: true });
+      await Promise.all([
+        selection,
+        loadConversations({ reset: true, quiet: true, skipSelected: true }),
+      ]);
+      setStatus(conversationsStatus, data.created ? `Discussion démarrée avec ${member.pseudo}. Aucun message n’a été envoyé.` : `Discussion ouverte avec ${member.pseudo}.`);
+    } catch {
+      setStatus(membersStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
+  };
+
+  const toggleConversationFavorite = async (conversationId) => {
+    const conversation = conversationRecords.get(conversationId);
+    if (!conversation) return;
+    const result = await patchConversationMetadata({ conversationId, favorite: conversation.favorite !== true });
+    if (!result?.conversation) return;
+    setStatus(conversationsStatus, result.conversation.favorite ? "Ajoutée aux favoris." : "Retirée des favoris.");
+  };
+
+  const runBulkPatch = async (changes) => {
+    const ids = [...selectedConversationIds];
+    if (!ids.length) return;
+    const actionLabel = typeof changes.favorite === "boolean"
+      ? "Mise à jour des favoris…"
+      : typeof changes.unread === "boolean"
+        ? "Mise à jour du statut de lecture…"
+        : "Fermeture des discussions…";
+    setStatus(bulkStatus, actionLabel);
+    [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+      if (button) button.disabled = true;
+    });
+
+    const updated = [];
+    const skipped = [];
+    let failed = false;
+    for (let index = 0; index < ids.length; index += 100) {
+      const result = await patchConversationMetadata({ conversationIds: ids.slice(index, index + 100), ...changes }, { quiet: true });
+      if (!result) {
+        failed = true;
+        break;
+      }
+      if (Array.isArray(result.updated)) updated.push(...result.updated);
+      if (Array.isArray(result.skipped)) skipped.push(...result.skipped);
+    }
+
+    if (!failed) {
+      selectedConversationIds.clear();
+      updateConversationSelection();
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      if (changes.status && currentConversationId && updated.some((item) => item.id === currentConversationId)) {
+        await loadSelectedConversation({ quiet: true });
+      }
+      const message = `${updated.length} discussion${updated.length > 1 ? "s" : ""} mise${updated.length > 1 ? "s" : ""} à jour${skipped.length ? ` · ${skipped.length} ignorée${skipped.length > 1 ? "s" : ""}` : ""}.`;
+      setStatus(conversationsStatus, message, skipped.length ? "error" : "");
+    } else {
+      setStatus(conversationsStatus, "L’action groupée n’a pas abouti. Ta sélection est conservée pour réessayer.", "error");
+    }
+
+    [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+      if (button) button.disabled = false;
+    });
+    updateBulkToolbar();
+  };
+
+  const deleteSelectedConversations = async () => {
+    const ids = [...selectedConversationIds];
+    if (!ids.length) return;
+    if (!window.confirm(`Supprimer définitivement ${ids.length} discussion${ids.length > 1 ? "s" : ""} ? Tous les messages, images et vocaux associés seront purgés.`)) return;
+
+    setStatus(bulkStatus, "Suppression des discussions, messages et vocaux…");
+    [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+      if (button) button.disabled = true;
+    });
+    const deletedIds = [];
+    const skippedIds = [];
+    const failedIds = [];
+
+    try {
+      for (let index = 0; index < ids.length; index += 100) {
+        const response = await fetch("/api/admin-messages", {
+          method: "DELETE",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({ conversationIds: ids.slice(index, index + 100) }),
+        });
+        const data = await readJson(response);
+        if (response.status === 401) {
+          showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || "La suppression groupée a échoué.");
+        deletedIds.push(...(Array.isArray(data.deletedIds) ? data.deletedIds : []));
+        skippedIds.push(...(Array.isArray(data.skippedIds) ? data.skippedIds : []));
+        failedIds.push(...(Array.isArray(data.failedIds) ? data.failedIds : []));
+      }
+
+      [...deletedIds, ...skippedIds].forEach((id) => {
+        selectedConversationIds.delete(id);
+        conversationRecords.delete(id);
+        [...(conversationsList?.querySelectorAll(".conversation-list-item") || [])]
+          .find((item) => item.dataset.conversationId === id)
+          ?.remove();
+      });
+      if (currentConversationId && deletedIds.includes(currentConversationId)) {
+        currentConversationId = "";
+        currentConversationStatus = "";
+        currentConversationMessages = [];
+        currentConversationMessageCount = -1;
+        conversationContent.hidden = true;
+        conversationEmpty.hidden = false;
+      }
+      updateConversationSelection();
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      const deletionSummary = deletedIds.length
+        ? `${deletedIds.length} discussion${deletedIds.length > 1 ? "s" : ""} supprimée${deletedIds.length > 1 ? "s" : ""}. Messages et vocaux associés purgés.`
+        : "Aucune discussion n’a été supprimée.";
+      const remainingSummary = failedIds.length
+        ? ` ${failedIds.length} échec${failedIds.length > 1 ? "s" : ""} à réessayer.`
+        : skippedIds.length
+          ? ` ${skippedIds.length} discussion${skippedIds.length > 1 ? "s" : ""} introuvable${skippedIds.length > 1 ? "s" : ""}.`
+          : "";
+      setStatus(conversationsStatus, deletionSummary + remainingSummary, failedIds.length ? "error" : "");
+    } catch (error) {
+      setStatus(conversationsStatus, error instanceof Error ? error.message : "La suppression groupée a échoué.", "error");
+    } finally {
+      [bulkFavoriteButton, bulkReadButton, bulkCloseButton, bulkDeleteButton].forEach((button) => {
+        if (button) button.disabled = false;
+      });
+      updateBulkToolbar();
+    }
+  };
+
+  const changeConversationStatus = async (status) => {
+    if (!currentConversationId) return;
+    const conversationId = currentConversationId;
+    if (status === "blocked" && !window.confirm("Bloquer cette discussion ? Le pseudo n’est pas une identité vérifiée.")) return;
+
+    threadCloseButton.disabled = true;
+    threadBlockButton.disabled = true;
+    setStatus(replyStatus, status === "blocked" ? "Blocage de la discussion…" : "Mise à jour…");
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "PATCH",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ conversationId, status }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || !data.conversation) {
+        setStatus(replyStatus, data.error || "Le statut n’a pas pu être changé.", "error");
+        return;
+      }
+      setStatus(replyStatus, status === "blocked" ? "Discussion bloquée." : "Statut mis à jour.");
+      await loadSelectedConversation({ quiet: true });
+      await loadConversations({ reset: true, quiet: true });
+    } catch {
+      setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      threadCloseButton.disabled = !currentConversationId || currentConversationStatus === "blocked";
+      threadBlockButton.disabled = !currentConversationId;
+    }
+  };
+
+  const removeConversation = async () => {
+    if (!currentConversationId || !window.confirm("Supprimer définitivement toute cette discussion ? Tous les messages, images et vocaux associés seront purgés.")) return;
+    const conversationId = currentConversationId;
+    threadDeleteButton.disabled = true;
+    try {
+      const response = await fetch("/api/admin-messages", {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ conversationId }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.deleted !== true) {
+        setStatus(replyStatus, data.error || "La discussion n’a pas pu être supprimée.", "error");
+        return;
+      }
+      currentConversationId = "";
+      currentConversationStatus = "";
+      currentConversationMessages = [];
+      currentConversationMessageCount = -1;
+      conversationContent.hidden = true;
+      conversationEmpty.hidden = false;
+      setStatus(replyStatus, "Discussion supprimée.");
+      await loadConversations({ reset: true });
+    } catch {
+      setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      threadDeleteButton.disabled = false;
+    }
+  };
+
+  let adminImageBlob = null;
+  let adminImagePreviewUrl = "";
+
+  const clearAdminImage = () => {
+    if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
+    adminImagePreviewUrl = "";
+    adminImageBlob = null;
+    if (adminImagePreview) adminImagePreview.hidden = true;
+    adminImagePreviewImg?.removeAttribute("src");
+    if (adminChatImageInput) adminChatImageInput.value = "";
+    adminVoiceState?.syncAvailability();
+  };
+
+  adminChatAttach?.addEventListener("click", () => {
+    if (adminChatAttach.disabled) return;
+    adminChatImageInput?.click();
+  });
+  adminImageRemove?.addEventListener("click", () => {
+    clearAdminImage();
+    updateAdminComposeAction();
+    replyInput?.focus({ preventScroll: true });
+  });
+  adminChatImageInput?.addEventListener("change", async () => {
+    const file = adminChatImageInput.files?.[0];
+    if (!file) return;
+    if (adminVoiceState && (adminVoiceState.mode !== "idle" || adminVoiceState.sending)) {
+      setStatus(replyStatus, "Envoie ou supprime le vocal avant de joindre une image.", "error");
+      adminChatImageInput.value = "";
+      return;
+    }
+    if (!window.qgImageTools?.compressToWebp) {
+      setStatus(replyStatus, "La compression WebP n’est pas disponible dans ce navigateur.", "error");
+      adminChatImageInput.value = "";
+      return;
+    }
+    setStatus(replyStatus, "Compression de l’image en WebP…");
+    try {
+      const blob = await window.qgImageTools.compressToWebp(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        maxBytes: 40_000,
+        initialQuality: 0.75,
+      });
+      if (adminImagePreviewUrl) URL.revokeObjectURL(adminImagePreviewUrl);
+      adminImageBlob = blob;
+      adminImagePreviewUrl = URL.createObjectURL(blob);
+      if (adminImagePreviewImg) adminImagePreviewImg.src = adminImagePreviewUrl;
+      if (adminImagePreview) adminImagePreview.hidden = false;
+      setStatus(replyStatus, `Image prête · ${Math.round(blob.size / 1024)} Ko.`, "success");
+      updateAdminComposeAction();
+    } catch (error) {
+      setStatus(replyStatus, error instanceof Error ? error.message : "L’image n’a pas pu être compressée.", "error");
+    } finally {
+      adminChatImageInput.value = "";
+    }
+  });
+  const updateAdminComposeAction = () => {
+    const hasPayload = Boolean(adminImageBlob || String(replyInput?.value || "").trim());
+    if (adminComposeAction) adminComposeAction.dataset.mode = hasPayload ? "send" : "voice";
+    if (adminComposeMic) adminComposeMic.hidden = hasPayload;
+    if (adminComposeSend) adminComposeSend.hidden = !hasPayload;
+    if (adminComposeAction) {
+      adminComposeAction.setAttribute("aria-label", hasPayload ? "Envoyer la réponse" : "Enregistrer un message vocal");
+      adminComposeAction.title = hasPayload ? "Envoyer" : "Message vocal";
+    }
+    adminVoiceState?.syncAvailability();
+  };
+
+  const uploadAdminVoice = async (audioBlob, audioPeaks = [], voice = adminVoiceState) => {
+    const conversationId = currentConversationId;
+    if (!conversationId || currentConversationStatus !== "open" || !hostSessionActive || !audioBlob?.size) return false;
+    if (audioBlob.size > ADMIN_MAX_VOICE_BYTES) {
+      voice?.setStatus("Ce vocal dépasse 200 Ko. Recommence avec un enregistrement plus court.", "error");
+      return false;
+    }
+
+    voice?.previewPlayer?.querySelector("audio")?.pause();
+    const pendingNode = createThreadMessage({
+      id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      sender: "gionny",
+      pseudo: adminIdentityPseudo?.textContent || "Gionny",
+      isHost: true,
+      text: "",
+      createdAt: new Date().toISOString(),
+      kind: "audio",
+      hasAudio: true,
+      audioPeaks,
+      pending: true,
+      previewUrl: voice?.previewUrl || "",
+    });
+    threadMessages?.append(pendingNode);
+    if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
+
+    try {
+      const response = await fetch("/api/contact-audio", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": audioBlob.type || "audio/webm",
+          "X-Admin-Reply": "true",
+          "X-Conversation-Id": conversationId,
+          "X-Voice-Peaks": Array.from(audioPeaks).map((peak) => Math.round(Math.max(0, Math.min(1, Number(peak) || 0)) * 100) / 100).join(","),
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: audioBlob,
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        pendingNode.remove();
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return false;
+      }
+      if (!response.ok || data.ok !== true) {
+        pendingNode.remove();
+        if (currentConversationId === conversationId) {
+          voice?.setStatus(data.error || "Le vocal n’a pas pu être envoyé. Réessaie.", "error");
+          if (response.status === 409) await loadSelectedConversation({ quiet: true });
+        }
+        return false;
+      }
+      pendingNode.remove();
+      if (currentConversationId === conversationId) {
+        setStatus(replyStatus, "Vocal envoyé.", "success");
+        await loadSelectedConversation({ quiet: true });
+      }
+      await loadConversations({ reset: true, quiet: true, skipSelected: true });
+      return true;
+    } catch {
+      pendingNode.remove();
+      if (currentConversationId === conversationId) voice?.setStatus("Impossible de joindre le serveur. Réessaie.", "error");
+      return false;
+    }
+  };
+
+  if (adminComposeAction && adminInputPill && adminVoicePanel && adminVoiceRecordingControls &&
+      adminVoiceWave && adminVoiceTimer && adminVoiceCancelButton && adminVoiceStopButton &&
+      adminVoicePreview && adminVoiceSendButton && adminVoiceStatus && replyForm &&
+      typeof window.createQGVoiceComposer === "function") {
+    adminVoiceState = window.createQGVoiceComposer({
+      inputPill: adminInputPill,
+      panel: adminVoicePanel,
+      liveControls: adminVoiceRecordingControls,
+      waveform: adminVoiceWave,
+      timer: adminVoiceTimer,
+      stopButton: adminVoiceStopButton,
+      cancelButton: adminVoiceCancelButton,
+      sendButton: adminVoiceSendButton,
+      preview: adminVoicePreview,
+      composeButton: adminComposeAction,
+      plusButton: adminChatAttach,
+      status: adminVoiceStatus,
+      label: "réponse vocale",
+      canRecord: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open" && !adminImageBlob && !String(replyInput?.value || "").trim()),
+      canSend: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open" && (adminImageBlob || String(replyInput?.value || "").trim())),
+      canUsePlus: () => Boolean(hostSessionActive && !adminPanel.hidden && currentConversationId && currentConversationStatus === "open"),
+      onSend: (blob, peaks, voice) => uploadAdminVoice(blob, peaks, voice),
+    });
+  }
+
+  adminComposeAction?.addEventListener("click", (event) => {
+    if (String(replyInput?.value || "").trim() || adminImageBlob) return;
+    event.preventDefault();
+    void adminVoiceState?.start();
+  });
+  replyForm?.addEventListener("click", (event) => {
+    const actionButton = event.target.closest("[data-admin-compose-action]");
+    if (!actionButton || !replyForm.contains(actionButton)) return;
+    if (!String(replyInput?.value || "").trim() && !adminImageBlob) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    if (replySendButton && !replySendButton.disabled) replyForm.requestSubmit(replySendButton);
+  }, true);
+
+  updateAdminComposeAction();
+
+  replyInput?.addEventListener("input", () => {
+    // Single-line pill: the textarea keeps its 20 px line, no inline height.
+    replyInput.style.height = "";
+    updateAdminComposeAction();
+  });
+  replyInput?.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+    event.preventDefault();
+    if (!replyInput.value.trim() && !adminImageBlob) return;
+    if (replySendButton && !replySendButton.disabled) replyForm.requestSubmit(replySendButton);
+  });
+  mailFilterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.mailFilter;
+      if (!["all", "unread", "favorites", "audio"].includes(filter) || filter === activeMailFilter) return;
+      activeMailFilter = filter;
+      mailFilterButtons.forEach((tab) => {
+        tab.setAttribute("aria-pressed", String(tab === button));
+      });
+      selectedConversationIds.clear();
+      updateConversationSelection();
+      void loadConversations({ reset: true });
+    });
+  });
+
+  conversationSubjectFilter?.addEventListener("change", () => {
+    activeSubjectFilter = conversationSubjectFilter.value;
+    selectedConversationIds.clear();
+    updateConversationSelection();
+    void loadConversations({ reset: true });
+  });
+
+  selectAllConversations?.addEventListener("change", () => {
+    const ids = visibleConversationIds();
+    if (selectAllConversations.checked) ids.forEach((id) => selectedConversationIds.add(id));
+    else ids.forEach((id) => selectedConversationIds.delete(id));
+    updateConversationSelection();
+  });
+
+  bulkFavoriteButton?.addEventListener("click", () => {
+    const selected = [...selectedConversationIds].map((id) => conversationRecords.get(id)).filter(Boolean);
+    const allFavorite = selected.length > 0 && selected.every((conversation) => conversation.favorite === true);
+    void runBulkPatch({ favorite: !allFavorite });
+  });
+  bulkReadButton?.addEventListener("click", () => {
+    const selected = [...selectedConversationIds].map((id) => conversationRecords.get(id)).filter(Boolean);
+    const allRead = selected.length > 0 && selected.every((conversation) => conversation.adminUnread !== true);
+    void runBulkPatch({ unread: allRead });
+  });
+  bulkCloseButton?.addEventListener("click", () => void runBulkPatch({ status: "closed" }));
+  bulkDeleteButton?.addEventListener("click", () => void deleteSelectedConversations());
+
+  replyForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = String(replyInput?.value || "").trim();
+    const conversationId = currentConversationId;
+    const sendingImage = Boolean(adminImageBlob);
+    if (adminVoiceState && (adminVoiceState.sending || adminVoiceState.mode !== "idle")) {
+      setStatus(replyStatus, "Envoie ou supprime le vocal avant d’envoyer un autre message.", "error");
+      return;
+    }
+    if (!conversationId || (!message && !sendingImage) || !replyForm.reportValidity() || replySendButton.disabled) return;
+
+    replySendButton.disabled = true;
+    setStatus(replyStatus, sendingImage ? "Envoi de l’image…" : "Envoi de ta réponse…");
+    const pendingNode = createThreadMessage({
+      id: `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      sender: "gionny",
+      pseudo: adminIdentityPseudo?.textContent || "Gionny",
+      isHost: true,
+      text: message,
+      createdAt: new Date().toISOString(),
+      kind: sendingImage ? "image" : "text",
+      hasImage: sendingImage,
+      pending: true,
+      previewUrl: sendingImage ? adminImagePreviewUrl : "",
+    });
+    threadMessages?.append(pendingNode);
+    if (threadMessages) threadMessages.scrollTop = threadMessages.scrollHeight;
+    try {
+      const response = sendingImage
+        ? await fetch("/api/contact-image", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "image/webp",
+            "X-Admin-Reply": "true",
+            "X-Conversation-Id": conversationId,
+            "X-Message-Text": encodeURIComponent(message),
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: adminImageBlob,
+        })
+        : await fetch("/api/admin-messages", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          credentials: "same-origin",
+          cache: "no-store",
+          body: JSON.stringify({ conversationId, message }),
+        });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        pendingNode.remove();
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok || data.ok !== true) {
+        pendingNode.remove();
+        setStatus(replyStatus, data.error || "Ta réponse n’a pas pu être envoyée.", "error");
+        if (response.status === 409) await loadSelectedConversation({ quiet: true });
+        return;
+      }
+      pendingNode.remove();
+      replyInput.value = "";
+      replyInput.style.height = "auto";
+      clearAdminImage();
+      updateAdminComposeAction();
+      setStatus(replyStatus, sendingImage ? "Image envoyée." : "Réponse envoyée.", "success");
+      await Promise.all([loadSelectedConversation({ quiet: true }), loadConversations({ reset: true, quiet: true })]);
+    } catch {
+      pendingNode.remove();
+      setStatus(replyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      replySendButton.disabled = false;
+    }
+  });
+
+  threadCloseButton?.addEventListener("click", () => {
+    const nextStatus = currentConversationStatus === "open" ? "closed" : "open";
+    void changeConversationStatus(nextStatus);
+  });
+  threadBlockButton?.addEventListener("click", () => {
+    const nextStatus = currentConversationStatus === "blocked" ? "open" : "blocked";
+    void changeConversationStatus(nextStatus);
+  });
+  threadDeleteButton?.addEventListener("click", () => void removeConversation());
+
+  const startAdminPolling = () => {
+    if (adminPollTimer) window.clearInterval(adminPollTimer);
+    adminPollTimer = window.setInterval(() => {
+      if (adminPanel.hidden || document.hidden) return;
+      if (activeAdminTab === "conversations") {
+        void loadConversations({ quiet: true, skipSelected: true });
+        if (currentConversationId) void loadSelectedConversation({ quiet: true });
+      } else if (activeAdminTab === "members") {
+        void loadMembers({ quiet: true });
+      }
+    }, 60_000);
+  };
+
+  const startAdminPresence = () => {
+    if (adminPresenceTimer) window.clearInterval(adminPresenceTimer);
+    const heartbeat = async () => {
+      if (adminPanel.hidden || document.hidden) return;
+      try {
+        const response = await fetch("/api/presence", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        const data = await readJson(response);
+        if (response.ok && Number.isInteger(data.activeSessions) && adminPresenceCount) {
+          adminPresenceCount.textContent = String(data.activeSessions);
+        }
+      } catch {
+        // Keep the last count when the presence endpoint is temporarily unavailable.
+      }
+    };
+    void heartbeat();
+    adminPresenceTimer = window.setInterval(heartbeat, 60_000);
+  };
+
+  inboxRefreshButton?.addEventListener("click", () => {
+    void loadInbox({ reset: true });
+    void loadConversations({ reset: true });
+    if (currentConversationId) void loadSelectedConversation({ quiet: true });
+  });
+  inboxMoreButton?.addEventListener("click", () => void loadInbox());
+  conversationsMoreButton?.addEventListener("click", () => void loadConversations());
+
+  const showAdmin = async () => {
+    loginPanel.hidden = true;
+    adminPanel.hidden = false;
+    if (adminTabNavigation) adminTabNavigation.hidden = false;
+    if (logoutButton) logoutButton.hidden = false;
+    if (adminPresence) adminPresence.hidden = false;
+    setAdminTab(activeAdminTab, { refresh: false });
+    startAdminPresence();
+    setStatus(loginStatus, "");
+    setStatus(saveStatus, "");
+    await Promise.all([
+      loadAdminIdentity(),
+      loadSettings(),
+      loadInbox({ reset: true }),
+      loadConversations({ reset: true }),
+    ]);
+    startAdminPolling();
+  };
+
+  loginForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!loginForm.reportValidity()) return;
+
+    loginButton.disabled = true;
+    setStatus(loginStatus, "Vérification du code…");
+    try {
+      const response = await fetch("/api/admin-auth", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({ password: loginInput.value }),
+      });
+      const data = await readJson(response);
+
+      if (!response.ok || data.authenticated !== true) {
+        setStatus(loginStatus, data.error || "La connexion n’a pas abouti.", "error");
+        loginInput.select();
+        return;
+      }
+
+      loginInput.value = "";
+      hostSessionActive = data.hostAuthenticated === true;
+      await showAdmin();
+    } catch {
+      setStatus(loginStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      loginButton.disabled = false;
+    }
+  });
+
+  for (const day of DAYS) {
+    document.querySelector(`[data-day-enabled="${day}"]`)?.addEventListener("change", () => {
+      updateDayInputState(day);
+    });
+    updateDayInputState(day);
+  }
+
+  // -------------------------------------------------------------------------
+  // ÉTAPE 7 · DISCUSSIONS (DM)
+  // Les fils où Gionny est participant : liste à gauche, chat complet à droite
+  // (texte, images, notes vocales 60 FPS, accusés bleus ✓✓).
+  // -------------------------------------------------------------------------
+
+  const dmListNode = document.querySelector("[data-dm-list]");
+  const dmStatus = document.querySelector("[data-dm-status]");
+  const dmEmpty = document.querySelector("[data-dm-empty]");
+  const dmContent = document.querySelector("[data-dm-content]");
+  const dmTitleNode = document.querySelector("[data-dm-title]");
+  const dmSubtitleNode = document.querySelector("[data-dm-subtitle]");
+  const dmAvatarNode = document.querySelector("[data-dm-avatar]");
+  const dmHistoryNode = document.querySelector("[data-dm-history]");
+  const dmReplyStatus = document.querySelector("[data-dm-reply-status]");
+  const dmForm = document.querySelector("[data-dm-form]");
+  const dmInput = document.querySelector("[data-dm-input]");
+  const dmImageInput = document.querySelector("[data-dm-image]");
+  const dmRefreshButton = document.querySelector("[data-dm-refresh]");
+
+  let dmLoaded = false;
+  let dmLoading = false;
+  let activeDmThread = null;
+  let activeDmMessages = [];
+
+  const dmAvatarFor = (thread) => {
+    const holder = document.createElement("span");
+    holder.className = "dm-list-avatar";
+    const participants = Array.isArray(thread?.participants) ? thread.participants : [];
+    const other = participants.find((person) => person.pseudo !== "Gionny" && person.avatarData)
+      || participants.find((person) => person.avatarData);
+    if (other?.avatarData) {
+      const image = document.createElement("img");
+      image.src = other.avatarData;
+      image.alt = "";
+      holder.append(image);
+    } else {
+      holder.textContent = String(thread?.title || "?").trim().charAt(0).toUpperCase();
+      holder.dataset.fallback = "true";
+    }
+    return holder;
+  };
+
+  const createDmRow = (thread) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "dm-row";
+    row.dataset.dmThreadId = thread.id;
+    row.dataset.unread = thread.unread > 0 ? "true" : "false";
+    row.setAttribute("role", "listitem");
+    row.append(dmAvatarFor(thread));
+
+    const copy = document.createElement("span");
+    copy.className = "dm-row-copy";
+    const name = document.createElement("span");
+    name.className = "dm-row-name";
+    name.textContent = thread.title || "Discussion";
+    if (thread.kind === "group") {
+      const tag = document.createElement("span");
+      tag.className = "dm-row-tag";
+      tag.textContent = "Groupe";
+      name.append(tag);
+    }
+    const snippet = document.createElement("span");
+    snippet.className = "dm-row-snippet";
+    snippet.textContent = thread.lastMessage?.text || "Aucun message";
+    copy.append(name, snippet);
+    row.append(copy);
+
+    if (thread.unread > 0) {
+      const badge = document.createElement("span");
+      badge.className = "dm-row-badge";
+      badge.textContent = thread.unread > 99 ? "99+" : String(thread.unread);
+      row.append(badge);
+    }
+    row.addEventListener("click", () => void openDmThread(thread.id));
+    return row;
+  };
+
+  const paintDmHistory = () => {
+    if (!dmHistoryNode) return;
+    dmHistoryNode.replaceChildren(
+      ...activeDmMessages.map((message) => {
+        const bubble = document.createElement("article");
+        bubble.className = `dm-bubble${message.senderPseudo === "Gionny" ? " is-mine" : ""}`;
+        bubble.dataset.kind = message.kind || "text";
+
+        const head = document.createElement("header");
+        head.className = "dm-bubble-head";
+        const who = document.createElement("strong");
+        who.textContent = message.senderPseudo;
+        const time = document.createElement("time");
+        time.dateTime = message.createdAt;
+        time.textContent = formatInboxTime(message.createdAt);
+        head.append(who, time);
+
+        const body = document.createElement("div");
+        body.className = "dm-bubble-body";
+        if (message.kind === "image" && message.mediaUrl) {
+          const image = document.createElement("img");
+          image.src = message.mediaUrl;
+          image.alt = "Image envoyée";
+          image.loading = "lazy";
+          body.append(image);
+        }
+        if (message.kind === "audio" && message.mediaUrl) {
+          const audio = document.createElement("audio");
+          audio.controls = true;
+          audio.preload = "metadata";
+          audio.src = message.mediaUrl;
+          body.append(audio);
+        }
+        if (message.text) {
+          const text = document.createElement("p");
+          text.textContent = message.text;
+          body.append(text);
+        }
+        if (message.senderPseudo === "Gionny") {
+          const ticks = document.createElement("span");
+          ticks.className = "dm-ticks";
+          ticks.textContent = "✓✓";
+          ticks.title = "Lu";
+          bubble.append(head, body, ticks);
+          return bubble;
+        }
+        bubble.append(head, body);
+        return bubble;
+      })
+    );
+    dmHistoryNode.scrollTop = dmHistoryNode.scrollHeight;
+  };
+
+  const openDmThread = async (threadId) => {
+    if (!threadId) return;
+    setStatus(dmReplyStatus, "");
+    try {
+      const response = await fetch(`/api/admin-messages?view=dm-thread&id=${encodeURIComponent(threadId)}`, {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(dmStatus, data.error || "Cette discussion n’a pas pu être ouverte.", "error");
+        return;
+      }
+      activeDmThread = data.thread;
+      activeDmMessages = Array.isArray(data.messages) ? data.messages : [];
+      if (dmEmpty) dmEmpty.hidden = true;
+      if (dmContent) dmContent.hidden = false;
+      if (dmTitleNode) dmTitleNode.textContent = activeDmThread?.title || "Discussion";
+      if (dmSubtitleNode) dmSubtitleNode.textContent = activeDmThread?.subtitle || "";
+      if (dmAvatarNode) {
+        dmAvatarNode.replaceChildren(...dmAvatarFor(activeDmThread).childNodes);
+      }
+      paintDmHistory();
+      setStatus(dmStatus, "");
+    } catch {
+      setStatus(dmStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    }
+  };
+
+  const sendDmReply = async ({ data = "", mimeType = "" } = {}) => {
+    if (!activeDmThread) return;
+    const text = String(dmInput?.value || "").trim();
+    if (!text && !data) return;
+    if (dmInput) dmInput.value = "";
+    setStatus(dmReplyStatus, "Envoi…");
+    try {
+      const response = await fetch("/api/messages", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ action: "send", threadId: activeDmThread.id, text, data, mimeType }),
+      });
+      const payload = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(dmReplyStatus, payload.error || "Le message n’a pas pu être envoyé.", "error");
+        if (text && dmInput) dmInput.value = text;
+        return;
+      }
+      if (payload.message) {
+        activeDmMessages.push(payload.message);
+        paintDmHistory();
+      }
+      setStatus(dmReplyStatus, "Message envoyé.");
+      void loadDmThreads({ quiet: true });
+    } catch {
+      setStatus(dmReplyStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    }
+  };
+
+  const loadDmThreads = async ({ quiet = false } = {}) => {
+    if (!dmListNode || dmLoading) return;
+    dmLoading = true;
+    if (dmRefreshButton) dmRefreshButton.disabled = true;
+    if (!quiet) setStatus(dmStatus, "Chargement des discussions…");
+    try {
+      const response = await fetch("/api/admin-messages?view=dm-threads", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(dmStatus, data.error || "Les discussions n’ont pas pu être chargées.", "error");
+        return;
+      }
+      const threads = [...(data.inbox || []), ...(data.requests || [])];
+      dmLoaded = true;
+      dmListNode.replaceChildren(...threads.map(createDmRow));
+      setStatus(
+        dmStatus,
+        threads.length
+          ? `${threads.length} discussion${threads.length > 1 ? "s" : ""} reçue${threads.length > 1 ? "s" : ""}.`
+          : "Aucune discussion pour le moment."
+      );
+    } catch {
+      setStatus(dmStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      dmLoading = false;
+      if (dmRefreshButton) dmRefreshButton.disabled = false;
+    }
+  };
+
+  dmForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void sendDmReply();
+  });
+  dmInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendDmReply();
+    }
+  });
+  document.querySelector("[data-dm-attach]")?.addEventListener("click", () => dmImageInput?.click());
+  dmImageInput?.addEventListener("change", () => {
+    const file = dmImageInput.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      void sendDmReply({ data: String(reader.result || ""), mimeType: file.type || "image/jpeg" });
+    });
+    reader.readAsDataURL(file);
+    dmImageInput.value = "";
+  });
+  dmRefreshButton?.addEventListener("click", () => void loadDmThreads({ quiet: true }));
+
+  // -------------------------------------------------------------------------
+  // ÉTAPE 7 · PLANNING & À LA UNE
+  // Édition en direct du planning (jours + heures) et des annonces du bandeau.
+  // Chaque clic sur « Enregistrer » écrit immédiatement dans Supabase.
+  // -------------------------------------------------------------------------
+
+  const planningDaysNode = document.querySelector("[data-planning-days]");
+  const planningAnnouncementsNode = document.querySelector("[data-planning-announcements]");
+  const planningStatus = document.querySelector("[data-planning-status]");
+  const planningSaveStatus = document.querySelector("[data-planning-save-status]");
+  const planningSaveButton = document.querySelector("[data-planning-save]");
+  const planningAddButton = document.querySelector("[data-planning-add]");
+  const planningRefreshButton = document.querySelector("[data-planning-refresh]");
+
+  const PLANNING_DAYS = [
+    ["monday", "Lundi"],
+    ["tuesday", "Mardi"],
+    ["wednesday", "Mercredi"],
+    ["thursday", "Jeudi"],
+    ["friday", "Vendredi"],
+    ["saturday", "Samedi"],
+    ["sunday", "Dimanche"],
+  ];
+  const MAX_ANNOUNCEMENTS = 8;
+  const MAX_ANNOUNCEMENT_LENGTH = 120;
+
+  let planningConfig = null;
+  let planningLoaded = false;
+  let planningSaving = false;
+
+  const createPlanningDayRow = (key, label, saved) => {
+    const row = document.createElement("div");
+    row.className = "planning-day-row";
+    row.dataset.planningDay = key;
+
+    const labelNode = document.createElement("label");
+    labelNode.className = "planning-day-label";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = saved?.enabled === true;
+    checkbox.dataset.planningDayEnabled = key;
+    const mark = document.createElement("span");
+    mark.className = "planning-day-mark";
+    mark.setAttribute("aria-hidden", "true");
+    const text = document.createElement("span");
+    text.textContent = label;
+    labelNode.append(checkbox, mark, text);
+
+    const time = document.createElement("input");
+    time.type = "time";
+    time.step = "60";
+    time.value = typeof saved?.time === "string" ? saved.time : "22:00";
+    time.dataset.planningDayTime = key;
+    time.setAttribute("aria-label", `Heure du ${label.toLowerCase()}`);
+    time.disabled = saved?.enabled !== true;
+    checkbox.addEventListener("change", () => {
+      time.disabled = !checkbox.checked;
+    });
+
+    row.append(labelNode, time);
+    return row;
+  };
+
+  const createAnnouncementField = (value) => {
+    const row = document.createElement("div");
+    row.className = "planning-announcement-row";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = MAX_ANNOUNCEMENT_LENGTH;
+    input.value = value || "";
+    input.placeholder = "Ex. : Live ce soir à 22:00 sur Twitch";
+    input.dataset.planningAnnouncement = "";
+    input.setAttribute("aria-label", "Texte de l’annonce");
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "quiet-button planning-announcement-remove";
+    remove.textContent = "Retirer";
+    remove.addEventListener("click", () => {
+      row.remove();
+    });
+    row.append(input, remove);
+    return row;
+  };
+
+  const paintPlanning = (config) => {
+    planningConfig = config || {};
+    const schedule = planningConfig.schedule || {};
+    if (planningDaysNode) {
+      planningDaysNode.replaceChildren(
+        ...PLANNING_DAYS.map(([key, label]) => createPlanningDayRow(key, label, schedule[key]))
+      );
+    }
+    if (planningAnnouncementsNode) {
+      const list = Array.isArray(planningConfig.announcements) ? planningConfig.announcements : [];
+      planningAnnouncementsNode.replaceChildren(...list.map(createAnnouncementField));
+      if (!list.length) planningAnnouncementsNode.append(createAnnouncementField(""));
+    }
+    if (planningAddButton) {
+      planningAddButton.disabled = listCount() >= MAX_ANNOUNCEMENTS;
+    }
+  };
+
+  const listCount = () => planningAnnouncementsNode?.querySelectorAll("[data-planning-announcement]").length || 0;
+
+  const collectPlanning = () => {
+    const schedule = {};
+    for (const [key] of PLANNING_DAYS) {
+      const enabled = planningDaysNode?.querySelector(`[data-planning-day-enabled="${key}"]`);
+      const time = planningDaysNode?.querySelector(`[data-planning-day-time="${key}"]`);
+      schedule[key] = {
+        enabled: enabled?.checked === true,
+        time: time?.value || "22:00",
+      };
+    }
+    const announcements = [...(planningAnnouncementsNode?.querySelectorAll("[data-planning-announcement]") || [])]
+      .map((input) => input.value.trim())
+      .filter(Boolean)
+      .slice(0, MAX_ANNOUNCEMENTS);
+    return {
+      version: 1,
+      socials: planningConfig?.socials || {},
+      socialInfo: planningConfig?.socialInfo || {},
+      schedule,
+      announcements,
+    };
+  };
+
+  const loadPlanning = async ({ quiet = false } = {}) => {
+    if (!planningDaysNode) return;
+    if (planningRefreshButton) planningRefreshButton.disabled = true;
+    if (!quiet) setStatus(planningStatus, "Chargement du planning…");
+    try {
+      const response = await fetch("/api/site-config", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(planningStatus, data.message || data.error || "Le planning n’a pas pu être chargé.", "error");
+        return;
+      }
+      planningLoaded = true;
+      paintPlanning(data.config);
+      setStatus(planningStatus, data.updatedAt ? "Planning partagé chargé." : "Prêt à configurer.");
+    } catch {
+      setStatus(planningStatus, "Impossible de joindre le serveur. Réessaie.", "error");
+    } finally {
+      if (planningRefreshButton) planningRefreshButton.disabled = false;
+    }
+  };
+
+  const savePlanning = async () => {
+    if (!planningDaysNode || planningSaving) return;
+    planningSaving = true;
+    if (planningSaveButton) planningSaveButton.disabled = true;
+    setStatus(planningSaveStatus, "Enregistrement…");
+    try {
+      const response = await fetch("/api/site-config", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(collectPlanning()),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        setStatus(planningSaveStatus, data.message || data.error || "L’enregistrement a échoué.", "error");
+        return;
+      }
+      paintPlanning(data.config);
+      writePersistedAdminState(data.config);
+      populateForm(data.config);
+      setStatus(planningSaveStatus, "Planning et annonces enregistrés pour tout le monde.", "success");
+    } catch {
+      setStatus(planningSaveStatus, "Erreur de connexion : rien n’a été enregistré.", "error");
+    } finally {
+      planningSaving = false;
+      if (planningSaveButton) planningSaveButton.disabled = false;
+    }
+  };
+
+  planningAddButton?.addEventListener("click", () => {
+    if (!planningAnnouncementsNode || listCount() >= MAX_ANNOUNCEMENTS) return;
+    planningAnnouncementsNode.append(createAnnouncementField(""));
+    if (planningAddButton) planningAddButton.disabled = listCount() >= MAX_ANNOUNCEMENTS;
+  });
+  planningSaveButton?.addEventListener("click", () => void savePlanning());
+  planningRefreshButton?.addEventListener("click", () => void loadPlanning({ quiet: true }));
+
+  const collectConfig = () => {
+    const socials = Object.fromEntries(
+      SOCIALS.map((key) => [key, settingsForm.elements.namedItem(`socials.${key}`).value.trim()])
+    );
+    const socialInfo = Object.fromEntries(
+      SOCIAL_INFO.map((key) => [key, settingsForm.elements.namedItem(`socialInfo.${key}`).value.trim()])
+    );
+    const schedule = Object.fromEntries(
+      DAYS.map((day) => [
+        day,
+        {
+          enabled: document.querySelector(`[data-day-enabled="${day}"]`).checked,
+          time: document.querySelector(`[data-day-time="${day}"]`).value,
+        },
+      ])
+    );
+    return { version: 1, socials, socialInfo, schedule };
+  };
+
+  settingsForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!settingsForm.reportValidity() || saving) return;
+    if (!storageConfigured) {
+      setStatus(saveStatus, "Active d’abord le stockage Vercel Blob pour enregistrer en ligne.", "error");
+      return;
+    }
+
+    saving = true;
+    saveButton.disabled = true;
+    setStatus(saveStatus, "Enregistrement en ligne…");
+
+    try {
+      const response = await fetch("/api/site-config", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify(collectConfig()),
+      });
+      const data = await readJson(response);
+
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (response.status === 503 && data.error === "blob_storage_not_configured") {
+          updateStorageNotice({ storageConfigured: false });
+        }
+        setStatus(saveStatus, data.message || data.error || "La sauvegarde a échoué.", "error");
+        return;
+      }
+
+      populateForm(data.config);
+      writePersistedAdminState(data.config);
+      updateStorageNotice(data);
+      const savedTime = formatSavedTime(data.updatedAt);
+      setStatus(
+        saveStatus,
+        savedTime ? `Enregistré pour tout le monde · ${savedTime}.` : "Enregistré pour tout le monde.",
+        "success"
+      );
+    } catch {
+      setStatus(saveStatus, "Erreur de connexion : les changements n’ont pas été enregistrés.", "error");
+    } finally {
+      saving = false;
+      saveButton.disabled = !storageConfigured;
+    }
+  });
+
+  logoutButton?.addEventListener("click", async () => {
+    logoutButton.disabled = true;
+    try {
+      const response = await fetch("/api/admin-auth", {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+      });
+      const data = await readJson(response);
+      hostSessionActive = data.hostAuthenticated === true;
+    } catch {
+      // Hiding the admin screen is still useful if the network is unavailable.
+    } finally {
+      logoutButton.disabled = false;
+      if (hostSessionActive) window.location.assign("/");
+      else showLogin();
+    }
+  });
+
+  const restoreSession = async () => {
+    try {
+      const response = await fetch("/api/admin-auth", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      hostSessionActive = data.hostAuthenticated === true;
+      if (response.ok && data.authenticated === true) {
+        await showAdmin();
+        return;
+      }
+    } catch {
+      // The login form remains available if the session check cannot reach the server.
+    }
+    showLogin();
+  };
+
+  void restoreSession();
+})();
