@@ -1,0 +1,558 @@
+/* ==========================================================================
+   QG2GIONNY · Page d'attente « SITE EN TRAVAUX »
+   Aucune dépendance, aucun utilitaire : CSS natif uniquement.
+   ========================================================================== */
+
+:root {
+  --works-page: #070b14;
+  --works-card: #0e1525;
+  --works-line: #1e293b;
+  --works-text: #e2e8f0;
+  --works-muted: #94a3b8;
+  --works-accent: #38bdf8;
+  --works-font: "Inter", "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --works-display: "Outfit", "Inter", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: var(--works-page);
+  color: var(--works-text);
+  font-family: var(--works-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------------------------------
+   Aperçu du site, très flouté, purement décoratif
+   -------------------------------------------------------------------------- */
+.works-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  padding: 0 0 24px;
+  filter: blur(26px) saturate(0.75) brightness(0.6);
+  opacity: 0.85;
+  transform: scale(1.06);
+  pointer-events: none;
+  user-select: none;
+}
+
+.works-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 56px;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.works-preview-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(140deg, #38bdf8, #1d4ed8);
+}
+
+.works-preview-pill {
+  width: 150px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.4);
+}
+
+.works-preview-pill--wide {
+  width: 260px;
+}
+
+.works-preview-body {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 340px;
+  gap: 24px;
+  padding: 24px 28px;
+}
+
+.works-preview-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.works-preview-rail span {
+  height: 18px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.28);
+}
+
+.works-preview-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.works-preview-card {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  background: rgba(14, 21, 37, 0.7);
+}
+
+.works-preview-avatar {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.32);
+}
+
+.works-preview-lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.works-preview-lines span {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.28);
+}
+
+.works-preview-lines span.is-short {
+  width: 55%;
+}
+
+.works-preview-card--media {
+  flex-direction: column;
+}
+
+.works-preview-media {
+  display: block;
+  height: 190px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, rgba(56, 189, 248, 0.35), rgba(29, 78, 216, 0.28));
+}
+
+.works-preview-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.works-preview-block {
+  height: 150px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 18px;
+  background: rgba(14, 21, 37, 0.6);
+}
+
+.works-preview-block--tall {
+  height: 260px;
+}
+
+/* Voile net par-dessus l'aperçu : le fond reste sombre et lisible. */
+.works-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(7, 11, 20, 0.72), rgba(7, 11, 20, 0.94) 55%, #070b14 100%);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   Badge « Site en travaux »
+   -------------------------------------------------------------------------- */
+.works-badge {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 4;
+  margin: 0;
+  padding: 8px 16px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 999px;
+  background: rgba(14, 21, 37, 0.92);
+  color: var(--works-accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Contenu
+   -------------------------------------------------------------------------- */
+.works-main {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  max-width: 1160px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  flex-direction: column;
+  gap: 32px;
+  padding: 96px 24px 48px;
+}
+
+.works-head {
+  display: flex;
+  max-width: 720px;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.works-logo {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  object-fit: cover;
+  box-shadow: 0 18px 40px rgba(2, 8, 23, 0.55);
+}
+
+.works-kicker {
+  margin: 6px 0 0;
+  color: var(--works-accent);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.works-title {
+  margin: 0;
+  font-family: var(--works-display);
+  font-size: clamp(32px, 5vw, 54px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.works-title span {
+  color: var(--works-accent);
+}
+
+.works-copy {
+  margin: 0;
+  max-width: 620px;
+  color: var(--works-muted);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   Colonnes : planning à gauche, réseaux à droite
+   -------------------------------------------------------------------------- */
+.works-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.works-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--works-line);
+  border-radius: 18px;
+  background: var(--works-card);
+  box-shadow: 0 24px 60px rgba(2, 8, 23, 0.45);
+}
+
+.works-card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.works-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--works-display);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.works-card-sub {
+  margin: 0;
+  color: var(--works-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.works-live-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--works-accent);
+}
+
+.works-days {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.works-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--works-line);
+  border-radius: 12px;
+  background: #0b1120;
+  font-size: 14px;
+}
+
+.works-day--empty {
+  justify-content: center;
+  color: var(--works-muted);
+  font-size: 13px;
+}
+
+.works-day-name {
+  color: var(--works-text);
+  font-weight: 600;
+}
+
+.works-day-time {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--works-accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.works-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--works-line);
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.works-next-label {
+  color: var(--works-muted);
+  font-size: 13px;
+}
+
+.works-next-value {
+  color: var(--works-text);
+  font-family: var(--works-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.works-card-note {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Réseaux */
+.works-networks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.works-network {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--works-line);
+  border-radius: 14px;
+  background: #0b1120;
+  color: var(--works-text);
+  text-decoration: none;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.works-network:hover,
+.works-network:focus-visible {
+  border-color: rgba(56, 189, 248, 0.6);
+  background: #101a2e;
+}
+
+.works-network:focus-visible {
+  outline: 2px solid var(--works-accent);
+  outline-offset: 2px;
+}
+
+.works-network-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--works-muted);
+}
+
+.works-network-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.works-network--discord .works-network-mark {
+  background: rgba(88, 101, 242, 0.16);
+  color: #5865f2;
+}
+
+.works-network--twitch .works-network-mark {
+  background: rgba(145, 70, 255, 0.16);
+  color: #a970ff;
+}
+
+.works-network--youtube .works-network-mark {
+  background: rgba(255, 0, 0, 0.14);
+  color: #ff4444;
+}
+
+.works-network--tiktok .works-network-mark {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--works-accent);
+}
+
+.works-network--x .works-network-mark {
+  background: rgba(226, 232, 240, 0.12);
+  color: #e2e8f0;
+}
+
+.works-network--instagram .works-network-mark {
+  background: rgba(225, 48, 108, 0.16);
+  color: #e1306c;
+}
+
+.works-network-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.works-network-copy strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.works-network-copy span {
+  overflow: hidden;
+  color: var(--works-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Accès hôte */
+.works-enter {
+  align-self: flex-start;
+  padding: 12px 20px;
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--works-accent);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background-color 160ms ease, filter 160ms ease;
+}
+
+.works-enter:hover,
+.works-enter:focus-visible {
+  background: rgba(56, 189, 248, 0.2);
+  filter: brightness(1.2);
+}
+
+.works-foot {
+  margin: 0;
+  color: #475569;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Téléphone : une seule colonne, planning puis réseaux
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .works-preview-body {
+    grid-template-columns: 1fr;
+  }
+
+  .works-preview-rail,
+  .works-preview-right {
+    display: none;
+  }
+
+  .works-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .works-main {
+    gap: 24px;
+    padding: 88px 16px 32px;
+  }
+
+  .works-logo {
+    width: 62px;
+    height: 62px;
+    border-radius: 16px;
+  }
+
+  .works-card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .works-badge {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .works-network,
+  .works-enter {
+    transition: none;
+  }
+}

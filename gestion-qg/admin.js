@@ -2442,6 +2442,94 @@
   }
 
   // -------------------------------------------------------------------------
+  // ÉTAPE 8 · RIDEAU DU SITE (« SITE EN TRAVAUX »)
+  // L'admin est le seul endroit d'où l'on peut entrer sur le site public :
+  // « Voir le site » ouvre la version complète, « Ouvrir au public » lève
+  // (ou remet) le rideau pour tout le monde.
+  // -------------------------------------------------------------------------
+
+  const gateStateNode = document.querySelector("[data-admin-gate-state]");
+  const gateToggleButton = document.querySelector("[data-admin-gate-toggle]");
+  const gateViewLink = document.querySelector("[data-admin-gate-view]");
+
+  let gateLocked = true;
+  let gateLoaded = false;
+  let gateSaving = false;
+
+  const paintGate = () => {
+    if (gateStateNode) {
+      gateStateNode.textContent = gateLocked
+        ? "État du site : fermé au public (travaux)"
+        : "État du site : ouvert au public";
+      gateStateNode.dataset.state = gateLocked ? "locked" : "open";
+    }
+    if (gateToggleButton) {
+      gateToggleButton.hidden = false;
+      gateToggleButton.textContent = gateLocked ? "Ouvrir au public" : "Fermer au public";
+    }
+    if (gateViewLink) gateViewLink.hidden = !gateLocked;
+  };
+
+  const loadGate = async () => {
+    try {
+      const response = await fetch("/api/access", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+      const data = await readJson(response);
+      if (!response.ok) return;
+      gateLocked = data.locked !== false;
+      gateLoaded = true;
+      paintGate();
+    } catch {
+      // L'admin reste utilisable même si l'état n'a pas pu être lu.
+    }
+  };
+
+  const toggleGate = async () => {
+    if (gateSaving) return;
+    gateSaving = true;
+    if (gateToggleButton) gateToggleButton.disabled = true;
+    const next = !gateLocked;
+    try {
+      const response = await fetch("/api/access", {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ locked: next }),
+      });
+      const data = await readJson(response);
+      if (response.status === 401) {
+        showLogin("Ta session a expiré. Saisis de nouveau le code d’accès.");
+        return;
+      }
+      if (!response.ok) {
+        if (gateStateNode) {
+          gateStateNode.textContent = data.error || "Le rideau n’a pas pu être modifié.";
+          gateStateNode.dataset.state = "error";
+        }
+        return;
+      }
+      gateLocked = data.locked !== false;
+      gateLoaded = true;
+      paintGate();
+    } catch {
+      if (gateStateNode) {
+        gateStateNode.textContent = "Impossible de joindre le serveur. Réessaie.";
+        gateStateNode.dataset.state = "error";
+      }
+    } finally {
+      gateSaving = false;
+      if (gateToggleButton) gateToggleButton.disabled = false;
+    }
+  };
+
+  gateToggleButton?.addEventListener("click", () => void toggleGate());
+  void loadGate();
+
+  // -------------------------------------------------------------------------
   // ÉTAPE 7 · DISCUSSIONS (DM)
   // Les fils où Gionny est participant : liste à gauche, chat complet à droite
   // (texte, images, notes vocales 60 FPS, accusés bleus ✓✓).

@@ -35,6 +35,7 @@
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
     </script>
     <script defer src="/_vercel/insights/script.js"></script>
+    <script src="/gate.js" defer></script>
     <script src="/image-tools.js" defer></script>
     <script src="/icons.js" defer></script>
     <script src="/audio-player.js" defer></script>
@@ -46,6 +47,42 @@
     <script src="/x-widget-messages.js" defer></script>
   </head>
   <body>
+  <!-- Rideau « site en travaux » : affiché par /gate.js quand le site est fermé
+       au public. Le vrai site reste monté derrière, complètement flouté. -->
+  <div class="works-gate" data-works-gate hidden>
+    <div class="works-gate-panel">
+      <p class="works-gate-kicker">QG2GIONNY</p>
+      <h1 class="works-gate-title">Site en <span>travaux</span></h1>
+      <p class="works-gate-copy">
+        Je suis en train de tout remettre au propre. Retrouve tous mes réseaux et le planning
+        des lives juste ici, le site rouvre très bientôt.
+      </p>
+      <div class="works-gate-columns">
+        <section class="works-gate-card" aria-labelledby="works-gate-schedule">
+          <h2 class="works-gate-card-title" id="works-gate-schedule">Les prochains lives</h2>
+          <p class="works-gate-sub" data-gate-schedule-time>Rendez-vous fixe · 22h00 (heure FR)</p>
+          <ul class="works-gate-days" data-gate-schedule-days aria-label="Jours de live"></ul>
+          <p class="works-gate-next">
+            <span>Prochain live dans</span>
+            <strong data-gate-countdown>—</strong>
+          </p>
+        </section>
+        <section class="works-gate-card" aria-labelledby="works-gate-networks">
+          <h2 class="works-gate-card-title" id="works-gate-networks">Retrouve-moi ici</h2>
+          <ul class="works-gate-networks">
+            <li><a data-gate-link="discord" target="_blank" rel="noopener noreferrer">Discord</a></li>
+            <li><a data-gate-link="twitch" target="_blank" rel="noopener noreferrer">Twitch</a></li>
+            <li><a data-gate-link="youtube" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+            <li><a data-gate-link="tiktok" target="_blank" rel="noopener noreferrer">TikTok</a></li>
+            <li><a data-gate-link="x" target="_blank" rel="noopener noreferrer">X</a></li>
+            <li><a data-gate-link="instagram" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+          </ul>
+        </section>
+      </div>
+      <p class="works-gate-foot">Le QG de Gionny — réouverture très bientôt.</p>
+    </div>
+  </div>
+
   <svg class="qg-inline-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden">
     <defs>
       <linearGradient id="qg-crown-gold-fill" x1="3" y1="3" x2="21" y2="22" gradientUnits="userSpaceOnUse">

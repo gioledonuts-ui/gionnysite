@@ -54,6 +54,19 @@
             <button class="admin-tab" id="admin-tab-settings" type="button" role="tab" aria-selected="false" aria-controls="settings-panel" data-admin-tab="settings" tabindex="-1"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-settings"></use></svg> Réglages</button>
             <button class="admin-tab" id="admin-tab-planning" type="button" role="tab" aria-selected="false" aria-controls="planning-panel" data-admin-tab="planning" tabindex="-1" aria-label="Planning et à la une"><svg class="qg-icon" aria-hidden="true"><use href="/assets/qg-icons.svg#icon-clock"></use></svg> Planning &amp; à la une</button>
           </nav>
+          <!-- Étape 8 · Rideau du site : état en direct + accès hôte -->
+          <section class="admin-gate-card" data-admin-gate aria-label="Accès public au site">
+            <p class="admin-gate-state" data-admin-gate-state aria-live="polite">État du site : chargement…</p>
+            <div class="admin-gate-actions">
+              <a class="admin-gate-view" href="/?suite=1" data-admin-gate-view>Voir le site</a>
+              <button class="quiet-button admin-gate-toggle" type="button" data-admin-gate-toggle hidden>Ouvrir au public</button>
+            </div>
+            <p class="admin-gate-help">
+              Tant que le site est fermé, les visiteurs voient seulement « Site en travaux »
+              avec tes réseaux et le planning. « Voir le site » t'ouvre la version complète.
+            </p>
+          </section>
+
           <button class="quiet-button admin-sidebar-logout" type="button" data-logout hidden>Se déconnecter</button>
           <p class="admin-sidebar-footnote">Panneau de gestion sécurisé</p>
         </aside>
